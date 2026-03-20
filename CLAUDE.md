@@ -12,6 +12,17 @@
 | 通知 | Slack API（Incoming Webhooks or Bot） |
 | インフラ | Docker Compose |
 
+### 開発ツール
+
+| 用途 | ツール |
+|---|---|
+| Python パッケージ管理 | uv |
+| Python リンター / フォーマッター | ruff |
+| Python 型チェック | pyright |
+| フロントエンド パッケージ管理 | pnpm |
+| フロントエンド リンター | ESLint |
+| フロントエンド フォーマッター | Prettier |
+
 ## 開発ルール
 
 - `.env` や秘密情報はコミットしない
@@ -35,6 +46,9 @@
 
 - テスト用DBはDocker Composeでテスト用PostgreSQLコンテナを使用（SQLiteモックは使わない）
 - ドメイン層テストはDB非依存で高速に回す
+- API層テストには `@pytest.mark.integration` を付与（DB依存）
+- **pre-commit**: ユニットテスト（`pytest -m "not integration"`）+ リンター + 型チェック
+- **CI**: 全テスト（integration含む）+ E2E（Playwright）
 
 ## ドキュメント
 

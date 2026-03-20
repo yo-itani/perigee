@@ -1,0 +1,42 @@
+repos:
+  # Python: ruff (lint + format)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Python: pyright (type check)
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: uv run pyright
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      # Python: pytest (unit tests only, exclude integration)
+      - id: pytest
+        name: pytest (unit)
+        entry: uv run pytest -m "not integration" --tb=short -q
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      # Frontend: lint (ESLint + Prettier)
+      - id: frontend-lint
+        name: frontend lint
+        entry: pnpm --prefix frontend lint
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+
+      # Frontend: test (Vitest)
+      - id: frontend-test
+        name: frontend test
+        entry: pnpm --prefix frontend test --run
+        language: system
+        files: ^frontend/
+        pass_filenames: false
