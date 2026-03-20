@@ -21,7 +21,7 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
-    model_config = SettingsConfigDict(env_prefix="PERIGEE_")
+    model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
 
 
 settings = Settings()

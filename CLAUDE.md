@@ -27,6 +27,13 @@
 
 - `.env` や秘密情報はコミットしない
 - DDDで設計・実装する（詳細は `docs/architecture.md`）
+
+## 環境変数
+
+- **pydantic-settings** で管理（`backend/shared/config/settings.py`）
+- `.env` ファイルから読み込む（`env_file=".env"`）
+- OS 環境変数が `.env` より優先される
+- すべての変数に `PERIGEE_` プレフィックスを付ける（例: `PERIGEE_DB_HOST`）
 ## Git / GitHub ルール
 
 - **デフォルトブランチ**: `develop`
