@@ -1,6 +1,9 @@
 # Serena
 .serena/
 
+# Claude Code (local settings only)
+.claude/settings.local.json
+
 # Created by https://www.toptal.com/developers/gitignore/api/python,react
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,react
 

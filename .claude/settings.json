@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(cat:*)",
+      "Bash(gh:*)",
+      "Bash(git:*)",
+      "Bash(echo:*)",
+      "Bash(uv:*)",
+      "Bash(which:*)",
+      "Bash(pwd:*)",
+      "Bash(ruff:*)",
+      "Bash(test:*)",
+      "Bash(pytest:*)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(awk:*)",
+      "Bash(export:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Read(*)",
+      "Edit(*)",
+      "Write(*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Bash(cat .env*)",
+      "Bash(cat *.env)"
+    ]
+  }
+}
+
