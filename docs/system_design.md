@@ -261,9 +261,10 @@ Slack通知（リンク）
 
 | レイヤー | 技術 |
 |---|---|
-| フロントエンド | React + TypeScript |
-| バックエンド | FastAPI（Python） |
-| データベース | PostgreSQL |
+| フロントエンド | React 19.x + TypeScript |
+| バックエンド | FastAPI 0.135.x（Python 3.13+） |
+| ORM | SQLAlchemy 2.x + Alembic |
+| データベース | MariaDB（TDE による暗号化有効） |
 | 通知 | Slack API（Incoming Webhooks or Bot） |
 | インフラ | Docker Compose |
 
