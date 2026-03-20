@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1on1 システム ワイヤーフレーム</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f3;
+  --bg-tertiary: #eeede8;
+  --text-primary: #1a1a18;
+  --text-secondary: #6b6b67;
+  --text-tertiary: #9e9e9a;
+  --border: rgba(0,0,0,0.12);
+  --border-md: rgba(0,0,0,0.22);
+  --info-bg: #e6f1fb;
+  --info-text: #185fa5;
+  --success-bg: #eaf3de;
+  --success-text: #3b6d11;
+  --warning-bg: #faeeda;
+  --warning-text: #854f0b;
+  --danger-bg: #fcebeb;
+  --danger-text: #a32d2d;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  font-family: -apple-system, 'Helvetica Neue', sans-serif;
+}
+body { background: #f0efea; color: var(--text-primary); }
+
+/* ナビゲーション */
+.nav { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; background: var(--bg); border-right: 0.5px solid var(--border); padding: 1.5rem 1rem; overflow-y: auto; z-index: 100; }
+.nav-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 1.25rem; padding-bottom: 10px; border-bottom: 0.5px solid var(--border); }
+.nav-group { margin-bottom: 1.25rem; }
+.nav-group-label { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.05em; margin-bottom: 6px; }
+.nav-item { display: block; padding: 7px 10px; font-size: 13px; color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; border: none; background: none; width: 100%; text-align: left; text-decoration: none; transition: background 0.12s; }
+.nav-item:hover { background: var(--bg-secondary); color: var(--text-primary); }
+.nav-item.active { background: var(--text-primary); color: var(--bg); }
+
+/* メインコンテンツ */
+.main { margin-left: 220px; padding: 2rem; min-height: 100vh; }
+.screen { display: none; max-width: 680px; }
+.screen.active { display: block; }
+.screen-label { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.05em; margin-bottom: 8px; }
+.screen-title { font-size: 22px; font-weight: 500; color: var(--text-primary); margin-bottom: 1.5rem; padding-bottom: 12px; border-bottom: 0.5px solid var(--border); }
+
+/* 共通コンポーネント */
+.card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.03em; }
+.card-action { font-size: 13px; color: var(--info-text); background: none; border: none; cursor: pointer; }
+.divider { height: 0.5px; background: var(--border); margin: 12px 0; }
+.meta-row { display: flex; gap: 20px; flex-wrap: wrap; }
+.meta-item { display: flex; flex-direction: column; gap: 3px; }
+.meta-label { font-size: 12px; color: var(--text-tertiary); }
+.meta-value { font-size: 14px; color: var(--text-primary); }
+.avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--info-bg); color: var(--info-text); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.avatar.warn { background: var(--warning-bg); color: var(--warning-text); }
+.avatar.success { background: var(--success-bg); color: var(--success-text); }
+.avatar-lg { width: 32px; height: 32px; font-size: 13px; }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 99px; font-weight: 500; }
+.badge-draft { background: var(--warning-bg); color: var(--warning-text); }
+.badge-published { background: var(--success-bg); color: var(--success-text); }
+.badge-info { background: var(--info-bg); color: var(--info-text); }
+.badge-gray { background: var(--bg-secondary); color: var(--text-tertiary); }
+
+.status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius-md); margin-bottom: 1.25rem; font-size: 13px; }
+.status-bar.info { background: var(--info-bg); color: var(--info-text); }
+.status-bar.success { background: var(--success-bg); color: var(--success-text); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.btn { padding: 8px 16px; font-size: 13px; border-radius: var(--radius-md); cursor: pointer; border: none; }
+.btn-primary { background: var(--text-primary); color: var(--bg); font-weight: 500; }
+.btn-ghost { background: none; border: 0.5px solid var(--border-md); color: var(--text-secondary); }
+.btn-danger { background: none; border: 0.5px solid #f09595; color: var(--danger-text); }
+.btn-success { background: var(--success-bg); color: var(--success-text); font-weight: 500; }
+
+.field { margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+.field label, .field-label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.field input, .field select, .field textarea { width: 100%; padding: 8px 12px; font-size: 14px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; }
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.7; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; margin-bottom: 0; }
+
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+.row:last-of-type { border-bottom: none; }
+.row-info { flex: 1; }
+.row-title { font-size: 14px; color: var(--text-primary); margin-bottom: 2px; }
+.row-meta { font-size: 12px; color: var(--text-secondary); }
+
+.add-row { display: flex; gap: 8px; margin-top: 12px; }
+.add-row input { flex: 1; padding: 7px 12px; font-size: 14px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; }
+.add-row button { padding: 7px 14px; font-size: 13px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer; }
+
+/* タブ */
+.tabs { display: flex; border: 0.5px solid var(--border-md); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem; }
+.tab { flex: 1; padding: 9px 16px; font-size: 14px; background: var(--bg-secondary); color: var(--text-secondary); border: none; cursor: pointer; }
+.tab.active { background: var(--bg); color: var(--text-primary); font-weight: 500; }
+.tab + .tab { border-left: 0.5px solid var(--border-md); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ページヘッダー */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; gap: 12px; }
+.page-title { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+.page-sub { font-size: 14px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 1.25rem; }
+.page-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.breadcrumb { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; }
+.footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.5rem; }
+
+/* メンバーブロック（スケジューリング） */
+.member-block { border: 0.5px solid var(--border); border-radius: var(--radius-md); margin-bottom: 10px; overflow: hidden; }
+.member-block-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); }
+.member-block-name { flex: 1; font-size: 14px; font-weight: 500; }
+.member-block-body { padding: 12px 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.member-block-body .field { flex: 1; min-width: 120px; margin-bottom: 0; }
+
+/* アジェンダ */
+.agenda-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+.agenda-item:last-of-type { border-bottom: none; }
+.agenda-text { flex: 1; font-size: 14px; color: var(--text-primary); }
+.agenda-text.done { color: var(--text-tertiary); text-decoration: line-through; }
+.agenda-tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--bg-secondary); color: var(--text-tertiary); flex-shrink: 0; }
+.agenda-tag.mine { background: var(--info-bg); color: var(--info-text); }
+.agenda-check { width: 18px; height: 18px; border-radius: 4px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.agenda-check.done { background: var(--success-bg); border-color: var(--success-text); color: var(--success-text); }
+.del-btn { color: var(--text-tertiary); font-size: 16px; cursor: pointer; background: none; border: none; flex-shrink: 0; }
+
+/* コメント */
+.comments-area { margin-top: 8px; margin-left: 4px; border-left: 2px solid var(--border); padding-left: 12px; }
+.comment-entry { display: flex; gap: 10px; margin-bottom: 14px; }
+.comment-entry:last-of-type { margin-bottom: 0; }
+.comment-body-wrap { flex: 1; }
+.comment-meta { font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+.comment-meta .name { font-weight: 500; color: var(--text-secondary); }
+.comment-body { font-size: 13px; color: var(--text-primary); background: var(--bg-secondary); border-radius: var(--radius-md); padding: 9px 12px; line-height: 1.6; }
+.comment-toggle { font-size: 12px; color: var(--text-tertiary); background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: var(--radius-md); flex-shrink: 0; }
+.comment-input-row { display: flex; gap: 8px; margin-top: 8px; }
+.comment-input-row input { flex: 1; padding: 6px 10px; font-size: 13px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; }
+.comment-input-row button { padding: 6px 12px; font-size: 12px; background: var(--bg-secondary); border: 0.5px solid var(--border-md); border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer; }
+
+/* アクションアイテム */
+.action-icon { width: 18px; height: 18px; border-radius: 4px; background: var(--warning-bg); color: var(--warning-text); font-size: 10px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.action-icon.danger { background: var(--danger-bg); color: var(--danger-text); }
+.action-due { font-size: 12px; padding: 3px 8px; border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border); white-space: nowrap; flex-shrink: 0; }
+.action-due.overdue { background: var(--danger-bg); color: var(--danger-text); border-color: #f09595; }
+
+/* メトリクス */
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.metric-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 14px; }
+.metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+.metric-value { font-size: 24px; font-weight: 500; color: var(--text-primary); }
+.metric-value.warn { color: var(--warning-text); }
+.metric-value.danger { color: var(--danger-text); }
+
+/* モーダル */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 200; }
+.overlay.show { display: flex; }
+.modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 1.5rem; width: 100%; max-width: 440px; margin: 0 1rem; }
+.modal-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+.modal-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.6; }
+.share-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-md); margin-bottom: 8px; cursor: pointer; }
+.share-option.selected { border-color: var(--text-primary); background: var(--bg-secondary); }
+.share-option-info .name { font-size: 14px; color: var(--text-primary); }
+.share-option-info .desc { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+
+/* 役割切り替え */
+.role-switcher { display: flex; gap: 6px; margin-bottom: 1.5rem; align-items: center; }
+.role-label { font-size: 12px; color: var(--text-tertiary); margin-right: 4px; }
+.role-btn { padding: 5px 14px; font-size: 12px; border-radius: 99px; border: 0.5px solid var(--border-md); background: none; color: var(--text-secondary); cursor: pointer; }
+.role-btn.active { background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+
+/* ダッシュボード */
+.greeting { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+.greeting-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+.next-card { background: var(--info-bg); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.next-label { font-size: 12px; color: var(--info-text); font-weight: 500; margin-bottom: 6px; }
+.next-title { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+.next-meta { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+.next-actions { display: flex; gap: 8px; }
+
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ナビゲーション -->
+<nav class="nav">
+  <div class="nav-title">1on1 ワイヤーフレーム</div>
+  <div class="nav-group">
+    <div class="nav-group-label">ダッシュボード</div>
+    <button class="nav-item active" onclick="showScreen('dashboard')">ダッシュボード</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">スケジューリング</div>
+    <button class="nav-item" onclick="showScreen('scheduling')">1on1 を設定する</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">1on1 実施</div>
+    <button class="nav-item" onclick="showScreen('prep')">準備画面（1on1前）</button>
+    <button class="nav-item" onclick="showScreen('exec')">実施・記録画面</button>
+    <button class="nav-item" onclick="showScreen('publish')">公開フロー</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">閲覧・コメント</div>
+    <button class="nav-item" onclick="showScreen('view')">記録閲覧・コメント</button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ① ダッシュボード -->
+<div class="screen active" id="screen-dashboard">
+  <div class="screen-label">DASHBOARD</div>
+  <div class="screen-title">ダッシュボード</div>
+  <div class="role-switcher">
+    <span class="role-label">表示切替：</span>
+    <button class="role-btn active" onclick="setDashRole('boss')">上司として見る</button>
+    <button class="role-btn" onclick="setDashRole('sub')">部下として見る</button>
+  </div>
+
+  <div id="dash-boss">
+    <div class="greeting">おはようございます、鈴木さん</div>
+    <div class="greeting-sub">2026年4月3日（金）　今日は田中さんとの1on1があります</div>
+    <div class="metrics">
+      <div class="metric-card"><div class="metric-label">今週の1on1</div><div class="metric-value">3件</div></div>
+      <div class="metric-card"><div class="metric-label">下書き未公開</div><div class="metric-value warn">2件</div></div>
+      <div class="metric-card"><div class="metric-label">期限切れアクション</div><div class="metric-value danger">1件</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">直近の1on1</div><button class="card-action">すべて見る</button></div>
+      <div class="row"><div class="avatar avatar-lg success">田</div><div class="row-info"><div class="row-title">田中 太郎</div><div class="row-meta">今日 10:00 · 週次定期 · アジェンダ 4件</div></div><span class="badge" style="background:var(--success-bg);color:var(--success-text);">今日</span></div>
+      <div class="row"><div class="avatar avatar-lg">山</div><div class="row-info"><div class="row-title">山田 花子</div><div class="row-meta">4月5日（日）14:00 · 隔週定期 · アジェンダ 2件</div></div><span class="badge badge-draft">2日後</span></div>
+      <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎</div><div class="row-meta">4月10日（金）15:00 · 週次定期 · アジェンダ未設定</div></div><span class="badge badge-gray">7日後</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">下書き未公開の記録</div><button class="card-action">すべて見る</button></div>
+      <div class="row"><div class="avatar avatar-lg">田</div><div class="row-info"><div class="row-title">田中 太郎 · 3月27日の1on1</div><div class="row-meta">7日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
+      <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎 · 3月20日の1on1</div><div class="row-meta">14日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">未完了アクションアイテム（全メンバー）</div><button class="card-action">すべて見る</button></div>
+      <div class="row"><div class="action-icon danger">!</div><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メール（田中 太郎）</div><div class="row-meta">3月20日の1on1から</div></div><span class="action-due overdue">期限切れ</span></div>
+      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を作成（田中 太郎）</div><div class="row-meta">4月3日の1on1から</div></div><span class="action-due">4/10まで</span></div>
+      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">企画書レビュー（山田 花子）</div><div class="row-meta">3月27日の1on1から</div></div><span class="action-due">4/15まで</span></div>
+    </div>
+  </div>
+
+  <div id="dash-sub" class="hidden">
+    <div class="greeting">おはようございます、田中さん</div>
+    <div class="greeting-sub">2026年4月3日（金）　今日は鈴木さんとの1on1があります</div>
+    <div class="next-card">
+      <div class="next-label">次の1on1</div>
+      <div class="next-title">週次 1on1 — 鈴木 一郎</div>
+      <div class="next-meta">今日 10:00 · 60分 · アジェンダ 4件</div>
+      <div class="next-actions">
+        <button class="btn btn-ghost" style="background:var(--bg);">準備画面を開く</button>
+        <button class="btn btn-primary">1on1 を開始する</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">自分の未完了アクションアイテム</div><button class="card-action">すべて見る</button></div>
+      <div class="row"><div class="action-icon danger">!</div><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メールを送る</div><div class="row-meta">3月20日の1on1から</div></div><span class="action-due overdue">期限切れ</span></div>
+      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を作成する</div><div class="row-meta">4月3日の1on1から</div></div><span class="action-due">4/10まで</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">未読の記録・コメント</div><button class="card-action">すべて見る</button></div>
+      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月27日の1on1 — 記録が公開されました</div><div class="row-meta">鈴木 一郎 · 山本 部長もコメントしています</div></div><span style="color:var(--text-tertiary);">›</span></div>
+      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月20日の1on1 — 鈴木さんがコメントしました</div><div class="row-meta">4月1日</div></div><span style="color:var(--text-tertiary);">›</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ② スケジューリング -->
+<div class="screen" id="screen-scheduling">
+  <div class="screen-label">SCHEDULING</div>
+  <div class="screen-title">1on1 を設定する</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('sched','regular')">定期スケジュール型</button>
+    <button class="tab" onclick="switchTab('sched','adhoc')">アドホック相談型</button>
+  </div>
+  <div class="panel active" id="sched-regular">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">メンバーごとのスケジュール</div>
+      <div class="member-block">
+        <div class="member-block-header"><div class="avatar">田</div><div class="member-block-name">田中 太郎</div><button class="del-btn">×</button></div>
+        <div class="member-block-body">
+          <div class="field"><label>開始日</label><input type="date" value="2026-04-07"></div>
+          <div class="field"><label>時刻</label><input type="time" value="10:00"></div>
+          <div class="field"><label>所要時間</label><select><option>30分</option><option selected>60分</option><option>90分</option></select></div>
+          <div class="field" style="flex:2;min-width:200px;"><label>繰り返し</label><div style="display:flex;gap:8px;"><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>毎週</option><option>隔週</option><option>毎月</option></select><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>月曜</option><option>火曜</option><option>水曜</option><option>木曜</option><option selected>金曜</option></select></div></div>
+        </div>
+      </div>
+      <div class="member-block">
+        <div class="member-block-header"><div class="avatar">山</div><div class="member-block-name">山田 花子</div><button class="del-btn">×</button></div>
+        <div class="member-block-body">
+          <div class="field"><label>開始日</label><input type="date" value="2026-04-09"></div>
+          <div class="field"><label>時刻</label><input type="time" value="14:00"></div>
+          <div class="field"><label>所要時間</label><select><option selected>30分</option><option>60分</option></select></div>
+          <div class="field" style="flex:2;min-width:200px;"><label>繰り返し</label><div style="display:flex;gap:8px;"><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>毎週</option><option selected>隔週</option></select><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>月曜</option><option>火曜</option><option selected>水曜</option></select></div></div>
+        </div>
+      </div>
+      <button style="display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:0.5px dashed var(--border-md);border-radius:var(--radius-md);font-size:14px;color:var(--text-secondary);cursor:pointer;margin-top:10px;">＋ メンバーを追加</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">テンプレートアジェンダ（任意・全メンバー共通）</div>
+      <div class="agenda-item"><div class="agenda-text">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
+      <div class="agenda-item"><div class="agenda-text">業務状況の共有</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
+      <div class="agenda-item"><div class="agenda-text">困っていること・相談事項</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
+      <div class="add-row"><input type="text" placeholder="アジェンダを追加..."><button>追加</button></div>
+    </div>
+    <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;color:var(--info-text);margin-bottom:1rem;">メンバーごとに別々の日時で1on1が作成されます。アジェンダはテンプレートとして各1on1に適用されます。</div>
+    <div class="footer"><button class="btn btn-ghost">キャンセル</button><button class="btn btn-primary">設定して通知する</button></div>
+  </div>
+  <div class="panel" id="sched-adhoc">
+    <div class="card">
+      <div class="field"><label>相談相手（上司を選択）</label><select><option>鈴木 一郎（エンジニアリングマネージャー）</option></select></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">日時 <span style="font-size:11px;color:var(--danger-text);">必須</span></div>
+      <div class="field-row">
+        <div class="field"><label>希望日時</label><input type="datetime-local"></div>
+        <div class="field"><label>所要時間</label><select><option selected>30分</option><option>60分</option></select></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">仮押さえとして登録されます。上司が承認すると確定します。</div>
+    </div>
+    <div class="card">
+      <div class="field"><label>相談のタイトル <span style="font-size:11px;color:var(--danger-text);">必須</span></label><input type="text" placeholder="例：キャリアについて相談したい"></div>
+      <div class="field"><label>アジェンダ（任意）</label><textarea placeholder="話したいこと・相談したい内容を書いておくと上司が準備できます"></textarea></div>
+    </div>
+    <div class="footer"><button class="btn btn-ghost">キャンセル</button><button class="btn btn-primary">リクエストを送る</button></div>
+  </div>
+</div>
+
+<!-- ③ 準備画面 -->
+<div class="screen" id="screen-prep">
+  <div class="screen-label">PREPARATION</div>
+  <div class="breadcrumb">1on1 一覧 › 田中 太郎</div>
+  <div class="page-header">
+    <div><div class="page-title">週次 1on1 — 田中 太郎</div><div class="page-sub">定期スケジュール型・毎週金曜</div></div>
+    <div class="page-actions"><button class="btn btn-ghost">日時を変更</button><button class="btn btn-danger">キャンセル</button></div>
+  </div>
+  <div class="status-bar info"><div class="status-dot"></div>2026年4月3日（金）10:00 — 11:00　あと3日</div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">基本情報</div>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-label">日時</div><div class="meta-value">2026/04/03（金）10:00</div></div>
+      <div class="meta-item"><div class="meta-label">所要時間</div><div class="meta-value">60分</div></div>
+      <div class="meta-item"><div class="meta-label">繰り返し</div><div class="meta-value">毎週金曜</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="meta-label" style="margin-bottom:8px;">参加者</div>
+    <div style="display:flex;gap:8px;">
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">鈴</div>鈴木 一郎<span style="font-size:11px;color:var(--text-tertiary);">上司</span></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">田</div>田中 太郎<span style="font-size:11px;color:var(--text-tertiary);">部下</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">アジェンダ</div><div style="font-size:12px;color:var(--text-tertiary);">上司・部下どちらでも追加・コメント可</div></div>
+    <div class="agenda-item">
+      <div class="agenda-text">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span>
+      <button class="comment-toggle">💬 コメント</button><button class="del-btn">×</button>
+    </div>
+    <div class="agenda-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span>
+        <button class="comment-toggle">💬 2</button><button class="del-btn">×</button>
+      </div>
+      <div class="comments-area" style="margin-top:8px;">
+        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（部下）</span>　3月31日</div><div class="comment-body">現在の達成率は60%ほどです。△△の部分が特に難しく感じています。</div></div></div>
+        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">鈴</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">鈴木 一郎（上司）</span>　4月1日</div><div class="comment-body">事前に先月のレポートも見ておいてください。当日一緒に考えましょう。</div></div></div>
+        <div class="comment-input-row"><input type="text" placeholder="コメントを追加..."><button>送信</button></div>
+      </div>
+    </div>
+    <div class="agenda-item"><div class="agenda-text">業務状況の共有</div><span class="agenda-tag">テンプレート</span><button class="comment-toggle">💬 コメント</button><button class="del-btn">×</button></div>
+    <div class="agenda-item"><div class="agenda-text">困っていること・相談事項</div><span class="agenda-tag">テンプレート</span><button class="comment-toggle">💬 コメント</button><button class="del-btn">×</button></div>
+    <div class="add-row"><input type="text" placeholder="アジェンダを追加..."><button>追加</button></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">未完了アクションアイテム</div><button class="card-action">すべて見る</button></div>
+    <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">〇〇さんに進捗共有メールを送る</div><div class="row-meta">2026/03/20の1on1から · 期限：2026/03/31</div></div><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">アジェンダに追加</button></div>
+    <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を立てる</div><div class="row-meta">2026/03/13の1on1から · 期限なし</div></div><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">アジェンダに追加</button></div>
+  </div>
+  <div class="footer"><button class="btn btn-primary">1on1 を開始する →</button></div>
+</div>
+
+<!-- ④ 実施・記録画面 -->
+<div class="screen" id="screen-exec">
+  <div class="screen-label">IN SESSION</div>
+  <div class="breadcrumb">1on1 一覧 › 田中 太郎</div>
+  <div class="page-header">
+    <div><div class="page-title">週次 1on1 — 田中 太郎</div><div class="page-sub">2026年4月3日（金）10:00</div></div>
+    <button class="btn btn-success">完了として保存</button>
+  </div>
+  <div class="status-bar success"><div class="status-dot"></div>実施中</div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">アジェンダ</div><div style="font-size:12px;color:var(--text-tertiary);">話し終えたらチェック</div></div>
+    <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">業務状況の共有</div><span class="agenda-tag">テンプレート</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">困っていること・相談事項</div><span class="agenda-tag">テンプレート</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span></div>
+    <div class="add-row"><input type="text" placeholder="話題が増えたら追加..."><button>追加</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">メモ（上司が記録）</div>
+    <textarea style="width:100%;min-height:160px;padding:10px 12px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;resize:vertical;line-height:1.7;" placeholder="1on1中に話した内容をメモしてください。"></textarea>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px;">アクションアイテム</div>
+    <div class="row"><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メール（前回持ち越し）</div></div><input type="date" value="2026-04-10" style="padding:4px 8px;font-size:12px;background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:var(--radius-md);color:var(--text-secondary);font-family:inherit;"><button class="del-btn">×</button></div>
+    <div class="add-row" style="margin-top:10px;"><input type="text" placeholder="アクションアイテムを追加..."><button>追加</button></div>
+  </div>
+  <div class="footer"><button class="btn btn-success">完了として保存</button></div>
+</div>
+
+<!-- ⑤ 公開フロー -->
+<div class="screen" id="screen-publish">
+  <div class="screen-label">PUBLISH</div>
+  <div class="breadcrumb">1on1 一覧 › 田中 太郎</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+    <div class="page-title">週次 1on1 — 田中 太郎</div>
+    <span class="badge badge-draft" id="pub-badge">下書き</span>
+  </div>
+  <div class="page-sub">2026年4月3日（金）10:00</div>
+  <div class="status-bar success"><div class="status-dot"></div>1on1 完了・記録を編集中</div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">記録（メモ）</div>
+    <textarea style="width:100%;min-height:160px;padding:10px 12px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;resize:vertical;line-height:1.7;">・来季目標について：現在の達成率60%、△△が課題との共有があった。来季は□□にフォーカスする方向で合意。
+・業務状況：〇〇プロジェクトは順調。来週レビュー予定。
+・アクションアイテム：資格取得の勉強計画を4/10までに作成する。</textarea>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px;">アクションアイテム</div>
+    <div class="row"><div class="row-title" style="flex:1;">資格取得の勉強計画を作成する</div><span class="action-due">期限：2026/04/10</span></div>
+    <div class="row"><div class="row-title" style="flex:1;">〇〇さんへの進捗共有メールを送る</div><span class="action-due">期限：2026/04/07</span></div>
+  </div>
+  <div class="card hidden" id="pub-viewers-card">
+    <div class="card-header"><div class="card-title">公開先</div><button class="card-action" onclick="document.getElementById('pub-modal').classList.add('show')">変更する</button></div>
+    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">部下・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
+    <div class="row" id="pub-viewer-extra"></div>
+  </div>
+  <div class="footer">
+    <button class="btn btn-ghost">下書き保存</button>
+    <button class="btn btn-primary" onclick="document.getElementById('pub-modal').classList.add('show')">公開設定へ →</button>
+  </div>
+</div>
+
+<!-- ⑥ 記録閲覧・コメント -->
+<div class="screen" id="screen-view">
+  <div class="screen-label">RECORD VIEW</div>
+  <div class="role-switcher">
+    <span class="role-label">表示切替：</span>
+    <button class="role-btn active" onclick="setViewRole('boss')">上司として見る</button>
+    <button class="role-btn" onclick="setViewRole('sub')">部下として見る</button>
+    <button class="role-btn" onclick="setViewRole('viewer')">閲覧者として見る</button>
+  </div>
+  <div class="breadcrumb">1on1 一覧 › 田中 太郎</div>
+  <div class="page-header">
+    <div class="page-title">週次 1on1 — 田中 太郎</div>
+    <span class="badge badge-published">公開済み</span>
+  </div>
+  <div class="page-sub">2026年4月3日（金）10:00　記録者：鈴木 一郎</div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">基本情報</div><button class="btn btn-ghost" id="view-edit-btn" style="font-size:12px;padding:6px 12px;">編集する</button></div>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-label">日時</div><div class="meta-value">2026/04/03（金）10:00</div></div>
+      <div class="meta-item"><div class="meta-label">所要時間</div><div class="meta-value">60分</div></div>
+      <div class="meta-item"><div class="meta-label">種別</div><div class="meta-value">定期・毎週金曜</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px;">アジェンダ</div>
+    <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span></div>
+    <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">業務状況の共有</div><span class="agenda-tag">テンプレート</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px;">記録（メモ）</div>
+    <div style="font-size:14px;color:var(--text-primary);line-height:1.8;white-space:pre-line;">・来季目標について：現在の達成率60%、△△が課題との共有があった。来季は□□にフォーカスする方向で合意。
+・業務状況：〇〇プロジェクトは順調。来週レビュー予定。
+・アクションアイテム：資格取得の勉強計画を4/10までに作成する。</div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px;">アクションアイテム</div>
+    <div class="row"><div class="row-title" style="flex:1;">資格取得の勉強計画を作成する</div><span class="action-due">期限：2026/04/10</span></div>
+    <div class="row"><div class="row-title" style="flex:1;">〇〇さんへの進捗共有メールを送る</div><span class="action-due">期限：2026/04/07</span></div>
+  </div>
+  <div class="card" id="view-pub-boss">
+    <div class="card-header"><div class="card-title">公開先</div><button class="card-action">変更する</button></div>
+    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">部下・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
+    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上の上司</span></div></div></div>
+  </div>
+  <div class="card hidden" id="view-pub-sub">
+    <div class="card-title" style="margin-bottom:12px;">この記録の公開先</div>
+    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">本人</span></div></div></div>
+    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上の上司</span></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;">コメント</div>
+    <div id="view-comment-list">
+      <div class="comment-entry"><div class="avatar" style="width:28px;height:28px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（部下）</span>　4月4日</div><div class="comment-body">ありがとうございます。来季の目標については、引き続き□□を意識して取り組みます！</div></div></div>
+      <div class="comment-entry"><div class="avatar warn" style="width:28px;height:28px;">山</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">山本 部長（閲覧者）</span>　4月4日</div><div class="comment-body">△△の課題については、来週の全体MTGで少し時間を取りましょう。</div></div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--border);align-items:flex-start;">
+      <div class="avatar" id="view-my-avatar" style="width:28px;height:28px;">鈴</div>
+      <textarea id="view-comment-input" style="flex:1;padding:8px 12px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;resize:none;min-height:70px;line-height:1.6;" placeholder="コメントを追加..."></textarea>
+      <button class="btn btn-primary" onclick="addViewComment()" style="align-self:flex-end;">送信</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- 公開設定モーダル -->
+<div class="overlay" id="pub-modal">
+  <div class="modal">
+    <div class="modal-title">公開設定</div>
+    <div class="modal-sub">この1on1の記録を共有する相手を選んでください。部下（田中 太郎）には常に公開されます。</div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px;">追加で共有する相手</div>
+    <label class="share-option" id="pub-opt-yamamoto"><input type="checkbox" style="flex-shrink:0;" onchange="toggleShareOpt('pub-opt-yamamoto',this)"> <div class="avatar warn">山</div><div class="share-option-info"><div class="name">山本 部長</div><div class="desc">上の上司</div></div></label>
+    <label class="share-option" id="pub-opt-hr"><input type="checkbox" style="flex-shrink:0;" onchange="toggleShareOpt('pub-opt-hr',this)"> <div class="avatar">人</div><div class="share-option-info"><div class="name">人事担当（佐藤）</div><div class="desc">人事部</div></div></label>
+    <div class="divider"></div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px;">公開タイミング</div>
+    <label class="share-option selected" id="pub-timing-now"><input type="radio" name="pub-timing" value="now" checked style="flex-shrink:0;" onchange="selectTiming('pub-timing-now')"><div class="share-option-info"><div class="name">今すぐ公開</div><div class="desc">保存と同時にSlackで通知されます</div></div></label>
+    <label class="share-option" id="pub-timing-draft"><input type="radio" name="pub-timing" value="draft" style="flex-shrink:0;" onchange="selectTiming('pub-timing-draft')"><div class="share-option-info"><div class="name">下書きとして保存（後で公開）</div><div class="desc">記録は保存されますが通知は送られません</div></div></label>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('pub-modal').classList.remove('show')">キャンセル</button>
+      <button class="btn btn-primary" onclick="doPublish()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentViewRole = 'boss';
+var viewRoles = { boss: { avatar:'鈴', name:'鈴木 一郎（上司）' }, sub: { avatar:'田', name:'田中 太郎（部下）' }, viewer: { avatar:'山', name:'山本 部長（閲覧者）' } };
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+function switchTab(prefix, name) {
+  var tabs = event.currentTarget.closest('.tabs').querySelectorAll('.tab');
+  tabs.forEach((t,i) => t.classList.toggle('active', i === (name === 'regular' || name === 'boss' ? 0 : 1)));
+  document.querySelectorAll('[id^="' + prefix + '-"]').forEach(p => p.classList.remove('active'));
+  document.getElementById(prefix + '-' + name).classList.add('active');
+}
+function setDashRole(role) {
+  document.querySelectorAll('#screen-dashboard .role-btn').forEach((b,i) => b.classList.toggle('active', i === (role === 'boss' ? 0 : 1)));
+  document.getElementById('dash-boss').classList.toggle('hidden', role !== 'boss');
+  document.getElementById('dash-sub').classList.toggle('hidden', role !== 'sub');
+}
+function setViewRole(role) {
+  currentViewRole = role;
+  document.querySelectorAll('#screen-view .role-btn').forEach((b,i) => b.classList.toggle('active', ['boss','sub','viewer'][i] === role));
+  var isBoss = role === 'boss';
+  document.getElementById('view-edit-btn').style.display = isBoss ? 'block' : 'none';
+  document.getElementById('view-pub-boss').classList.toggle('hidden', !isBoss);
+  document.getElementById('view-pub-sub').classList.toggle('hidden', isBoss);
+  document.getElementById('view-my-avatar').textContent = viewRoles[role].avatar;
+}
+function addViewComment() {
+  var inp = document.getElementById('view-comment-input');
+  if (!inp.value.trim()) return;
+  var r = viewRoles[currentViewRole];
+  var list = document.getElementById('view-comment-list');
+  var el = document.createElement('div');
+  el.className = 'comment-entry';
+  el.innerHTML = '<div class="avatar" style="width:28px;height:28px;">' + r.avatar + '</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">' + r.name + '</span>　今</div><div class="comment-body">' + inp.value + '</div></div>';
+  list.appendChild(el);
+  inp.value = '';
+}
+function toggleShareOpt(id, cb) { document.getElementById(id).classList.toggle('selected', cb.checked); }
+function selectTiming(id) {
+  ['pub-timing-now','pub-timing-draft'].forEach(i => document.getElementById(i).classList.remove('selected'));
+  document.getElementById(id).classList.add('selected');
+}
+function doPublish() {
+  var timing = document.querySelector('input[name="pub-timing"]:checked').value;
+  var badge = document.getElementById('pub-badge');
+  if (timing === 'now') {
+    badge.className = 'badge badge-published';
+    badge.textContent = '公開済み';
+    document.getElementById('pub-viewers-card').classList.remove('hidden');
+    var extra = document.getElementById('pub-viewer-extra');
+    extra.innerHTML = '';
+    document.querySelectorAll('#pub-modal input[type=checkbox]:checked').forEach(cb => {
+      var opt = cb.closest('.share-option');
+      var name = opt.querySelector('.name').textContent;
+      var av = name.charAt(0);
+      extra.innerHTML += '<div class="avatar warn">' + av + '</div><div class="row-info"><div class="row-title">' + name + '</div></div>';
+    });
+  } else {
+    badge.className = 'badge badge-draft';
+    badge.textContent = '下書き';
+  }
+  document.getElementById('pub-modal').classList.remove('show');
+}
+</script>
+</body>
+</html>
