@@ -1,0 +1,69 @@
+# perigee - 1on1管理システム
+
+上司と部下の1on1を管理するシステム。スケジューリング・記録・共有・フォローアップまでの一連の流れをサポートし、Slack通知によるコミュニケーション連携を含む。
+
+## 技術スタック
+
+| レイヤー | 候補 |
+|---|---|
+| フロントエンド | React + TypeScript |
+| バックエンド | FastAPI（Python） |
+| データベース | MariaDB（TDE による暗号化有効） |
+| 通知 | Slack API（Incoming Webhooks or Bot） |
+| インフラ | Docker Compose |
+
+### 開発ツール
+
+| 用途 | ツール |
+|---|---|
+| Python パッケージ管理 | uv |
+| Python リンター / フォーマッター | ruff |
+| Python 型チェック | pyright |
+| フロントエンド パッケージ管理 | pnpm |
+| フロントエンド リンター | ESLint |
+| フロントエンド フォーマッター | Prettier |
+
+## 開発ルール
+
+- `.env` や秘密情報はコミットしない
+- DDDで設計・実装する（詳細は `docs/architecture.md`）
+## Git / GitHub ルール
+
+- **デフォルトブランチ**: `develop`
+- **ブランチ戦略**: `develop` から派生 → 実装 → `develop` へPR
+- **ブランチ命名**: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `docs/xxx`
+- **コミットメッセージ**: 英語（Conventional Commits）
+- **Issue / PR**: 日本語で記述
+
+## テスト戦略
+
+| レイヤー | ツール | 方針 |
+|---|---|---|
+| ドメイン層（Python） | pytest | DB不要。純粋なビジネスロジックのユニットテスト |
+| API層（FastAPI） | pytest + httpx | テスト用MariaDBコンテナで実行。認証・権限系を重点的にテスト |
+| フロントエンド | Vitest + Testing Library | コンポーネント単位のテスト |
+| E2E | Playwright | 主要ユーザーフローの結合テスト |
+
+- テスト用DBはDocker Composeでテスト用MariaDBコンテナを使用（SQLiteモックは使わない）
+- ドメイン層テストはDB非依存で高速に回す
+- API層テストには `@pytest.mark.integration` を付与（DB依存）
+- **pre-commit**: ユニットテスト（`pytest -m "not integration"`）+ リンター + 型チェック
+- **CI**: 全テスト（integration含む）+ E2E（Playwright）
+
+## フロントエンド コーディングルール
+
+- shadcn/ui のコンポーネントファイルでは、非コンポーネント export（`buttonVariants` 等）がコンポーネントと同居するパターンが頻出する。`react-refresh/only-export-components` 警告が出るため、export 行に `// eslint-disable-next-line react-refresh/only-export-components` を付与して抑制する。
+- **レビュー時**: `pnpm lint` で `react-refresh/only-export-components` 警告が出ていないか確認する。出ている場合は上記の抑制コメントの追加を指摘する。
+
+## ドキュメント
+
+- APIドキュメント: FastAPI自動生成のSwagger UI（`/docs`）
+- 設計ドキュメント: `docs/` 配下に配置
+
+## 詳細ドキュメント
+
+必要に応じて下記ドキュメントを参考にしてください
+
+- `docs/system_design.md` # システム設計書（ユビキタス言語、ドメインイベント、ビジネスルール等）
+- `docs/architecture.md` # アーキテクチャ設計（DDD構成、ディレクトリ構造、レイヤー責務）
+- `docs/wireframes.html` # 主要画面の画面イメージ。デザイン的なことより画面要素的な部分を参照する
