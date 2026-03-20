@@ -8,7 +8,7 @@
 |---|---|
 | フロントエンド | React + TypeScript |
 | バックエンド | FastAPI（Python） |
-| データベース | PostgreSQL |
+| データベース | MariaDB（TDE による暗号化有効） |
 | 通知 | Slack API（Incoming Webhooks or Bot） |
 | インフラ | Docker Compose |
 
@@ -47,11 +47,11 @@
 | レイヤー | ツール | 方針 |
 |---|---|---|
 | ドメイン層（Python） | pytest | DB不要。純粋なビジネスロジックのユニットテスト |
-| API層（FastAPI） | pytest + httpx | テスト用PostgreSQLコンテナで実行。認証・権限系を重点的にテスト |
+| API層（FastAPI） | pytest + httpx | テスト用MariaDBコンテナで実行。認証・権限系を重点的にテスト |
 | フロントエンド | Vitest + Testing Library | コンポーネント単位のテスト |
 | E2E | Playwright | 主要ユーザーフローの結合テスト |
 
-- テスト用DBはDocker Composeでテスト用PostgreSQLコンテナを使用（SQLiteモックは使わない）
+- テスト用DBはDocker Composeでテスト用MariaDBコンテナを使用（SQLiteモックは使わない）
 - ドメイン層テストはDB非依存で高速に回す
 - API層テストには `@pytest.mark.integration` を付与（DB依存）
 - **pre-commit**: ユニットテスト（`pytest -m "not integration"`）+ リンター + 型チェック
