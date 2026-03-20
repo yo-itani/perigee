@@ -18,7 +18,7 @@ backend/
     recording/             # 1on1実施中のメモ・アクションアイテム記録
     publication/           # 記録の公開・公開先管理
     notification/          # Slack通知
-  platform/                # 技術基盤（ドメイン非依存）
+  shared/                  # 技術基盤（ドメイン非依存）
     db/                    # DB接続・セッション管理
     auth/                  # 認証ミドルウェア
     config/                # 環境設定
@@ -46,7 +46,7 @@ contexts/<context_name>/
 |---|---|---|
 | domain | ビジネスロジック、エンティティ、値オブジェクト、ドメインイベント | なし（純粋Python） |
 | application | ユースケースの実行、トランザクション制御 | domain |
-| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, platform |
+| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, shared |
 | presentation | HTTPリクエスト/レスポンス、バリデーション、ルーティング | application |
 
 - **domain層は他のどの層にも依存しない**（テスト容易性の根幹）
