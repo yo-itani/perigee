@@ -1,41 +1,42 @@
 import pytest
 
 from contexts.preparation.domain.agenda_template import AgendaTemplate
-from contexts.preparation.domain.exceptions import InvalidAgendaTopicError
+from contexts.preparation.domain.exceptions import InvalidTopicError
+from contexts.preparation.domain.topic import Topic
 
 
 class TestAgendaTemplate:
     def test_creates_with_valid_topic(self) -> None:
         tmpl = AgendaTemplate("Weekly check-in")
-        assert tmpl.topic == "Weekly check-in"
+        assert tmpl.topic == Topic("Weekly check-in")
 
     def test_strips_whitespace(self) -> None:
         tmpl = AgendaTemplate("  padded topic  ")
-        assert tmpl.topic == "padded topic"
+        assert tmpl.topic.value == "padded topic"
 
     def test_empty_topic_raises(self) -> None:
-        with pytest.raises(InvalidAgendaTopicError, match="must not be empty"):
+        with pytest.raises(InvalidTopicError, match="must not be empty"):
             AgendaTemplate("")
 
     def test_whitespace_only_raises(self) -> None:
-        with pytest.raises(InvalidAgendaTopicError, match="must not be empty"):
+        with pytest.raises(InvalidTopicError, match="must not be empty"):
             AgendaTemplate("   ")
 
     def test_newline_raises(self) -> None:
-        with pytest.raises(InvalidAgendaTopicError, match="must not contain newlines"):
+        with pytest.raises(InvalidTopicError, match="must not contain newlines"):
             AgendaTemplate("line1\nline2")
 
     def test_carriage_return_raises(self) -> None:
-        with pytest.raises(InvalidAgendaTopicError, match="must not contain newlines"):
+        with pytest.raises(InvalidTopicError, match="must not contain newlines"):
             AgendaTemplate("line1\rline2")
 
     def test_exceeds_max_length_raises(self) -> None:
-        with pytest.raises(InvalidAgendaTopicError, match="must not exceed"):
+        with pytest.raises(InvalidTopicError, match="must not exceed"):
             AgendaTemplate("a" * 201)
 
     def test_exactly_max_length_is_valid(self) -> None:
         tmpl = AgendaTemplate("a" * 200)
-        assert len(tmpl.topic) == 200
+        assert len(tmpl.topic.value) == 200
 
     def test_frozen(self) -> None:
         tmpl = AgendaTemplate("topic")

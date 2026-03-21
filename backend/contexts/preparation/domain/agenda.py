@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from contexts.preparation.domain.comment import Comment
+from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import AgendaId, CommentId, ScheduleId
 from shared.domain.value_objects import UserId
 
@@ -24,7 +25,7 @@ class Agenda:
 
     _id: AgendaId
     _schedule_id: ScheduleId
-    _topic: str
+    _topic: Topic
     _added_by: UserId
     _comments: list[Comment]
     _created_at: datetime
@@ -39,7 +40,7 @@ class Agenda:
 
     @property
     def topic(self) -> str:
-        return self._topic
+        return self._topic.value
 
     @property
     def added_by(self) -> UserId:
@@ -61,12 +62,17 @@ class Agenda:
         added_by: UserId,
         now: datetime | None = None,
     ) -> Agenda:
-        """Factory method to create a new agenda item."""
+        """Factory method to create a new agenda item.
+
+        Raises:
+            InvalidTopicError: If topic is empty, contains newlines,
+                or exceeds max length.
+        """
         ts = now or datetime.now(UTC)
         return Agenda(
             _id=AgendaId.generate(),
             _schedule_id=schedule_id,
-            _topic=topic,
+            _topic=Topic(topic),
             _added_by=added_by,
             _comments=[],
             _created_at=ts,

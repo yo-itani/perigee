@@ -29,10 +29,10 @@ class NoPendingConfirmationRequestError(Exception):
         super().__init__(message)
 
 
-class InvalidAgendaTopicError(Exception):
-    """Raised when an agenda topic fails validation."""
+class InvalidTopicError(Exception):
+    """Raised when a topic value fails validation."""
 
-    def __init__(self, message: str = "Invalid agenda topic.") -> None:
+    def __init__(self, message: str = "Invalid topic.") -> None:
         super().__init__(message)
 
 

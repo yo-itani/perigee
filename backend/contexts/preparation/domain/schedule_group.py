@@ -163,7 +163,7 @@ class ScheduleGroup:
         for schedule_id in self._schedule_ids:
             agenda = Agenda.create(
                 schedule_id=schedule_id,
-                topic=agenda_template.topic,
+                topic=agenda_template.topic.value,
                 added_by=actor_id,
                 now=now,
             )
@@ -174,7 +174,7 @@ class ScheduleGroup:
         self._events.append(
             AgendaAddedViaGroup(
                 schedule_group_id=self.id,
-                topic=agenda_template.topic,
+                topic=agenda_template.topic.value,
                 target_schedule_ids=list(self._schedule_ids),
                 occurred_at=now,
             )
@@ -213,7 +213,7 @@ class ScheduleGroup:
         # Remove first matching template; if none found, this is a no-op.
         found = False
         for i, tmpl in enumerate(self._agenda_templates):
-            if tmpl.topic == topic:
+            if tmpl.topic.value == topic:
                 self._agenda_templates.pop(i)
                 found = True
                 break

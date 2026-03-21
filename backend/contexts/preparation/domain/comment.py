@@ -3,11 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.preparation.domain.exceptions import InvalidCommentBodyError
+from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.value_objects import AgendaId, CommentId
 from shared.domain.value_objects import UserId
-
-_COMMENT_BODY_MAX_LENGTH = 2000
 
 
 @dataclass
@@ -21,7 +19,7 @@ class Comment:
     _id: CommentId
     _agenda_id: AgendaId
     _author_id: UserId
-    _body: str
+    _body: CommentBody
     _created_at: datetime
 
     @property
@@ -38,7 +36,7 @@ class Comment:
 
     @property
     def body(self) -> str:
-        return self._body
+        return self._body.value
 
     @property
     def created_at(self) -> datetime:
@@ -58,23 +56,10 @@ class Comment:
             InvalidCommentBodyError: If body is empty or exceeds max length.
         """
         ts = now or datetime.now(UTC)
-        validated_body = _validate_comment_body(body)
         return Comment(
             _id=CommentId.generate(),
             _agenda_id=agenda_id,
             _author_id=author_id,
-            _body=validated_body,
+            _body=CommentBody(body),
             _created_at=ts,
         )
-
-
-def _validate_comment_body(body: str) -> str:
-    """Validate and normalize a comment body."""
-    stripped = body.strip()
-    if not stripped:
-        raise InvalidCommentBodyError("Comment body must not be empty.")
-    if len(stripped) > _COMMENT_BODY_MAX_LENGTH:
-        raise InvalidCommentBodyError(
-            f"Comment body must not exceed {_COMMENT_BODY_MAX_LENGTH} characters."
-        )
-    return stripped

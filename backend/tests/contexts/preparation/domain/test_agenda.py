@@ -3,7 +3,10 @@ from datetime import datetime
 import pytest
 
 from contexts.preparation.domain.agenda import Agenda
-from contexts.preparation.domain.exceptions import InvalidCommentBodyError
+from contexts.preparation.domain.exceptions import (
+    InvalidCommentBodyError,
+    InvalidTopicError,
+)
 from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
@@ -37,6 +40,26 @@ class TestAgendaCreate:
         a1 = _make_agenda()
         a2 = _make_agenda()
         assert a1.id != a2.id
+
+    def test_empty_topic_raises(self) -> None:
+        with pytest.raises(InvalidTopicError, match="must not be empty"):
+            _make_agenda(topic="")
+
+    def test_whitespace_only_topic_raises(self) -> None:
+        with pytest.raises(InvalidTopicError, match="must not be empty"):
+            _make_agenda(topic="   ")
+
+    def test_newline_topic_raises(self) -> None:
+        with pytest.raises(InvalidTopicError, match="must not contain newlines"):
+            _make_agenda(topic="line1\nline2")
+
+    def test_topic_exceeds_max_length_raises(self) -> None:
+        with pytest.raises(InvalidTopicError, match="must not exceed"):
+            _make_agenda(topic="a" * 201)
+
+    def test_topic_strips_whitespace(self) -> None:
+        agenda = _make_agenda(topic="  padded  ")
+        assert agenda.topic == "padded"
 
 
 class TestAgendaComment:
