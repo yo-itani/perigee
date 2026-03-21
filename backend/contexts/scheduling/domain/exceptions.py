@@ -15,13 +15,6 @@ class UnauthorizedScheduleOperationError(Exception):
         super().__init__(message)
 
 
-class ScheduleConflictError(Exception):
-    """Raised when a schedule conflicts with an existing one."""
-
-    def __init__(self, message: str = "Schedule conflict detected.") -> None:
-        super().__init__(message)
-
-
 class InvalidScheduleOperationError(Exception):
     """Raised when a schedule operation is invalid."""
 

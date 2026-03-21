@@ -360,6 +360,45 @@ class TestScheduleReject:
         with pytest.raises(NoPendingConfirmationRequestError):
             schedule.reject(actor_id=org, now=_LATER)
 
+    def test_reject_reschedule_never_confirmed_cancels(self) -> None:
+        """Reject reschedule when schedule was never confirmed (no approved request).
+
+        Flow: create(org) -> counterpart reschedules (rejects creation) ->
+        organizer rejects reschedule -> should cancel (not revert to Confirmed).
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp, requested_by=org)
+        schedule.collect_events()
+
+        # Counterpart reschedules, which rejects the pending creation request
+        schedule.reschedule(actor_id=cp, new_proposed_at=_FUTURE2, now=_LATER)
+        schedule.collect_events()
+
+        # Organizer rejects the reschedule; no request was ever approved
+        reject_time = datetime(2026, 3, 20, 12, 0)
+        schedule.reject(actor_id=org, now=reject_time)
+
+        assert schedule.status == ScheduleStatus.CANCELLED
+
+    def test_reject_reschedule_never_confirmed_emits_cancelled(self) -> None:
+        """Rejecting reschedule when never confirmed emits ScheduleCancelled."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp, requested_by=org)
+        schedule.collect_events()
+
+        schedule.reschedule(actor_id=cp, new_proposed_at=_FUTURE2, now=_LATER)
+        schedule.collect_events()
+
+        reject_time = datetime(2026, 3, 20, 12, 0)
+        schedule.reject(actor_id=org, now=reject_time)
+
+        events = schedule.collect_events()
+        assert len(events) == 1
+        assert isinstance(events[0], ScheduleCancelled)
+        assert events[0].cancelled_by == org
+
 
 # ===========================================================================
 # Reschedule
@@ -597,7 +636,7 @@ class TestAggregateInvariants:
     def test_multiple_operations_maintain_invariants(self) -> None:
         """Exercise a complex flow.
 
-        create -> reschedule -> reject -> reschedule -> confirm.
+        create -> confirm -> reschedule -> reject -> reschedule -> confirm.
         """
         org = UserId.generate()
         cp = UserId.generate()
@@ -609,14 +648,18 @@ class TestAggregateInvariants:
             now=_NOW,
         )
 
-        # Organizer reschedules their own request (supersede)
+        # Counterpart confirms creation
+        t0 = datetime(2026, 3, 20, 10, 30)
+        schedule.confirm(actor_id=cp, now=t0)
+        assert schedule.status == ScheduleStatus.CONFIRMED
+
+        # Organizer reschedules
         t1 = datetime(2026, 3, 20, 11, 0)
         schedule.reschedule(actor_id=org, new_proposed_at=_FUTURE2, now=t1)
         assert schedule.status == ScheduleStatus.REQUESTED
 
-        # Counterpart rejects the reschedule
+        # Counterpart rejects the reschedule (has prior approval -> revert)
         t2 = datetime(2026, 3, 20, 12, 0)
-        # Creation was superseded, so latest pending is reschedule by org
         schedule.reject(actor_id=cp, now=t2)
         assert schedule.status == ScheduleStatus.CONFIRMED
 

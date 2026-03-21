@@ -199,7 +199,9 @@ class Schedule:
 
         If the pending request is a Creation type, rejecting it cancels
         the schedule entirely (ScheduleCancelled event, not ScheduleRejected).
-        If it is a Reschedule type, the schedule reverts to Confirmed.
+        If it is a Reschedule type:
+        - If previously confirmed (approved request exists), reverts to Confirmed.
+        - If never confirmed, cancels the schedule (ScheduleCancelled event).
 
         Raises:
             ScheduleAlreadyCancelledError: If already cancelled.
@@ -227,8 +229,8 @@ class Schedule:
                     occurred_at=now,
                 )
             )
-        else:
-            # Rejecting reschedule = revert to Confirmed
+        elif self._has_approved_request():
+            # Rejecting reschedule when previously confirmed = revert to Confirmed
             self._status = ScheduleStatus.CONFIRMED
             self._events.append(
                 ScheduleRejected(
@@ -236,6 +238,18 @@ class Schedule:
                     organizer_id=self.organizer_id,
                     counterpart_id=self.counterpart_id,
                     rejected_by=actor_id,
+                    occurred_at=now,
+                )
+            )
+        else:
+            # Rejecting reschedule when never confirmed = cancellation
+            self._status = ScheduleStatus.CANCELLED
+            self._events.append(
+                ScheduleCancelled(
+                    schedule_id=self.id,
+                    organizer_id=self.organizer_id,
+                    counterpart_id=self.counterpart_id,
+                    cancelled_by=actor_id,
                     occurred_at=now,
                 )
             )
@@ -369,6 +383,13 @@ class Schedule:
             raise UnauthorizedScheduleOperationError(
                 "Cannot confirm or reject your own request."
             )
+
+    def _has_approved_request(self) -> bool:
+        """Check whether any confirmation request has been approved."""
+        return any(
+            req.resolution == ConfirmationResolution.APPROVED
+            for req in self._confirmation_requests
+        )
 
     def _find_pending_request(self) -> ConfirmationRequest | None:
         """Find the pending confirmation request (if any)."""
