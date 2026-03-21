@@ -20,7 +20,7 @@ backend/
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
     domain/
-      value_objects.py     # OneOnOneId, UserId など
+      value_objects.py     # ScheduleId, UserId など
       user.py              # User エンティティ（最小構成）
       user_repository.py   # UserRepository インターフェース
       events.py            # 基底クラス
@@ -59,6 +59,74 @@ contexts/<context_name>/
 
 - **domain層は他のどの層にも依存しない**（テスト容易性の根幹）
 - infrastructure層はdomain層のリポジトリインターフェースを実装する（依存性逆転）
+
+## ドメイン層の設計規約
+
+### ドメイン例外
+
+ビジネスルール違反には `ValueError` や `PermissionError` ではなく、ドメイン固有の例外クラスを使う。
+
+- 例: `RecordAlreadyPublishedError`, `UnauthorizedOperationError`
+- 例外クラスはコンテキストの `domain/exceptions.py` に配置する
+
+```
+contexts/<context_name>/
+  domain/
+    exceptions.py          # ドメイン固有の例外クラス
+```
+
+### フィールドのカプセル化（read-only プロパティ）
+
+以下に該当するフィールドは `_` プレフィックス + read-only `@property` で公開し、直接代入を防ぐ。
+
+- **状態遷移や不変条件を持つフィールド**: `status`, `is_completed` など
+- **ドメインメソッド経由でのみ変更すべきフィールド**: `memo`, `updated_at`, `events` など
+
+```python
+class Record:
+    def __init__(self, ..., status: RecordStatus) -> None:
+        self._status = status
+
+    @property
+    def status(self) -> RecordStatus:
+        return self._status
+
+    def publish(self, now: datetime) -> None:
+        self._status = RecordStatus.PUBLISHED
+```
+
+### ドメインイベントの管理
+
+イベントは `_events` リストに蓄積し、`collect_events()` メソッドで取得とクリアを行う。
+
+```python
+class Record:
+    def __init__(self, ...) -> None:
+        self._events: list[DomainEvent] = []
+
+    def collect_events(self) -> list[DomainEvent]:
+        events = list(self._events)
+        self._events.clear()
+        return events
+```
+
+### datetime の扱い
+
+- **ファクトリメソッド（`create()`）**: `now: datetime | None = None` で受け取り、省略時は `datetime.now(UTC)` をフォールバックとして使用する
+- **操作メソッド（`update_memo()`, `publish()` 等）**: `now: datetime` を必須引数にする
+
+```python
+class Record:
+    @staticmethod
+    def create(..., now: datetime | None = None) -> "Record":
+        now = now or datetime.now(UTC)
+        ...
+
+    def publish(self, now: datetime) -> None:  # 必須
+        ...
+```
+
+ファクトリメソッドでフォールバックを許容するのは、生成時のタイムスタンプが厳密でなくても実害が少ないため。操作メソッドで必須にするのは、テストでの再現性と、ユースケース層が時刻の責任を持つことを明確にするため。
 
 ## 境界コンテキストの対応
 
