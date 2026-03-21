@@ -24,7 +24,9 @@ backend/
       events.py            # 基底クラス
   platform/                # 技術基盤（ドメイン非依存）
     db/                    # SQLAlchemy async engine/session
+    auth/                  # 認証ミドルウェア
     config/                # pydantic-settings
+    logging/               # ログ設定
   api/
     register_routers.py    # 各コンテキストのrouterを集約・登録
   main.py                  # FastAPIエントリポイント
