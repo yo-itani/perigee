@@ -74,6 +74,10 @@ git checkout -b feature/$ARGUMENTS-<説明>
 - **型ヒント**: すべての関数の引数・戻り値に型ヒントを付ける
 - **コメント**: 「何をしているか」は書かない。「なぜそうしたか」が伝わりにくい箇所にだけ書く
 - **ドメイン層**: 純粋な Python で書く。FastAPI・SQLAlchemy 等のフレームワーク依存なし
+- **ドメイン例外**: ビジネスルール違反には `ValueError` / `PermissionError` ではなくドメイン固有の例外クラスを使う（例: `RecordAlreadyPublishedError`）。コンテキストの `domain/exceptions.py` に配置する
+- **フィールドのカプセル化**: 状態遷移や不変条件を持つフィールド、およびドメインメソッド経由でのみ変更すべきフィールドは `_` プレフィックス + read-only `@property` で公開し、直接代入を防ぐ
+- **ドメインイベント管理**: イベントは `_events` リストに蓄積し、`collect_events()` メソッドで取得＆クリアする
+- **datetime の扱い**: ファクトリメソッド（`create()`）では `now: datetime | None = None` で `datetime.now(UTC)` フォールバック可。操作メソッドでは `now: datetime` を必須引数にする
 
 #### TypeScript（フロントエンド）
 - **命名規約**: 変数・関数は `camelCase`、コンポーネント・型は `PascalCase`、定数は `UPPER_SNAKE_CASE`
