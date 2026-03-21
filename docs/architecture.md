@@ -20,7 +20,7 @@ backend/
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
     domain/
-      value_objects.py     # OneOnOneId, UserId など
+      value_objects.py     # ScheduleId, UserId など
       user.py              # User エンティティ（最小構成）
       user_repository.py   # UserRepository インターフェース
       events.py            # 基底クラス

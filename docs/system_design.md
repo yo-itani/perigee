@@ -75,8 +75,8 @@
 
 | イベント | 発行元 | 消費先 | 説明 |
 |---|---|---|---|
-| OneOnOneScheduled | スケジューリング | 通知 | 1on1が設定された時にSlack通知を送信 |
-| OneOnOneStarted | 実施・記録 | 参照 | 1on1の開始を記録し、リードモデルを更新 |
+| ScheduleCreated | スケジューリング | 通知 | 1on1が設定された時にSlack通知を送信 |
+| ScheduleStarted | 実施・記録 | 参照 | 1on1の開始を記録し、リードモデルを更新 |
 | RecordPublished | 公開管理 | 通知 | 記録が公開された時にSlack通知を送信 |
 | CommentAdded | 準備, 公開管理 | 通知 | コメント追加時にSlack通知を送信 |
 | ActionItemCompleted | フォローアップ | 参照 | アクションアイテム完了をリードモデルに反映 |
@@ -85,8 +85,8 @@
 
 ```python
 @dataclass(frozen=True)
-class OneOnOneScheduled:
-    one_on_one_id: OneOnOneId
+class ScheduleCreated:
+    schedule_id: ScheduleId
     organizer_id: UserId
     counterpart_id: UserId
     scheduled_at: datetime
@@ -94,7 +94,7 @@ class OneOnOneScheduled:
 @dataclass(frozen=True)
 class RecordPublished:
     record_id: RecordId
-    one_on_one_id: OneOnOneId | None  # 事後記録型の場合はなし
+    schedule_id: ScheduleId | None  # 事後記録型の場合はなし
     published_by: UserId
     published_at: datetime
 ```
@@ -223,7 +223,7 @@ class RecordPublished:
 - スケジューリングされても実施されなければ記録は存在しない（キャンセル等）
 - 記録はスケジュールなしでも作成できる（事後記録型：パターンC）
 - 記録は実施日時を自分で持つ。スケジュールの予定日時とは異なる場合がある
-- スケジュールに紐づく記録は `one_on_one_id` で参照する（任意）
+- スケジュールに紐づく記録は `schedule_id` で参照する（任意）
 
 ### 日時変更・キャンセル
 - オーガナイザー・カウンターパート**どちらでも**変更・キャンセル可能
