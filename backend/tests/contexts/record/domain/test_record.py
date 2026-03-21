@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 
+from contexts.preparation.domain.value_objects import ScheduleId
 from contexts.record.domain.events import (
     MemoUpdated,
     RecordCreated,
@@ -14,7 +15,6 @@ from contexts.record.domain.exceptions import (
 )
 from contexts.record.domain.record import Record
 from contexts.record.domain.value_objects import RecordStatus
-from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
 
