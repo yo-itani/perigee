@@ -11,12 +11,13 @@
 
 ```
 backend/
-  scheduling/              # 定期・アドホック1on1のスケジューリング
-  preparation/             # 1on1前のアジェンダ・コメント準備
-  recording/               # 1on1実施中のメモ・アクションアイテム記録
-  publishing/              # 記録の公開・公開先管理
-  notification/            # Slack通知
-  # read_model/, settings/ は実装時に追加予定
+  contexts/
+    scheduling/            # 定期・アドホック1on1のスケジューリング
+    preparation/           # 1on1前のアジェンダ・コメント準備
+    recording/             # 1on1実施中のメモ・アクションアイテム記録
+    publishing/            # 記録の公開・公開先管理
+    notification/          # Slack通知
+    # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、イベント基底クラス）
     domain/
       value_objects.py     # OneOnOneId, UserId など
@@ -32,7 +33,7 @@ backend/
 ## コンテキスト内の構成
 
 ```
-<context_name>/
+contexts/<context_name>/
   domain/                  # エンティティ、値オブジェクト、ドメインイベント、リポジトリインターフェース
   application/             # ユースケース（サービス層）、DTOなど
   infrastructure/          # リポジトリ実装、外部サービス連携
