@@ -12,12 +12,12 @@
 ```
 backend/
   contexts/
-    scheduling/            # 定期・アドホック1on1のスケジューリング
+    preparation/           # 事前準備：スケジューリング、アジェンダ、事前コメント
       domain/
-        value_objects.py   # ScheduleId など（Scheduling コンテキスト固有の値オブジェクト）
-    preparation/           # 1on1前のアジェンダ・コメント準備
-    recording/             # 1on1実施中のメモ・アクションアイテム記録
-    publishing/            # 記録の公開・公開先管理
+        value_objects.py   # ScheduleId, ScheduleGroupId など
+    session/               # 実施：アジェンダ確認、メモ、アクションアイテム登録
+    record/                # 記録：メモの整理・仕上げ、下書き
+    followup/              # フォローアップ：記録の公開・共有、コメント、フォローアップ
     notification/          # Slack通知
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
@@ -136,10 +136,10 @@ class Record:
 
 | コンテキスト | system_design上の対応 |
 |---|---|
-| scheduling | スケジューリング |
-| preparation | 準備（1on1前） |
-| recording | 実施・記録（1on1中〜直後）、フォローアップ |
-| publishing | 公開管理 |
+| preparation | 事前準備（Preparation）：スケジューリング + アジェンダ + 事前コメント |
+| session | 実施（Session） |
+| record | 記録（Record） |
+| followup | フォローアップ（FollowUp）：公開・共有・コメント・フォローアップ |
 | notification | 通知（Slack） |
 | read_model | 参照（リードモデル） |
 | settings | ユーザーごとの通知設定・デフォルト公開先 |
