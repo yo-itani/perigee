@@ -3,18 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from contexts.recording.domain.events import (
+from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.record.domain.events import (
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
     RecordPublished,
 )
-from contexts.recording.domain.exceptions import (
+from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
-from contexts.recording.domain.value_objects import RecordId, RecordStatus
-from contexts.scheduling.domain.value_objects import ScheduleId
+from contexts.record.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import UserId
 
 type _RecordEvent = RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished

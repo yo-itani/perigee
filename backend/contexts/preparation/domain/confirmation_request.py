@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from contexts.scheduling.domain.value_objects import (
+from contexts.preparation.domain.value_objects import (
     ConfirmationRequestId,
     ConfirmationRequestType,
     ConfirmationResolution,

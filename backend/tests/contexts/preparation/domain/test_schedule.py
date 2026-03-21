@@ -2,21 +2,21 @@ from datetime import datetime
 
 import pytest
 
-from contexts.scheduling.domain.events import (
+from contexts.preparation.domain.events import (
     ScheduleCancelled,
     ScheduleConfirmed,
     ScheduleCreated,
     ScheduleRejected,
     ScheduleRescheduled,
 )
-from contexts.scheduling.domain.exceptions import (
+from contexts.preparation.domain.exceptions import (
     InvalidScheduleOperationError,
     NoPendingConfirmationRequestError,
     ScheduleAlreadyCancelledError,
     UnauthorizedScheduleOperationError,
 )
-from contexts.scheduling.domain.schedule import Schedule
-from contexts.scheduling.domain.value_objects import (
+from contexts.preparation.domain.schedule import Schedule
+from contexts.preparation.domain.value_objects import (
     ConfirmationRequestType,
     ConfirmationResolution,
     ScheduleStatus,

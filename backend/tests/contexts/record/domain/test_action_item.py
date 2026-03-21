@@ -2,14 +2,14 @@ from datetime import datetime
 
 import pytest
 
-from contexts.recording.domain.action_item import ActionItem
-from contexts.recording.domain.events import ActionItemAdded, ActionItemCompleted
-from contexts.recording.domain.exceptions import (
+from contexts.record.domain.action_item import ActionItem
+from contexts.record.domain.events import ActionItemAdded, ActionItemCompleted
+from contexts.record.domain.exceptions import (
     ActionItemAlreadyCompletedError,
     InvalidActionItemTitleError,
     UnauthorizedOperationError,
 )
-from contexts.recording.domain.value_objects import ActionItemTitle, RecordId
+from contexts.record.domain.value_objects import ActionItemTitle, RecordId
 from shared.domain.value_objects import UserId
 
 

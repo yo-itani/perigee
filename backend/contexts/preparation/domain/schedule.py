@@ -3,21 +3,21 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from contexts.scheduling.domain.confirmation_request import ConfirmationRequest
-from contexts.scheduling.domain.events import (
+from contexts.preparation.domain.confirmation_request import ConfirmationRequest
+from contexts.preparation.domain.events import (
     ScheduleCancelled,
     ScheduleConfirmed,
     ScheduleCreated,
     ScheduleRejected,
     ScheduleRescheduled,
 )
-from contexts.scheduling.domain.exceptions import (
+from contexts.preparation.domain.exceptions import (
     InvalidScheduleOperationError,
     NoPendingConfirmationRequestError,
     ScheduleAlreadyCancelledError,
     UnauthorizedScheduleOperationError,
 )
-from contexts.scheduling.domain.value_objects import (
+from contexts.preparation.domain.value_objects import (
     ConfirmationRequestType,
     ConfirmationResolution,
     ScheduleId,

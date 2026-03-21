@@ -2,19 +2,19 @@ from datetime import datetime
 
 import pytest
 
-from contexts.recording.domain.events import (
+from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.record.domain.events import (
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
     RecordPublished,
 )
-from contexts.recording.domain.exceptions import (
+from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
-from contexts.recording.domain.record import Record
-from contexts.recording.domain.value_objects import RecordStatus
-from contexts.scheduling.domain.value_objects import ScheduleId
+from contexts.record.domain.record import Record
+from contexts.record.domain.value_objects import RecordStatus
 from shared.domain.value_objects import UserId
 
 
