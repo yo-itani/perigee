@@ -34,16 +34,24 @@ class Record:
     organizer_id: UserId
     counterpart_id: UserId
     schedule_id: ScheduleId | None
-    memo: str
+    _memo: str
     _status: RecordStatus
     conducted_at: datetime
     created_at: datetime
-    updated_at: datetime
+    _updated_at: datetime
     _events: list[_RecordEvent] = field(default_factory=list, repr=False)
+
+    @property
+    def memo(self) -> str:
+        return self._memo
 
     @property
     def status(self) -> RecordStatus:
         return self._status
+
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
 
     @staticmethod
     def create(
@@ -62,11 +70,11 @@ class Record:
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
             schedule_id=schedule_id,
-            memo="",
+            _memo="",
             _status=RecordStatus.DRAFT,
             conducted_at=conducted_at,
             created_at=ts,
-            updated_at=ts,
+            _updated_at=ts,
         )
         record._events.append(
             RecordCreated(
@@ -84,8 +92,8 @@ class Record:
         """Update memo content. Only the organizer may edit."""
         self._assert_organizer(actor_id)
         self._assert_draft()
-        self.memo = memo
-        self.updated_at = now
+        self._memo = memo
+        self._updated_at = now
         self._events.append(
             MemoUpdated(
                 record_id=self.id,
@@ -98,7 +106,7 @@ class Record:
         """Save as draft. Only the organizer may save."""
         self._assert_organizer(actor_id)
         self._assert_draft()
-        self.updated_at = now
+        self._updated_at = now
         self._events.append(
             RecordDraftSaved(
                 record_id=self.id,
@@ -115,7 +123,7 @@ class Record:
         self._assert_organizer(actor_id)
         self._assert_draft()
         self._status = RecordStatus.PUBLISHED
-        self.updated_at = now
+        self._updated_at = now
         self._events.append(
             RecordPublished(
                 record_id=self.id,
