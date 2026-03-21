@@ -10,7 +10,7 @@ services:
       MARIADB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./docker/mariadb/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql:ro
+      - ./docker/mariadb/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
