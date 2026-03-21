@@ -35,11 +35,15 @@ class Record:
     counterpart_id: UserId
     schedule_id: ScheduleId | None
     memo: str
-    status: RecordStatus
+    _status: RecordStatus
     conducted_at: datetime
     created_at: datetime
     updated_at: datetime
     _events: list[_RecordEvent] = field(default_factory=list, repr=False)
+
+    @property
+    def status(self) -> RecordStatus:
+        return self._status
 
     @staticmethod
     def create(
@@ -59,7 +63,7 @@ class Record:
             counterpart_id=counterpart_id,
             schedule_id=schedule_id,
             memo="",
-            status=RecordStatus.DRAFT,
+            _status=RecordStatus.DRAFT,
             conducted_at=conducted_at,
             created_at=ts,
             updated_at=ts,
@@ -110,7 +114,7 @@ class Record:
         """
         self._assert_organizer(actor_id)
         self._assert_draft()
-        self.status = RecordStatus.PUBLISHED
+        self._status = RecordStatus.PUBLISHED
         self.updated_at = now
         self._events.append(
             RecordPublished(
@@ -126,7 +130,7 @@ class Record:
         Draft records are only visible to the organizer.
         Published records visibility is managed by the Publishing context.
         """
-        if self.status == RecordStatus.DRAFT:
+        if self._status == RecordStatus.DRAFT:
             return user_id == self.organizer_id
         return True
 
@@ -141,5 +145,5 @@ class Record:
             raise UnauthorizedOperationError("Only the organizer can edit the record.")
 
     def _assert_draft(self) -> None:
-        if self.status != RecordStatus.DRAFT:
+        if self._status != RecordStatus.DRAFT:
             raise RecordAlreadyPublishedError("Record is already published.")
