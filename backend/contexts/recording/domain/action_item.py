@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 from contexts.recording.domain.events import ActionItemAdded, ActionItemCompleted
-from contexts.recording.domain.value_objects import ActionItemId, RecordId
+from contexts.recording.domain.exceptions import (
+    ActionItemAlreadyCompletedError,
+    UnauthorizedOperationError,
+)
+from contexts.recording.domain.value_objects import (
+    ActionItemId,
+    ActionItemTitle,
+    RecordId,
+)
 from shared.domain.value_objects import UserId
+
+type _ActionItemEvent = ActionItemAdded | ActionItemCompleted
 
 
 @dataclass
@@ -23,12 +33,14 @@ class ActionItem:
     id: ActionItemId
     counterpart_id: UserId
     record_id: RecordId
-    title: str
-    is_completed: bool
+    title: ActionItemTitle
+    _is_completed: bool
     created_at: datetime
-    events: list[ActionItemAdded | ActionItemCompleted] = field(
-        default_factory=list, repr=False
-    )
+    _events: list[_ActionItemEvent] = field(default_factory=list, repr=False)
+
+    @property
+    def is_completed(self) -> bool:
+        return self._is_completed
 
     @staticmethod
     def create(
@@ -42,25 +54,24 @@ class ActionItem:
     ) -> ActionItem:
         """Create a new action item. Only the organizer may add."""
         if actor_id != organizer_id:
-            raise PermissionError("Only the organizer can add action items.")
-        if not title.strip():
-            raise ValueError("Action item title must not be empty.")
+            raise UnauthorizedOperationError("Only the organizer can add action items.")
+        action_item_title = ActionItemTitle(title)
         action_item_id = ActionItemId.generate()
-        ts = now or datetime.now()
+        ts = now or datetime.now(UTC)
         action_item = ActionItem(
             id=action_item_id,
             counterpart_id=counterpart_id,
             record_id=record_id,
-            title=title,
-            is_completed=False,
+            title=action_item_title,
+            _is_completed=False,
             created_at=ts,
         )
-        action_item.events.append(
+        action_item._events.append(
             ActionItemAdded(
                 action_item_id=action_item_id,
                 counterpart_id=counterpart_id,
                 record_id=record_id,
-                title=title,
+                title=action_item_title.value,
                 created_at=ts,
             )
         )
@@ -69,14 +80,22 @@ class ActionItem:
     def complete(self, *, actor_id: UserId, now: datetime) -> None:
         """Mark as completed. Only the counterpart may complete."""
         if actor_id != self.counterpart_id:
-            raise PermissionError("Only the counterpart can complete action items.")
-        if self.is_completed:
-            raise ValueError("Action item is already completed.")
-        self.is_completed = True
-        self.events.append(
+            raise UnauthorizedOperationError(
+                "Only the counterpart can complete action items."
+            )
+        if self._is_completed:
+            raise ActionItemAlreadyCompletedError("Action item is already completed.")
+        self._is_completed = True
+        self._events.append(
             ActionItemCompleted(
                 action_item_id=self.id,
                 counterpart_id=self.counterpart_id,
                 completed_at=now,
             )
         )
+
+    def collect_events(self) -> list[_ActionItemEvent]:
+        """Return accumulated events and clear the internal list."""
+        events = list(self._events)
+        self._events.clear()
+        return events

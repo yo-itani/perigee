@@ -38,6 +38,15 @@ class RecordDraftSaved:
 
 
 @dataclass(frozen=True)
+class RecordPublished:
+    """Raised when a record is published."""
+
+    record_id: RecordId
+    organizer_id: UserId
+    published_at: datetime
+
+
+@dataclass(frozen=True)
 class ActionItemAdded:
     """Raised when an action item is added."""
 

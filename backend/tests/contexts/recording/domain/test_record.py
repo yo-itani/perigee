@@ -6,6 +6,11 @@ from contexts.recording.domain.events import (
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
+    RecordPublished,
+)
+from contexts.recording.domain.exceptions import (
+    RecordAlreadyPublishedError,
+    UnauthorizedOperationError,
 )
 from contexts.recording.domain.record import Record
 from contexts.recording.domain.value_objects import RecordStatus
@@ -46,8 +51,9 @@ class TestRecordCreate:
 
     def test_emits_record_created_event(self) -> None:
         record = _make_record()
-        assert len(record.events) == 1
-        event = record.events[0]
+        events = record.collect_events()
+        assert len(events) == 1
+        event = events[0]
         assert isinstance(event, RecordCreated)
         assert event.record_id == record.id
         assert event.organizer_id == record.organizer_id
@@ -57,6 +63,12 @@ class TestRecordCreate:
         record = _make_record(now=now)
         assert record.created_at == now
         assert record.updated_at == now
+
+    def test_collect_events_clears_list(self) -> None:
+        record = _make_record()
+        events = record.collect_events()
+        assert len(events) == 1
+        assert record.collect_events() == []
 
 
 class TestRecordUpdateMemo:
@@ -75,19 +87,33 @@ class TestRecordUpdateMemo:
         other = UserId.generate()
         record = _make_record(organizer_id=organizer)
 
-        with pytest.raises(PermissionError, match="Only the organizer"):
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
             record.update_memo(
                 memo="hack", actor_id=other, now=datetime(2026, 3, 20, 11, 0)
+            )
+
+    def test_cannot_update_memo_when_published(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        with pytest.raises(RecordAlreadyPublishedError):
+            record.update_memo(
+                memo="late edit",
+                actor_id=organizer,
+                now=datetime(2026, 3, 20, 11, 0),
             )
 
     def test_emits_memo_updated_event(self) -> None:
         organizer = UserId.generate()
         record = _make_record(organizer_id=organizer)
+        record.collect_events()  # clear creation event
         now = datetime(2026, 3, 20, 11, 0)
 
         record.update_memo(memo="Updated", actor_id=organizer, now=now)
 
-        memo_events = [e for e in record.events if isinstance(e, MemoUpdated)]
+        events = record.collect_events()
+        memo_events = [e for e in events if isinstance(e, MemoUpdated)]
         assert len(memo_events) == 1
         assert memo_events[0].record_id == record.id
         assert memo_events[0].updated_at == now
@@ -108,27 +134,70 @@ class TestRecordSaveDraft:
         other = UserId.generate()
         record = _make_record(organizer_id=organizer)
 
-        with pytest.raises(PermissionError, match="Only the organizer"):
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
             record.save_draft(actor_id=other, now=datetime(2026, 3, 20, 11, 0))
 
     def test_cannot_save_draft_when_published(self) -> None:
         organizer = UserId.generate()
         record = _make_record(organizer_id=organizer)
-        record.status = RecordStatus.PUBLISHED
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
 
-        with pytest.raises(ValueError, match="not in draft status"):
+        with pytest.raises(RecordAlreadyPublishedError):
             record.save_draft(actor_id=organizer, now=datetime(2026, 3, 20, 11, 0))
 
     def test_emits_record_draft_saved_event(self) -> None:
         organizer = UserId.generate()
         record = _make_record(organizer_id=organizer)
+        record.collect_events()  # clear creation event
         now = datetime(2026, 3, 20, 11, 0)
 
         record.save_draft(actor_id=organizer, now=now)
 
-        draft_events = [e for e in record.events if isinstance(e, RecordDraftSaved)]
+        events = record.collect_events()
+        draft_events = [e for e in events if isinstance(e, RecordDraftSaved)]
         assert len(draft_events) == 1
         assert draft_events[0].saved_at == now
+
+
+class TestRecordPublish:
+    def test_organizer_can_publish(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.publish(actor_id=organizer, now=now)
+
+        assert record.status == RecordStatus.PUBLISHED
+        assert record.updated_at == now
+
+    def test_non_organizer_cannot_publish(self) -> None:
+        organizer = UserId.generate()
+        other = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
+            record.publish(actor_id=other, now=datetime(2026, 3, 20, 11, 0))
+
+    def test_cannot_publish_twice(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        with pytest.raises(RecordAlreadyPublishedError):
+            record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 11, 0))
+
+    def test_emits_record_published_event(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.collect_events()  # clear creation event
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.publish(actor_id=organizer, now=now)
+
+        events = record.collect_events()
+        pub_events = [e for e in events if isinstance(e, RecordPublished)]
+        assert len(pub_events) == 1
+        assert pub_events[0].published_at == now
 
 
 class TestRecordVisibility:
@@ -152,8 +221,9 @@ class TestRecordVisibility:
         assert record.is_visible_to(other) is False
 
     def test_published_visible_to_anyone(self) -> None:
-        record = _make_record()
-        record.status = RecordStatus.PUBLISHED
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
         other = UserId.generate()
 
         assert record.is_visible_to(other) is True

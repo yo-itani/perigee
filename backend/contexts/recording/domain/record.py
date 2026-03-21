@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 from contexts.recording.domain.events import (
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
+    RecordPublished,
+)
+from contexts.recording.domain.exceptions import (
+    RecordAlreadyPublishedError,
+    UnauthorizedOperationError,
 )
 from contexts.recording.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import ScheduleId, UserId
+
+type _RecordEvent = RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished
 
 
 @dataclass
@@ -32,9 +39,7 @@ class Record:
     conducted_at: datetime
     created_at: datetime
     updated_at: datetime
-    events: list[RecordCreated | MemoUpdated | RecordDraftSaved] = field(
-        default_factory=list, repr=False
-    )
+    _events: list[_RecordEvent] = field(default_factory=list, repr=False)
 
     @staticmethod
     def create(
@@ -47,7 +52,7 @@ class Record:
     ) -> Record:
         """Create a new record in Draft status."""
         record_id = RecordId.generate()
-        ts = now or datetime.now()
+        ts = now or datetime.now(UTC)
         record = Record(
             id=record_id,
             organizer_id=organizer_id,
@@ -59,7 +64,7 @@ class Record:
             created_at=ts,
             updated_at=ts,
         )
-        record.events.append(
+        record._events.append(
             RecordCreated(
                 record_id=record_id,
                 organizer_id=organizer_id,
@@ -74,9 +79,10 @@ class Record:
     def update_memo(self, *, memo: str, actor_id: UserId, now: datetime) -> None:
         """Update memo content. Only the organizer may edit."""
         self._assert_organizer(actor_id)
+        self._assert_draft()
         self.memo = memo
         self.updated_at = now
-        self.events.append(
+        self._events.append(
             MemoUpdated(
                 record_id=self.id,
                 organizer_id=self.organizer_id,
@@ -89,11 +95,28 @@ class Record:
         self._assert_organizer(actor_id)
         self._assert_draft()
         self.updated_at = now
-        self.events.append(
+        self._events.append(
             RecordDraftSaved(
                 record_id=self.id,
                 organizer_id=self.organizer_id,
                 saved_at=now,
+            )
+        )
+
+    def publish(self, *, actor_id: UserId, now: datetime) -> None:
+        """Publish the record. Only the organizer may publish.
+
+        Status transition: Draft -> Published (one-way).
+        """
+        self._assert_organizer(actor_id)
+        self._assert_draft()
+        self.status = RecordStatus.PUBLISHED
+        self.updated_at = now
+        self._events.append(
+            RecordPublished(
+                record_id=self.id,
+                organizer_id=self.organizer_id,
+                published_at=now,
             )
         )
 
@@ -107,10 +130,16 @@ class Record:
             return user_id == self.organizer_id
         return True
 
+    def collect_events(self) -> list[_RecordEvent]:
+        """Return accumulated events and clear the internal list."""
+        events = list(self._events)
+        self._events.clear()
+        return events
+
     def _assert_organizer(self, actor_id: UserId) -> None:
         if actor_id != self.organizer_id:
-            raise PermissionError("Only the organizer can edit the record.")
+            raise UnauthorizedOperationError("Only the organizer can edit the record.")
 
     def _assert_draft(self) -> None:
         if self.status != RecordStatus.DRAFT:
-            raise ValueError("Record is not in draft status.")
+            raise RecordAlreadyPublishedError("Record is already published.")

@@ -4,7 +4,12 @@ import pytest
 
 from contexts.recording.domain.action_item import ActionItem
 from contexts.recording.domain.events import ActionItemAdded, ActionItemCompleted
-from contexts.recording.domain.value_objects import RecordId
+from contexts.recording.domain.exceptions import (
+    ActionItemAlreadyCompletedError,
+    InvalidActionItemTitleError,
+    UnauthorizedOperationError,
+)
+from contexts.recording.domain.value_objects import ActionItemTitle, RecordId
 from shared.domain.value_objects import UserId
 
 
@@ -32,13 +37,13 @@ class TestActionItemCreate:
     def test_creates_with_defaults(self) -> None:
         item = _make_action_item()
         assert item.is_completed is False
-        assert item.title == "Follow up on project status"
+        assert item.title == ActionItemTitle("Follow up on project status")
 
     def test_only_organizer_can_create(self) -> None:
         organizer = UserId.generate()
         other = UserId.generate()
 
-        with pytest.raises(PermissionError, match="Only the organizer"):
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
             ActionItem.create(
                 counterpart_id=UserId.generate(),
                 record_id=RecordId.generate(),
@@ -50,7 +55,7 @@ class TestActionItemCreate:
     def test_title_must_not_be_empty(self) -> None:
         organizer = UserId.generate()
 
-        with pytest.raises(ValueError, match="title must not be empty"):
+        with pytest.raises(InvalidActionItemTitleError, match="must not be empty"):
             ActionItem.create(
                 counterpart_id=UserId.generate(),
                 record_id=RecordId.generate(),
@@ -59,13 +64,50 @@ class TestActionItemCreate:
                 organizer_id=organizer,
             )
 
+    def test_title_must_not_contain_newlines(self) -> None:
+        organizer = UserId.generate()
+
+        with pytest.raises(
+            InvalidActionItemTitleError, match="must not contain newlines"
+        ):
+            ActionItem.create(
+                counterpart_id=UserId.generate(),
+                record_id=RecordId.generate(),
+                title="line1\nline2",
+                actor_id=organizer,
+                organizer_id=organizer,
+            )
+
+    def test_title_must_not_exceed_max_length(self) -> None:
+        organizer = UserId.generate()
+
+        with pytest.raises(InvalidActionItemTitleError, match="must not exceed"):
+            ActionItem.create(
+                counterpart_id=UserId.generate(),
+                record_id=RecordId.generate(),
+                title="a" * 201,
+                actor_id=organizer,
+                organizer_id=organizer,
+            )
+
+    def test_title_strips_whitespace(self) -> None:
+        item = _make_action_item(title="  some task  ")
+        assert item.title.value == "some task"
+
     def test_emits_action_item_added_event(self) -> None:
         item = _make_action_item()
-        assert len(item.events) == 1
-        event = item.events[0]
+        events = item.collect_events()
+        assert len(events) == 1
+        event = events[0]
         assert isinstance(event, ActionItemAdded)
         assert event.action_item_id == item.id
-        assert event.title == item.title
+        assert event.title == item.title.value
+
+    def test_collect_events_clears_list(self) -> None:
+        item = _make_action_item()
+        events = item.collect_events()
+        assert len(events) == 1
+        assert item.collect_events() == []
 
 
 class TestActionItemComplete:
@@ -83,7 +125,7 @@ class TestActionItemComplete:
         other = UserId.generate()
         item = _make_action_item(counterpart_id=counterpart)
 
-        with pytest.raises(PermissionError, match="Only the counterpart"):
+        with pytest.raises(UnauthorizedOperationError, match="Only the counterpart"):
             item.complete(actor_id=other, now=datetime(2026, 3, 21, 9, 0))
 
     def test_cannot_complete_twice(self) -> None:
@@ -91,19 +133,19 @@ class TestActionItemComplete:
         item = _make_action_item(counterpart_id=counterpart)
         item.complete(actor_id=counterpart, now=datetime(2026, 3, 21, 9, 0))
 
-        with pytest.raises(ValueError, match="already completed"):
+        with pytest.raises(ActionItemAlreadyCompletedError, match="already completed"):
             item.complete(actor_id=counterpart, now=datetime(2026, 3, 21, 10, 0))
 
     def test_emits_action_item_completed_event(self) -> None:
         counterpart = UserId.generate()
         item = _make_action_item(counterpart_id=counterpart)
+        item.collect_events()  # clear creation event
         now = datetime(2026, 3, 21, 9, 0)
 
         item.complete(actor_id=counterpart, now=now)
 
-        completed_events = [
-            e for e in item.events if isinstance(e, ActionItemCompleted)
-        ]
+        events = item.collect_events()
+        completed_events = [e for e in events if isinstance(e, ActionItemCompleted)]
         assert len(completed_events) == 1
         assert completed_events[0].completed_at == now
         assert completed_events[0].counterpart_id == counterpart
