@@ -14,7 +14,8 @@ from contexts.recording.domain.exceptions import (
     UnauthorizedOperationError,
 )
 from contexts.recording.domain.value_objects import RecordId, RecordStatus
-from shared.domain.value_objects import ScheduleId, UserId
+from contexts.scheduling.domain.value_objects import ScheduleId
+from shared.domain.value_objects import UserId
 
 type _RecordEvent = RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished
 
