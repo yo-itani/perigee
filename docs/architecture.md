@@ -18,10 +18,14 @@ backend/
     publishing/            # 記録の公開・公開先管理
     notification/          # Slack通知
     # read_model/, settings/ は実装時に追加予定
-  shared/                  # ドメイン共有（値オブジェクト、イベント基底クラス）
+  shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
     domain/
       value_objects.py     # OneOnOneId, UserId など
+      user.py              # User エンティティ（最小構成）
+      user_repository.py   # UserRepository インターフェース
       events.py            # 基底クラス
+    infrastructure/
+      in_memory_user_repository.py  # UserRepository の固定データ仮実装
   foundation/              # 技術基盤（ドメイン非依存）
     db/                    # SQLAlchemy async engine/session
     auth/                  # 認証ミドルウェア

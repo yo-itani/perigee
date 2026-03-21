@@ -1,0 +1,23 @@
+from shared.domain.user import User
+from shared.domain.user_repository import UserRepository
+from shared.domain.value_objects import UserId
+
+
+class InMemoryUserRepository(UserRepository):
+    """Stub implementation backed by a fixed set of users."""
+
+    def __init__(self, users: list[User] | None = None) -> None:
+        self._users: dict[UserId, User] = {u.id: u for u in (users or [])}
+
+    # -- mutation helpers (not part of the interface) -------------------------
+
+    def add(self, user: User) -> None:
+        self._users[user.id] = user
+
+    # -- UserRepository interface --------------------------------------------
+
+    def get_by_id(self, user_id: UserId) -> User | None:
+        return self._users.get(user_id)
+
+    def exists(self, user_id: UserId) -> bool:
+        return user_id in self._users
