@@ -12,16 +12,20 @@
 ```
 backend/
   contexts/
-    identity/              # ユーザー・上司部下ペア管理（初期は固定データ）
     scheduling/            # 定期・アドホック1on1のスケジューリング
     preparation/           # 1on1前のアジェンダ・コメント準備
     recording/             # 1on1実施中のメモ・アクションアイテム記録
-    publication/           # 記録の公開・公開先管理
+    publishing/            # 記録の公開・公開先管理
     notification/          # Slack通知
-  shared/                  # 技術基盤（ドメイン非依存）
-    db/                    # DB接続・セッション管理
+    # read_model/, settings/ は実装時に追加予定
+  shared/                  # ドメイン共有（値オブジェクト、イベント基底クラス）
+    domain/
+      value_objects.py     # OneOnOneId, UserId など
+      events.py            # 基底クラス
+  platform/                # 技術基盤（ドメイン非依存）
+    db/                    # SQLAlchemy async engine/session
     auth/                  # 認証ミドルウェア
-    config/                # 環境設定
+    config/                # pydantic-settings
     logging/               # ログ設定
   api/
     register_routers.py    # 各コンテキストのrouterを集約・登録
@@ -46,7 +50,7 @@ contexts/<context_name>/
 |---|---|---|
 | domain | ビジネスロジック、エンティティ、値オブジェクト、ドメインイベント | なし（純粋Python） |
 | application | ユースケースの実行、トランザクション制御 | domain |
-| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, shared |
+| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, platform |
 | presentation | HTTPリクエスト/レスポンス、バリデーション、ルーティング | application |
 
 - **domain層は他のどの層にも依存しない**（テスト容易性の根幹）
@@ -58,14 +62,16 @@ contexts/<context_name>/
 
 | コンテキスト | system_design上の対応 |
 |---|---|
-| identity | アクター（上司・部下・閲覧者）、設定の一部 |
 | scheduling | スケジューリング |
 | preparation | 準備（1on1前） |
 | recording | 実施・記録（1on1中〜直後）、フォローアップ |
-| publication | 公開管理 |
+| publishing | 公開管理 |
 | notification | 通知（Slack） |
+| read_model | 参照（リードモデル） |
+| settings | ユーザーごとの通知設定・デフォルト公開先 |
 
 ## コンテキスト間連携
 
 - コンテキスト間はドメインイベントで連携する（例：「記録が公開された」→ notification が Slack通知を送信）
 - 他コンテキストのエンティティを直接importしない。参照が必要な場合はIDで参照する
+- オーガナイザー・カウンターパートの概念は各コンテキストが必要に応じてIDで参照する（専用のidentityコンテキストは設けない）
