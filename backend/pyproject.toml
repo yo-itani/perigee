@@ -32,6 +32,9 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["foundation"]
+
 [tool.pyright]
 pythonVersion = "3.13"
 typeCheckingMode = "standard"

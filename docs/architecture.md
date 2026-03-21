@@ -22,7 +22,7 @@ backend/
     domain/
       value_objects.py     # OneOnOneId, UserId など
       events.py            # 基底クラス
-  platform/                # 技術基盤（ドメイン非依存）
+  foundation/              # 技術基盤（ドメイン非依存）
     db/                    # SQLAlchemy async engine/session
     auth/                  # 認証ミドルウェア
     config/                # pydantic-settings
@@ -50,7 +50,7 @@ contexts/<context_name>/
 |---|---|---|
 | domain | ビジネスロジック、エンティティ、値オブジェクト、ドメインイベント | なし（純粋Python） |
 | application | ユースケースの実行、トランザクション制御 | domain |
-| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, platform |
+| infrastructure | DBアクセス、外部API呼び出し、リポジトリ実装 | domain, foundation |
 | presentation | HTTPリクエスト/レスポンス、バリデーション、ルーティング | application |
 
 - **domain層は他のどの層にも依存しない**（テスト容易性の根幹）

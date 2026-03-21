@@ -1,14 +1,21 @@
 {
   "permissions": {
     "allow": [
+      "mcp__serena__*",
       "Bash(ls:*)",
       "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
       "Bash(rg:*)",
       "Bash(cat:*)",
       "Bash(gh:*)",
+      "Bash(cd:*)",
       "Bash(git:*)",
       "Bash(echo:*)",
       "Bash(uv:*)",
+      "Bash(pnpm:*)",
+      "Bash(npx:*)",
       "Bash(which:*)",
       "Bash(pwd:*)",
       "Bash(ruff:*)",
