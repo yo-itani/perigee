@@ -14,7 +14,8 @@ from contexts.recording.domain.exceptions import (
 )
 from contexts.recording.domain.record import Record
 from contexts.recording.domain.value_objects import RecordStatus
-from shared.domain.value_objects import ScheduleId, UserId
+from contexts.scheduling.domain.value_objects import ScheduleId
+from shared.domain.value_objects import UserId
 
 
 def _make_record(

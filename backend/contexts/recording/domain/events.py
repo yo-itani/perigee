@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from contexts.recording.domain.value_objects import ActionItemId, RecordId
-from shared.domain.value_objects import ScheduleId, UserId
+from contexts.scheduling.domain.value_objects import ScheduleId
+from shared.domain.value_objects import UserId
 
 
 @dataclass(frozen=True)
