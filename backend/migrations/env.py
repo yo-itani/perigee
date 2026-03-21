@@ -5,7 +5,7 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from shared.config.settings import settings
+from platform.config.settings import settings
 
 config = context.config
 
