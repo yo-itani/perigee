@@ -59,3 +59,17 @@ class UnauthorizedScheduleGroupOperationError(Exception):
 
     def __init__(self, message: str = "Unauthorized schedule group operation.") -> None:
         super().__init__(message)
+
+
+class UnauthorizedTemplateOperationError(Exception):
+    """Raised when a user without permission attempts a Template operation."""
+
+    def __init__(self, message: str = "Unauthorized template operation.") -> None:
+        super().__init__(message)
+
+
+class InvalidCommentBodyError(Exception):
+    """Raised when a comment body fails validation."""
+
+    def __init__(self, message: str = "Invalid comment body.") -> None:
+        super().__init__(message)

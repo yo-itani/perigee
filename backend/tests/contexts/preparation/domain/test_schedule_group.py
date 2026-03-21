@@ -98,6 +98,13 @@ class TestScheduleGroupRegisterSchedule:
             group.register_schedule(sid)
         assert group.schedule_ids == sids
 
+    def test_register_duplicate_schedule_is_ignored(self) -> None:
+        group = _make_group()
+        sid = ScheduleId.generate()
+        group.register_schedule(sid)
+        group.register_schedule(sid)
+        assert group.schedule_ids == [sid]
+
 
 class TestScheduleGroupAddAgenda:
     def test_add_agenda_to_all_schedules(self) -> None:
@@ -341,6 +348,23 @@ class TestScheduleGroupRemoveAgenda:
         # Agenda is removed (including its comments)
         assert len(removed_ids) == 1
         assert len(schedules_agendas[schedule_ids[0]]) == 0
+
+    def test_remove_nonexistent_topic_is_noop(self) -> None:
+        """Removing a topic that has no matching template is a no-op."""
+        organizer = UserId.generate()
+        group, schedule_ids = _make_group_with_schedules(organizer_id=organizer)
+        group.collect_events()  # clear
+
+        removed_ids = group.remove_agenda_from_schedules(
+            topic="Nonexistent",
+            actor_id=organizer,
+            schedules_agendas={sid: [] for sid in schedule_ids},
+            now=_LATER,
+        )
+
+        assert removed_ids == []
+        assert group.updated_at == _NOW  # timestamp not updated
+        assert group.collect_events() == []  # no events emitted
 
     def test_remove_duplicate_removes_one_per_schedule(self) -> None:
         """When duplicate topics exist, remove only removes one per schedule."""

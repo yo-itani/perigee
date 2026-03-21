@@ -6,7 +6,7 @@ from contexts.preparation.domain.agenda_template import AgendaTemplate
 from contexts.preparation.domain.events import TemplateSaved
 from contexts.preparation.domain.exceptions import (
     InvalidTemplateNameError,
-    UnauthorizedScheduleGroupOperationError,
+    UnauthorizedTemplateOperationError,
 )
 from contexts.preparation.domain.template import Template
 from shared.domain.value_objects import UserId
@@ -127,7 +127,7 @@ class TestTemplateUpdate:
         tmpl = _make_template(organizer_id=organizer)
 
         with pytest.raises(
-            UnauthorizedScheduleGroupOperationError, match="Only the organizer"
+            UnauthorizedTemplateOperationError, match="Only the organizer"
         ):
             tmpl.update(
                 actor_id=other,

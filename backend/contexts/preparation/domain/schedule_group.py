@@ -117,8 +117,12 @@ class ScheduleGroup:
     # ------------------------------------------------------------------
 
     def register_schedule(self, schedule_id: ScheduleId) -> None:
-        """Register a schedule as belonging to this group."""
-        self._schedule_ids.append(schedule_id)
+        """Register a schedule as belonging to this group.
+
+        Duplicate registration of the same ScheduleId is silently ignored.
+        """
+        if schedule_id not in self._schedule_ids:
+            self._schedule_ids.append(schedule_id)
 
     def add_agenda_to_schedules(
         self,
@@ -137,7 +141,9 @@ class ScheduleGroup:
             topic: The agenda topic to add.
             actor_id: The user performing the operation (must be organizer).
             schedules_agendas: Mutable agenda lists keyed by schedule ID.
-                New agendas are appended to each list.
+                New agendas are appended to each list. Must contain keys
+                for all registered schedule IDs; missing keys are skipped
+                (new Agenda is still created but not appended to the dict).
             now: Current time.
 
         Returns:
@@ -204,11 +210,16 @@ class ScheduleGroup:
         """
         self._assert_organizer(actor_id)
 
-        # Remove first matching template
+        # Remove first matching template; if none found, this is a no-op.
+        found = False
         for i, tmpl in enumerate(self._agenda_templates):
             if tmpl.topic == topic:
                 self._agenda_templates.pop(i)
+                found = True
                 break
+
+        if not found:
+            return []
 
         self._updated_at = now
 

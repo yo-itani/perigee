@@ -7,7 +7,7 @@ from contexts.preparation.domain.agenda_template import AgendaTemplate
 from contexts.preparation.domain.events import TemplateSaved
 from contexts.preparation.domain.exceptions import (
     InvalidTemplateNameError,
-    UnauthorizedScheduleGroupOperationError,
+    UnauthorizedTemplateOperationError,
 )
 from contexts.preparation.domain.value_objects import TemplateId
 from shared.domain.value_objects import UserId
@@ -125,12 +125,12 @@ class Template:
         Only the owning organizer can update.
 
         Raises:
-            UnauthorizedScheduleGroupOperationError: If actor is not the
+            UnauthorizedTemplateOperationError: If actor is not the
                 organizer.
             InvalidTemplateNameError: If name is empty or too long.
         """
         if actor_id != self.organizer_id:
-            raise UnauthorizedScheduleGroupOperationError(
+            raise UnauthorizedTemplateOperationError(
                 "Only the organizer can update this template."
             )
         validated_name = _validate_template_name(name)

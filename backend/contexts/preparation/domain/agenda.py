@@ -22,16 +22,36 @@ class Agenda:
     Post-hoc records (pattern C) do not have agendas.
     """
 
-    id: AgendaId
-    schedule_id: ScheduleId
-    topic: str
-    added_by: UserId
+    _id: AgendaId
+    _schedule_id: ScheduleId
+    _topic: str
+    _added_by: UserId
     _comments: list[Comment]
-    created_at: datetime
+    _created_at: datetime
+
+    @property
+    def id(self) -> AgendaId:
+        return self._id
+
+    @property
+    def schedule_id(self) -> ScheduleId:
+        return self._schedule_id
+
+    @property
+    def topic(self) -> str:
+        return self._topic
+
+    @property
+    def added_by(self) -> UserId:
+        return self._added_by
 
     @property
     def comments(self) -> list[Comment]:
         return list(self._comments)
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
 
     @staticmethod
     def create(
@@ -44,12 +64,12 @@ class Agenda:
         """Factory method to create a new agenda item."""
         ts = now or datetime.now(UTC)
         return Agenda(
-            id=AgendaId.generate(),
-            schedule_id=schedule_id,
-            topic=topic,
-            added_by=added_by,
+            _id=AgendaId.generate(),
+            _schedule_id=schedule_id,
+            _topic=topic,
+            _added_by=added_by,
             _comments=[],
-            created_at=ts,
+            _created_at=ts,
         )
 
     def add_comment(self, *, author_id: UserId, body: str, now: datetime) -> Comment:
@@ -58,7 +78,7 @@ class Agenda:
         Both organizer and counterpart can comment (no restriction).
         """
         comment = Comment.create(
-            agenda_id=self.id,
+            agenda_id=self._id,
             author_id=author_id,
             body=body,
             now=now,

@@ -1,6 +1,9 @@
 from datetime import datetime
 
+import pytest
+
 from contexts.preparation.domain.agenda import Agenda
+from contexts.preparation.domain.exceptions import InvalidCommentBodyError
 from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
@@ -82,3 +85,32 @@ class TestAgendaComment:
         agenda = _make_agenda()
         comments = agenda.comments
         assert comments is not agenda.comments  # different list instances
+
+    def test_empty_comment_body_raises(self) -> None:
+        agenda = _make_agenda()
+        with pytest.raises(InvalidCommentBodyError, match="must not be empty"):
+            agenda.add_comment(author_id=UserId.generate(), body="", now=_LATER)
+
+    def test_whitespace_only_comment_body_raises(self) -> None:
+        agenda = _make_agenda()
+        with pytest.raises(InvalidCommentBodyError, match="must not be empty"):
+            agenda.add_comment(author_id=UserId.generate(), body="   ", now=_LATER)
+
+    def test_comment_body_exceeds_max_length_raises(self) -> None:
+        agenda = _make_agenda()
+        with pytest.raises(InvalidCommentBodyError, match="must not exceed"):
+            agenda.add_comment(author_id=UserId.generate(), body="a" * 2001, now=_LATER)
+
+    def test_comment_body_at_max_length_is_valid(self) -> None:
+        agenda = _make_agenda()
+        comment = agenda.add_comment(
+            author_id=UserId.generate(), body="a" * 2000, now=_LATER
+        )
+        assert len(comment.body) == 2000
+
+    def test_comment_body_strips_whitespace(self) -> None:
+        agenda = _make_agenda()
+        comment = agenda.add_comment(
+            author_id=UserId.generate(), body="  hello  ", now=_LATER
+        )
+        assert comment.body == "hello"
