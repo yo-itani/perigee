@@ -216,61 +216,44 @@ body { background: #f0efea; color: var(--text-primary); }
 <div class="screen active" id="screen-dashboard">
   <div class="screen-label">DASHBOARD</div>
   <div class="screen-title">ダッシュボード</div>
-  <div class="role-switcher">
-    <span class="role-label">表示切替：</span>
-    <button class="role-btn active" onclick="setDashRole('boss')">上司として見る</button>
-    <button class="role-btn" onclick="setDashRole('sub')">部下として見る</button>
-  </div>
 
-  <div id="dash-boss">
-    <div class="greeting">おはようございます、鈴木さん</div>
-    <div class="greeting-sub">2026年4月3日（金）　今日は田中さんとの1on1があります</div>
-    <div class="metrics">
-      <div class="metric-card"><div class="metric-label">今週の1on1</div><div class="metric-value">3件</div></div>
-      <div class="metric-card"><div class="metric-label">下書き未公開</div><div class="metric-value warn">2件</div></div>
-      <div class="metric-card"><div class="metric-label">期限切れアクション</div><div class="metric-value danger">1件</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">直近の1on1</div><button class="card-action">すべて見る</button></div>
-      <div class="row"><div class="avatar avatar-lg success">田</div><div class="row-info"><div class="row-title">田中 太郎</div><div class="row-meta">今日 10:00 · 週次定期 · アジェンダ 4件</div></div><span class="badge" style="background:var(--success-bg);color:var(--success-text);">今日</span></div>
-      <div class="row"><div class="avatar avatar-lg">山</div><div class="row-info"><div class="row-title">山田 花子</div><div class="row-meta">4月5日（日）14:00 · 隔週定期 · アジェンダ 2件</div></div><span class="badge badge-draft">2日後</span></div>
-      <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎</div><div class="row-meta">4月10日（金）15:00 · 週次定期 · アジェンダ未設定</div></div><span class="badge badge-gray">7日後</span></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">下書き未公開の記録</div><button class="card-action">すべて見る</button></div>
-      <div class="row"><div class="avatar avatar-lg">田</div><div class="row-info"><div class="row-title">田中 太郎 · 3月27日の1on1</div><div class="row-meta">7日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
-      <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎 · 3月20日の1on1</div><div class="row-meta">14日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">未完了アクションアイテム（全メンバー）</div><button class="card-action">すべて見る</button></div>
-      <div class="row"><div class="action-icon danger">!</div><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メール（田中 太郎）</div><div class="row-meta">3月20日の1on1から</div></div><span class="action-due overdue">期限切れ</span></div>
-      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を作成（田中 太郎）</div><div class="row-meta">4月3日の1on1から</div></div><span class="action-due">4/10まで</span></div>
-      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">企画書レビュー（山田 花子）</div><div class="row-meta">3月27日の1on1から</div></div><span class="action-due">4/15まで</span></div>
+  <div class="greeting">おはようございます、鈴木さん</div>
+  <div class="greeting-sub">2026年4月3日（金）　今日は田中さんとの1on1があります</div>
+  <div class="next-card">
+    <div class="next-label">次の1on1</div>
+    <div class="next-title">週次 1on1 — 田中 太郎</div>
+    <div class="next-meta">今日 10:00 · 60分 · アジェンダ 4件</div>
+    <div class="next-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);">準備画面を開く</button>
+      <button class="btn btn-primary">1on1 を開始する</button>
     </div>
   </div>
-
-  <div id="dash-sub" class="hidden">
-    <div class="greeting">おはようございます、田中さん</div>
-    <div class="greeting-sub">2026年4月3日（金）　今日は鈴木さんとの1on1があります</div>
-    <div class="next-card">
-      <div class="next-label">次の1on1</div>
-      <div class="next-title">週次 1on1 — 鈴木 一郎</div>
-      <div class="next-meta">今日 10:00 · 60分 · アジェンダ 4件</div>
-      <div class="next-actions">
-        <button class="btn btn-ghost" style="background:var(--bg);">準備画面を開く</button>
-        <button class="btn btn-primary">1on1 を開始する</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">自分の未完了アクションアイテム</div><button class="card-action">すべて見る</button></div>
-      <div class="row"><div class="action-icon danger">!</div><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メールを送る</div><div class="row-meta">3月20日の1on1から</div></div><span class="action-due overdue">期限切れ</span></div>
-      <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を作成する</div><div class="row-meta">4月3日の1on1から</div></div><span class="action-due">4/10まで</span></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">未読の記録・コメント</div><button class="card-action">すべて見る</button></div>
-      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月27日の1on1 — 記録が公開されました</div><div class="row-meta">鈴木 一郎 · 山本 部長もコメントしています</div></div><span style="color:var(--text-tertiary);">›</span></div>
-      <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月20日の1on1 — 鈴木さんがコメントしました</div><div class="row-meta">4月1日</div></div><span style="color:var(--text-tertiary);">›</span></div>
-    </div>
+  <div class="metrics">
+    <div class="metric-card"><div class="metric-label">今週の1on1</div><div class="metric-value">3件</div></div>
+    <div class="metric-card"><div class="metric-label">下書き未公開</div><div class="metric-value warn">2件</div></div>
+    <div class="metric-card"><div class="metric-label">期限切れアクション</div><div class="metric-value danger">1件</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">直近の1on1</div><button class="card-action">すべて見る</button></div>
+    <div class="row"><div class="avatar avatar-lg success">田</div><div class="row-info"><div class="row-title">田中 太郎</div><div class="row-meta">今日 10:00 · 週次定期 · アジェンダ 4件</div></div><span class="badge" style="background:var(--success-bg);color:var(--success-text);">今日</span></div>
+    <div class="row"><div class="avatar avatar-lg">山</div><div class="row-info"><div class="row-title">山田 花子</div><div class="row-meta">4月5日（日）14:00 · 隔週定期 · アジェンダ 2件</div></div><span class="badge badge-draft">2日後</span></div>
+    <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎</div><div class="row-meta">4月10日（金）15:00 · 週次定期 · アジェンダ未設定</div></div><span class="badge badge-gray">7日後</span></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">下書き未公開の記録</div><button class="card-action">すべて見る</button></div>
+    <div class="row"><div class="avatar avatar-lg">田</div><div class="row-info"><div class="row-title">田中 太郎 · 3月27日の1on1</div><div class="row-meta">7日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
+    <div class="row"><div class="avatar avatar-lg warn">佐</div><div class="row-info"><div class="row-title">佐藤 次郎 · 3月20日の1on1</div><div class="row-meta">14日間 下書きのまま</div></div><span class="badge badge-draft">下書き</span><button class="btn btn-ghost" style="font-size:12px;padding:5px 10px;">公開する</button></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">未完了アクションアイテム</div><button class="card-action">すべて見る</button></div>
+    <div class="row"><div class="action-icon danger">!</div><div class="row-info"><div class="row-title">〇〇さんへの進捗共有メール（田中 太郎）</div><div class="row-meta">3月20日の1on1から</div></div><span class="action-due overdue">期限切れ</span></div>
+    <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">資格取得の勉強計画を作成（田中 太郎）</div><div class="row-meta">4月3日の1on1から</div></div><span class="action-due">4/10まで</span></div>
+    <div class="row"><div class="action-icon">!</div><div class="row-info"><div class="row-title">企画書レビュー（山田 花子）</div><div class="row-meta">3月27日の1on1から</div></div><span class="action-due">4/15まで</span></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">未読の記録・コメント</div><button class="card-action">すべて見る</button></div>
+    <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月27日の1on1 — 記録が公開されました</div><div class="row-meta">鈴木 一郎 · 山本 部長もコメントしています</div></div><span style="color:var(--text-tertiary);">›</span></div>
+    <div class="row"><div style="width:8px;height:8px;border-radius:50%;background:var(--info-text);flex-shrink:0;"></div><div class="row-info"><div class="row-title">3月20日の1on1 — 鈴木さんがコメントしました</div><div class="row-meta">4月1日</div></div><span style="color:var(--text-tertiary);">›</span></div>
   </div>
 </div>
 
@@ -284,7 +267,7 @@ body { background: #f0efea; color: var(--text-primary); }
   </div>
   <div class="panel active" id="sched-regular">
     <div class="card">
-      <div class="card-title" style="margin-bottom:12px;">メンバーごとのスケジュール</div>
+      <div class="card-title" style="margin-bottom:12px;">カウンターパートごとのスケジュール</div>
       <div class="member-block">
         <div class="member-block-header"><div class="avatar">田</div><div class="member-block-name">田中 太郎</div><button class="del-btn">×</button></div>
         <div class="member-block-body">
@@ -303,21 +286,21 @@ body { background: #f0efea; color: var(--text-primary); }
           <div class="field" style="flex:2;min-width:200px;"><label>繰り返し</label><div style="display:flex;gap:8px;"><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>毎週</option><option selected>隔週</option></select><select style="flex:1;padding:8px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;"><option>月曜</option><option>火曜</option><option selected>水曜</option></select></div></div>
         </div>
       </div>
-      <button style="display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:0.5px dashed var(--border-md);border-radius:var(--radius-md);font-size:14px;color:var(--text-secondary);cursor:pointer;margin-top:10px;">＋ メンバーを追加</button>
+      <button style="display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:0.5px dashed var(--border-md);border-radius:var(--radius-md);font-size:14px;color:var(--text-secondary);cursor:pointer;margin-top:10px;">＋ カウンターパートを追加</button>
     </div>
     <div class="card">
-      <div class="card-title" style="margin-bottom:12px;">テンプレートアジェンダ（任意・全メンバー共通）</div>
+      <div class="card-title" style="margin-bottom:12px;">テンプレートアジェンダ（任意・全カウンターパート共通）</div>
       <div class="agenda-item"><div class="agenda-text">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
       <div class="agenda-item"><div class="agenda-text">業務状況の共有</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
       <div class="agenda-item"><div class="agenda-text">困っていること・相談事項</div><span class="agenda-tag">テンプレート</span><button class="del-btn">×</button></div>
       <div class="add-row"><input type="text" placeholder="アジェンダを追加..."><button>追加</button></div>
     </div>
-    <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;color:var(--info-text);margin-bottom:1rem;">メンバーごとに別々の日時で1on1が作成されます。アジェンダはテンプレートとして各1on1に適用されます。</div>
+    <div style="background:var(--info-bg);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;color:var(--info-text);margin-bottom:1rem;">カウンターパートごとに別々の日時で1on1が作成されます。アジェンダはテンプレートとして各1on1に適用されます。</div>
     <div class="footer"><button class="btn btn-ghost">キャンセル</button><button class="btn btn-primary">設定して通知する</button></div>
   </div>
   <div class="panel" id="sched-adhoc">
     <div class="card">
-      <div class="field"><label>相談相手（上司を選択）</label><select><option>鈴木 一郎（エンジニアリングマネージャー）</option></select></div>
+      <div class="field"><label>相談相手（オーガナイザーを選択）</label><select><option>鈴木 一郎（エンジニアリングマネージャー）</option></select></div>
     </div>
     <div class="card">
       <div class="card-title" style="margin-bottom:12px;">日時 <span style="font-size:11px;color:var(--danger-text);">必須</span></div>
@@ -325,11 +308,11 @@ body { background: #f0efea; color: var(--text-primary); }
         <div class="field"><label>希望日時</label><input type="datetime-local"></div>
         <div class="field"><label>所要時間</label><select><option selected>30分</option><option>60分</option></select></div>
       </div>
-      <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">仮押さえとして登録されます。上司が承認すると確定します。</div>
+      <div style="font-size:12px;color:var(--text-tertiary);margin-top:4px;">仮押さえとして登録されます。オーガナイザーが承認すると確定します。</div>
     </div>
     <div class="card">
       <div class="field"><label>相談のタイトル <span style="font-size:11px;color:var(--danger-text);">必須</span></label><input type="text" placeholder="例：キャリアについて相談したい"></div>
-      <div class="field"><label>アジェンダ（任意）</label><textarea placeholder="話したいこと・相談したい内容を書いておくと上司が準備できます"></textarea></div>
+      <div class="field"><label>アジェンダ（任意）</label><textarea placeholder="話したいこと・相談したい内容を書いておくとオーガナイザーが準備できます"></textarea></div>
     </div>
     <div class="footer"><button class="btn btn-ghost">キャンセル</button><button class="btn btn-primary">リクエストを送る</button></div>
   </div>
@@ -354,24 +337,24 @@ body { background: #f0efea; color: var(--text-primary); }
     <div class="divider"></div>
     <div class="meta-label" style="margin-bottom:8px;">参加者</div>
     <div style="display:flex;gap:8px;">
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">鈴</div>鈴木 一郎<span style="font-size:11px;color:var(--text-tertiary);">上司</span></div>
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">田</div>田中 太郎<span style="font-size:11px;color:var(--text-tertiary);">部下</span></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">鈴</div>鈴木 一郎<span style="font-size:11px;color:var(--text-tertiary);">オーガナイザー</span></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-secondary);border-radius:99px;font-size:13px;"><div class="avatar">田</div>田中 太郎<span style="font-size:11px;color:var(--text-tertiary);">カウンターパート</span></div>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><div class="card-title">アジェンダ</div><div style="font-size:12px;color:var(--text-tertiary);">上司・部下どちらでも追加・コメント可</div></div>
+    <div class="card-header"><div class="card-title">アジェンダ</div><div style="font-size:12px;color:var(--text-tertiary);">オーガナイザー・カウンターパートどちらでも追加・コメント可</div></div>
     <div class="agenda-item">
       <div class="agenda-text">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span>
       <button class="comment-toggle">💬 コメント</button><button class="del-btn">×</button>
     </div>
     <div class="agenda-item" style="flex-direction:column;align-items:stretch;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span>
+        <div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">カウンターパートが追加</span>
         <button class="comment-toggle">💬 2</button><button class="del-btn">×</button>
       </div>
       <div class="comments-area" style="margin-top:8px;">
-        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（部下）</span>　3月31日</div><div class="comment-body">現在の達成率は60%ほどです。△△の部分が特に難しく感じています。</div></div></div>
-        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">鈴</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">鈴木 一郎（上司）</span>　4月1日</div><div class="comment-body">事前に先月のレポートも見ておいてください。当日一緒に考えましょう。</div></div></div>
+        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（カウンターパート）</span>　3月31日</div><div class="comment-body">現在の達成率は60%ほどです。△△の部分が特に難しく感じています。</div></div></div>
+        <div class="comment-entry"><div class="avatar" style="width:22px;height:22px;font-size:10px;">鈴</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">鈴木 一郎（オーガナイザー）</span>　4月1日</div><div class="comment-body">事前に先月のレポートも見ておいてください。当日一緒に考えましょう。</div></div></div>
         <div class="comment-input-row"><input type="text" placeholder="コメントを追加..."><button>送信</button></div>
       </div>
     </div>
@@ -401,11 +384,11 @@ body { background: #f0efea; color: var(--text-primary); }
     <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span></div>
     <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">業務状況の共有</div><span class="agenda-tag">テンプレート</span></div>
     <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">困っていること・相談事項</div><span class="agenda-tag">テンプレート</span></div>
-    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">カウンターパートが追加</span></div>
     <div class="add-row"><input type="text" placeholder="話題が増えたら追加..."><button>追加</button></div>
   </div>
   <div class="card">
-    <div class="card-title" style="margin-bottom:10px;">メモ（上司が記録）</div>
+    <div class="card-title" style="margin-bottom:10px;">メモ（オーガナイザーが記録）</div>
     <textarea style="width:100%;min-height:160px;padding:10px 12px;font-size:14px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;resize:vertical;line-height:1.7;" placeholder="1on1中に話した内容をメモしてください。"></textarea>
   </div>
   <div class="card">
@@ -439,7 +422,7 @@ body { background: #f0efea; color: var(--text-primary); }
   </div>
   <div class="card hidden" id="pub-viewers-card">
     <div class="card-header"><div class="card-title">公開先</div><button class="card-action" onclick="document.getElementById('pub-modal').classList.add('show')">変更する</button></div>
-    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">部下・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
+    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">カウンターパート・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
     <div class="row" id="pub-viewer-extra"></div>
   </div>
   <div class="footer">
@@ -453,8 +436,8 @@ body { background: #f0efea; color: var(--text-primary); }
   <div class="screen-label">RECORD VIEW</div>
   <div class="role-switcher">
     <span class="role-label">表示切替：</span>
-    <button class="role-btn active" onclick="setViewRole('boss')">上司として見る</button>
-    <button class="role-btn" onclick="setViewRole('sub')">部下として見る</button>
+    <button class="role-btn active" onclick="setViewRole('boss')">オーガナイザーとして見る</button>
+    <button class="role-btn" onclick="setViewRole('sub')">カウンターパートとして見る</button>
     <button class="role-btn" onclick="setViewRole('viewer')">閲覧者として見る</button>
   </div>
   <div class="breadcrumb">1on1 一覧 › 田中 太郎</div>
@@ -475,7 +458,7 @@ body { background: #f0efea; color: var(--text-primary); }
     <div class="card-title" style="margin-bottom:12px;">アジェンダ</div>
     <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">前回のアクションアイテム確認</div><span class="agenda-tag">テンプレート</span></div>
     <div class="agenda-item"><div class="agenda-check done">✓</div><div class="agenda-text done">業務状況の共有</div><span class="agenda-tag">テンプレート</span></div>
-    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">部下が追加</span></div>
+    <div class="agenda-item"><div class="agenda-check"></div><div class="agenda-text">来季の目標設定</div><span class="agenda-tag mine">カウンターパートが追加</span></div>
   </div>
   <div class="card">
     <div class="card-title" style="margin-bottom:10px;">記録（メモ）</div>
@@ -490,18 +473,18 @@ body { background: #f0efea; color: var(--text-primary); }
   </div>
   <div class="card" id="view-pub-boss">
     <div class="card-header"><div class="card-title">公開先</div><button class="card-action">変更する</button></div>
-    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">部下・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
-    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上の上司</span></div></div></div>
+    <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">カウンターパート・本人</span></div></div><span style="font-size:12px;color:var(--text-tertiary);">常に公開</span></div>
+    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上位オーガナイザー</span></div></div></div>
   </div>
   <div class="card hidden" id="view-pub-sub">
     <div class="card-title" style="margin-bottom:12px;">この記録の公開先</div>
     <div class="row"><div class="avatar">田</div><div class="row-info"><div class="row-title">田中 太郎<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">本人</span></div></div></div>
-    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上の上司</span></div></div></div>
+    <div class="row"><div class="avatar warn">山</div><div class="row-info"><div class="row-title">山本 部長<span style="font-size:11px;color:var(--text-tertiary);margin-left:6px;">上位オーガナイザー</span></div></div></div>
   </div>
   <div class="card">
     <div class="card-title" style="margin-bottom:16px;">コメント</div>
     <div id="view-comment-list">
-      <div class="comment-entry"><div class="avatar" style="width:28px;height:28px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（部下）</span>　4月4日</div><div class="comment-body">ありがとうございます。来季の目標については、引き続き□□を意識して取り組みます！</div></div></div>
+      <div class="comment-entry"><div class="avatar" style="width:28px;height:28px;">田</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">田中 太郎（カウンターパート）</span>　4月4日</div><div class="comment-body">ありがとうございます。来季の目標については、引き続き□□を意識して取り組みます！</div></div></div>
       <div class="comment-entry"><div class="avatar warn" style="width:28px;height:28px;">山</div><div class="comment-body-wrap"><div class="comment-meta"><span class="name">山本 部長（閲覧者）</span>　4月4日</div><div class="comment-body">△△の課題については、来週の全体MTGで少し時間を取りましょう。</div></div></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--border);align-items:flex-start;">
@@ -518,9 +501,9 @@ body { background: #f0efea; color: var(--text-primary); }
 <div class="overlay" id="pub-modal">
   <div class="modal">
     <div class="modal-title">公開設定</div>
-    <div class="modal-sub">この1on1の記録を共有する相手を選んでください。部下（田中 太郎）には常に公開されます。</div>
+    <div class="modal-sub">この1on1の記録を共有する相手を選んでください。カウンターパート（田中 太郎）には常に公開されます。</div>
     <div style="font-size:13px;font-weight:500;margin-bottom:10px;">追加で共有する相手</div>
-    <label class="share-option" id="pub-opt-yamamoto"><input type="checkbox" style="flex-shrink:0;" onchange="toggleShareOpt('pub-opt-yamamoto',this)"> <div class="avatar warn">山</div><div class="share-option-info"><div class="name">山本 部長</div><div class="desc">上の上司</div></div></label>
+    <label class="share-option" id="pub-opt-yamamoto"><input type="checkbox" style="flex-shrink:0;" onchange="toggleShareOpt('pub-opt-yamamoto',this)"> <div class="avatar warn">山</div><div class="share-option-info"><div class="name">山本 部長</div><div class="desc">上位オーガナイザー</div></div></label>
     <label class="share-option" id="pub-opt-hr"><input type="checkbox" style="flex-shrink:0;" onchange="toggleShareOpt('pub-opt-hr',this)"> <div class="avatar">人</div><div class="share-option-info"><div class="name">人事担当（佐藤）</div><div class="desc">人事部</div></div></label>
     <div class="divider"></div>
     <div style="font-size:13px;font-weight:500;margin-bottom:10px;">公開タイミング</div>
@@ -535,7 +518,7 @@ body { background: #f0efea; color: var(--text-primary); }
 
 <script>
 var currentViewRole = 'boss';
-var viewRoles = { boss: { avatar:'鈴', name:'鈴木 一郎（上司）' }, sub: { avatar:'田', name:'田中 太郎（部下）' }, viewer: { avatar:'山', name:'山本 部長（閲覧者）' } };
+var viewRoles = { boss: { avatar:'鈴', name:'鈴木 一郎（オーガナイザー）' }, sub: { avatar:'田', name:'田中 太郎（カウンターパート）' }, viewer: { avatar:'山', name:'山本 部長（閲覧者）' } };
 
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -548,11 +531,6 @@ function switchTab(prefix, name) {
   tabs.forEach((t,i) => t.classList.toggle('active', i === (name === 'regular' || name === 'boss' ? 0 : 1)));
   document.querySelectorAll('[id^="' + prefix + '-"]').forEach(p => p.classList.remove('active'));
   document.getElementById(prefix + '-' + name).classList.add('active');
-}
-function setDashRole(role) {
-  document.querySelectorAll('#screen-dashboard .role-btn').forEach((b,i) => b.classList.toggle('active', i === (role === 'boss' ? 0 : 1)));
-  document.getElementById('dash-boss').classList.toggle('hidden', role !== 'boss');
-  document.getElementById('dash-sub').classList.toggle('hidden', role !== 'sub');
 }
 function setViewRole(role) {
   currentViewRole = role;
