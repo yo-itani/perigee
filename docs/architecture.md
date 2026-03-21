@@ -13,6 +13,8 @@
 backend/
   contexts/
     scheduling/            # 定期・アドホック1on1のスケジューリング
+      domain/
+        value_objects.py   # ScheduleId など（Scheduling コンテキスト固有の値オブジェクト）
     preparation/           # 1on1前のアジェンダ・コメント準備
     recording/             # 1on1実施中のメモ・アクションアイテム記録
     publishing/            # 記録の公開・公開先管理
@@ -20,7 +22,7 @@ backend/
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
     domain/
-      value_objects.py     # ScheduleId, UserId など
+      value_objects.py     # UserId など（コンテキスト共通の値オブジェクト）
       user.py              # User エンティティ（最小構成）
       user_repository.py   # UserRepository インターフェース
       events.py            # 基底クラス
