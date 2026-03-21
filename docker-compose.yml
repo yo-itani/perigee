@@ -1,0 +1,53 @@
+services:
+  mariadb:
+    image: mariadb:11.8.6
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${PERIGEE_DB_ROOT_PASSWORD:-rootpassword}
+      MARIADB_DATABASE: ${PERIGEE_DB_NAME:-perigee}
+      MARIADB_USER: ${PERIGEE_DB_USER:-perigee}
+      MARIADB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      PERIGEE_DB_HOST: mariadb
+      PERIGEE_DB_PORT: "3306"
+      PERIGEE_DB_USER: ${PERIGEE_DB_USER:-perigee}
+      PERIGEE_DB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
+      PERIGEE_DB_NAME: ${PERIGEE_DB_NAME:-perigee}
+      PERIGEE_DEBUG: "true"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  mariadb_data:
+  frontend_node_modules:

@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS perigee_test;
+GRANT ALL PRIVILEGES ON perigee_test.* TO 'perigee'@'%';
+FLUSH PRIVILEGES;
