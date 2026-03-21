@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from contexts.recording.domain.events import ActionItemAdded, ActionItemCompleted
-from contexts.recording.domain.exceptions import (
+from contexts.record.domain.events import ActionItemAdded, ActionItemCompleted
+from contexts.record.domain.exceptions import (
     ActionItemAlreadyCompletedError,
     UnauthorizedOperationError,
 )
-from contexts.recording.domain.value_objects import (
+from contexts.record.domain.value_objects import (
     ActionItemId,
     ActionItemTitle,
     RecordId,

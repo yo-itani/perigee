@@ -1,6 +1,6 @@
 import uuid
 
-from contexts.scheduling.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import ScheduleId
 
 
 class TestScheduleId:

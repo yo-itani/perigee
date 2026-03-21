@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from contexts.recording.domain.value_objects import ActionItemId, RecordId
-from contexts.scheduling.domain.value_objects import ScheduleId
+from contexts.record.domain.value_objects import ActionItemId, RecordId
+from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
 

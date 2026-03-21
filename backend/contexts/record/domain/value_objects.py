@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 
-from contexts.recording.domain.exceptions import InvalidActionItemTitleError
+from contexts.record.domain.exceptions import InvalidActionItemTitleError
 
 _ACTION_ITEM_TITLE_MAX_LENGTH = 200
 

@@ -1,6 +1,6 @@
 import uuid
 
-from contexts.recording.domain.value_objects import (
+from contexts.record.domain.value_objects import (
     ActionItemId,
     RecordId,
     RecordStatus,
