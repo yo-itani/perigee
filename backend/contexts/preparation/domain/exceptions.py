@@ -1,4 +1,4 @@
-"""Domain exceptions for the scheduling context."""
+"""Domain exceptions for the preparation context."""
 
 
 class ScheduleAlreadyCancelledError(Exception):
@@ -26,4 +26,36 @@ class NoPendingConfirmationRequestError(Exception):
     """Raised when confirm/reject is attempted without a pending request."""
 
     def __init__(self, message: str = "No pending confirmation request.") -> None:
+        super().__init__(message)
+
+
+class InvalidAgendaTopicError(Exception):
+    """Raised when an agenda topic fails validation."""
+
+    def __init__(self, message: str = "Invalid agenda topic.") -> None:
+        super().__init__(message)
+
+
+class InvalidTemplateNameError(Exception):
+    """Raised when a template name fails validation."""
+
+    def __init__(self, message: str = "Invalid template name.") -> None:
+        super().__init__(message)
+
+
+class AgendaEditNotAllowedError(Exception):
+    """Raised when attempting to edit an agenda topic via ScheduleGroup."""
+
+    def __init__(
+        self,
+        message: str = "Editing agenda topics via ScheduleGroup is not allowed. "
+        "Delete and re-add instead.",
+    ) -> None:
+        super().__init__(message)
+
+
+class UnauthorizedScheduleGroupOperationError(Exception):
+    """Raised when a user without permission attempts a ScheduleGroup operation."""
+
+    def __init__(self, message: str = "Unauthorized schedule group operation.") -> None:
         super().__init__(message)
