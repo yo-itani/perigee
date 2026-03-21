@@ -17,7 +17,7 @@ backend/
         value_objects.py   # ScheduleId, ScheduleGroupId など
     session/               # 実施：アジェンダ確認、メモ、アクションアイテム登録
     record/                # 記録：メモの整理・仕上げ、下書き
-    # post_session/        # 事後：記録の公開・共有、コメント、フォローアップ（名称未定）
+    follow_up/             # フォローアップ：記録の公開・共有、コメント、フォローアップ
     notification/          # Slack通知
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
@@ -139,7 +139,7 @@ class Record:
 | preparation | 事前準備（Preparation）：スケジューリング + アジェンダ + 事前コメント |
 | session | 実施（Session） |
 | record | 記録（Record） |
-| _(TBD)_ | 事後（TBD）：公開・共有・コメント・フォローアップ |
+| follow_up | フォローアップ（FollowUp）：公開・共有・コメント・フォローアップ |
 | notification | 通知（Slack） |
 | read_model | 参照（リードモデル） |
 | settings | ユーザーごとの通知設定・デフォルト公開先 |
