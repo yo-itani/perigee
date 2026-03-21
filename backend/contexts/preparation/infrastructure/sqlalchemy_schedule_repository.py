@@ -38,6 +38,8 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
     async def save(self, schedule: Schedule) -> None:
         """Persist a Schedule (insert or update via merge)."""
         row = _entity_to_row(schedule)
+        # Note: merge does not delete orphaned children. This is safe because
+        # the domain model only adds ConfirmationRequests, never removes them.
         await self._session.merge(row)
         await self._session.flush()
 

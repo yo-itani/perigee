@@ -22,14 +22,14 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("organizer_id", sa.String(36), nullable=False, index=True),
         sa.Column("counterpart_id", sa.String(36), nullable=False, index=True),
-        sa.Column("scheduled_at", sa.DateTime, nullable=False),
+        sa.Column("scheduled_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "status",
             sa.Enum("requested", "confirmed", "cancelled", name="schedule_status"),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime, nullable=False),
-        sa.Column("updated_at", sa.DateTime, nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
     )
 
     op.create_table(
@@ -48,7 +48,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("requested_by", sa.String(36), nullable=False),
-        sa.Column("proposed_at", sa.DateTime, nullable=False),
+        sa.Column("proposed_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "resolution",
             sa.Enum(
@@ -61,7 +61,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("resolved_by", sa.String(36), nullable=True),
-        sa.Column("created_at", sa.DateTime, nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
 
 

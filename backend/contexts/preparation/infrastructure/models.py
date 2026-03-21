@@ -16,13 +16,19 @@ class ScheduleRow(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     organizer_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     counterpart_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    scheduled_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     status: Mapped[str] = mapped_column(
         Enum("requested", "confirmed", "cancelled", name="schedule_status"),
         nullable=False,
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
     confirmation_requests: Mapped[list["ConfirmationRequestRow"]] = relationship(
         back_populates="schedule",
@@ -46,7 +52,9 @@ class ConfirmationRequestRow(Base):
         nullable=False,
     )
     requested_by: Mapped[str] = mapped_column(String(36), nullable=False)
-    proposed_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    proposed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     resolution: Mapped[str] = mapped_column(
         Enum(
             "pending",
@@ -58,7 +66,9 @@ class ConfirmationRequestRow(Base):
         nullable=False,
     )
     resolved_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
 
     schedule: Mapped["ScheduleRow"] = relationship(
         back_populates="confirmation_requests",
