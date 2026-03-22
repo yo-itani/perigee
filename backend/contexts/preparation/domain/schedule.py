@@ -102,7 +102,7 @@ class Schedule:
         counterpart_id: UserId,
         scheduled_at: datetime,
         requested_by: UserId,
-        title: str,
+        title: ScheduleTitle,
         schedule_group_id: ScheduleGroupId | None = None,
         now: datetime | None = None,
     ) -> Schedule:
@@ -124,7 +124,6 @@ class Schedule:
                 or scheduled_at is in the past.
             UnauthorizedScheduleOperationError: If requested_by is
                 neither the organizer nor the counterpart.
-            InvalidScheduleTitleError: If title fails validation.
         """
         ts = now or datetime.now(UTC)
 
@@ -142,7 +141,6 @@ class Schedule:
                 "Only the organizer or counterpart can create a schedule."
             )
 
-        schedule_title = ScheduleTitle(title)
         schedule_id = ScheduleId.generate()
         creation_request = ConfirmationRequest.create(
             request_type=ConfirmationRequestType.CREATION,
@@ -156,7 +154,7 @@ class Schedule:
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
             schedule_group_id=schedule_group_id,
-            _title=schedule_title,
+            _title=title,
             _scheduled_at=scheduled_at,
             _status=ScheduleStatus.REQUESTED,
             _confirmation_requests=[creation_request],
@@ -381,11 +379,10 @@ class Schedule:
             )
         )
 
-    def rename(self, *, new_title: str, now: datetime) -> None:
+    def rename(self, *, new_title: ScheduleTitle, now: datetime) -> None:
         """Rename the schedule.
 
-        No-op if the new title is the same as the current title
-        (after normalization).
+        No-op if the new title is the same as the current title.
 
         Cancelled schedules can also be renamed. This is intentional
         because ScheduleGroup.rename propagates to all child schedules
@@ -394,19 +391,15 @@ class Schedule:
         Args:
             new_title: The new title for the schedule.
             now: Current time.
-
-        Raises:
-            InvalidScheduleTitleError: If new_title fails validation.
         """
-        title = ScheduleTitle(new_title)
-        if title == self._title:
+        if new_title == self._title:
             return
-        self._title = title
+        self._title = new_title
         self._updated_at = now
         self._events.append(
             ScheduleRenamed(
                 schedule_id=self.id,
-                new_title=title.value,
+                new_title=new_title.value,
                 occurred_at=now,
             )
         )

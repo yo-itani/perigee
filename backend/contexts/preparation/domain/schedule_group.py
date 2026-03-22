@@ -93,7 +93,7 @@ class ScheduleGroup:
     def create(
         *,
         organizer_id: UserId,
-        title: str,
+        title: ScheduleTitle,
         agenda_templates: list[AgendaTemplate] | None = None,
         template_id: TemplateId | None = None,
         now: datetime | None = None,
@@ -106,18 +106,14 @@ class ScheduleGroup:
             agenda_templates: Initial agenda templates (optional).
             template_id: Source template ID if created from a template.
             now: Current time (defaults to UTC now).
-
-        Raises:
-            InvalidScheduleTitleError: If title fails validation.
         """
         ts = now or datetime.now(UTC)
-        schedule_title = ScheduleTitle(title)
         group_id = ScheduleGroupId.generate()
         group = ScheduleGroup(
             id=group_id,
             organizer_id=organizer_id,
             template_id=template_id,
-            _title=schedule_title,
+            _title=title,
             _agenda_templates=list(agenda_templates) if agenda_templates else [],
             _schedule_ids=[],
             created_at=ts,
@@ -140,15 +136,14 @@ class ScheduleGroup:
     def rename(
         self,
         *,
-        title: str,
+        title: ScheduleTitle,
         actor_id: UserId,
         now: datetime,
         schedules: list[Schedule],
     ) -> None:
         """Rename the schedule group and propagate to all child schedules.
 
-        No-op if the new title is the same as the current title
-        (after normalization).
+        No-op if the new title is the same as the current title.
 
         All child schedules are renamed regardless of their status.
 
@@ -164,24 +159,22 @@ class ScheduleGroup:
                 organizer.
             InconsistentSchedulesError: If schedules do not match the
                 registered schedule IDs.
-            InvalidScheduleTitleError: If title fails validation.
         """
         self._assert_organizer(actor_id)
         self._assert_schedules_complete(schedules)
 
-        new_title = ScheduleTitle(title)
-        if new_title == self._title:
+        if title == self._title:
             return
-        self._title = new_title
+        self._title = title
         self._updated_at = now
 
         for schedule in schedules:
-            schedule.rename(new_title=new_title.value, now=now)
+            schedule.rename(new_title=title, now=now)
 
         self._events.append(
             ScheduleGroupRenamed(
                 schedule_group_id=self.id,
-                new_title=new_title.value,
+                new_title=title.value,
                 renamed_schedule_ids=list(self._schedule_ids),
                 occurred_at=now,
             )
