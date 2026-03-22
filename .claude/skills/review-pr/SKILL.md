@@ -47,6 +47,7 @@ PR 本文に Issue リンクがある場合、`gh issue view` で Issue の完�
 - **ドメイン層**: 純粋な Python で書かれているか（FastAPI・SQLAlchemy 等のフレームワーク依存なし）
 - **ドメイン例外**: ビジネスルール違反に `ValueError` / `PermissionError` ではなくドメイン固有の例外を使っているか（`domain/exceptions.py` に配置）
 - **フィールドのカプセル化**: 状態遷移・不変条件を持つフィールドやドメインメソッド経由でのみ変更すべきフィールドが `_` プレフィックス + read-only `@property` で保護されているか（直接代入で不変条件を迂回できないこと）
+- **値オブジェクトの配置**: ID型・Enumは `domain/value_objects.py`、ドメイン固有のバリデーションを持つ値オブジェクト（`Topic`, `CommentBody` 等）は `domain/<vo_name>.py` として個別ファイルに配置されているか
 - **ドメインイベント管理**: イベントが `_events` + `collect_events()` パターンで管理されているか
 - **datetime の扱い**: ファクトリメソッドでは `now: datetime | None = None`（`datetime.now(UTC)` フォールバック可）、操作メソッドでは `now: datetime` 必須になっているか
 - **配置**: ファイルが適切なコンテキスト・レイヤーに配置されているか
