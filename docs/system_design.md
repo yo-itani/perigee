@@ -327,5 +327,6 @@ Slack通知（リンク）
 
 ### イベントストーミング図（Figma / FigJam）
 
+- v18（公開先・コメント・フォローアップ追加）: https://www.figma.com/board/TwUYCgisIjpwzTRvAOx5jI/v18
 - v17（FollowUp・Session を Record に統合）: https://www.figma.com/board/TwUYCgisIjpwzTRvAOx5jI
 - v16（4フェーズ再定義）: https://www.figma.com/board/stNxBFtqJyjMW0zAzdStgN/1on1-%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%82%B9%E3%83%88%E3%83%BC%E3%83%9F%E3%83%B3%E3%82%B0-v16%EF%BC%884%E3%83%95%E3%82%A7%E3%83%BC%E3%82%BA%E5%86%8D%E5%AE%9A%E7%BE%A9%EF%BC%89?node-id=0-1&p=f&t=TjPlsLJAjfkUKTfO-0

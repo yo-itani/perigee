@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from contexts.preparation.domain.value_objects import ScheduleId
-from contexts.record.domain.value_objects import ActionItemId, RecordId
+from contexts.record.domain.value_objects import ActionItemId, CommentId, RecordId
 from shared.domain.value_objects import UserId
 
 
@@ -45,6 +45,26 @@ class RecordPublished:
     record_id: RecordId
     organizer_id: UserId
     published_at: datetime
+
+
+@dataclass(frozen=True)
+class ViewersChanged:
+    """Raised when the viewers list of a record is changed."""
+
+    record_id: RecordId
+    organizer_id: UserId
+    viewer_ids: tuple[UserId, ...]
+    changed_at: datetime
+
+
+@dataclass(frozen=True)
+class CommentAdded:
+    """Raised when a comment is added to a record."""
+
+    comment_id: CommentId
+    record_id: RecordId
+    author_id: UserId
+    created_at: datetime
 
 
 @dataclass(frozen=True)

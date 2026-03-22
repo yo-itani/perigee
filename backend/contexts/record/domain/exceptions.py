@@ -27,3 +27,10 @@ class InvalidActionItemTitleError(Exception):
 
     def __init__(self, message: str = "Invalid action item title.") -> None:
         super().__init__(message)
+
+
+class InvalidCommentBodyError(Exception):
+    """Raised when a comment body fails validation."""
+
+    def __init__(self, message: str = "Invalid comment body.") -> None:
+        super().__init__(message)

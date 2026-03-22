@@ -2,6 +2,7 @@ import uuid
 
 from contexts.record.domain.value_objects import (
     ActionItemId,
+    CommentId,
     RecordId,
     RecordStatus,
 )
@@ -55,6 +56,30 @@ class TestActionItemId:
         action_item_id = ActionItemId.generate()
         try:
             action_item_id.value = uuid.uuid4()  # type: ignore[misc]
+            raise AssertionError("Expected FrozenInstanceError")  # noqa: TRY301
+        except AttributeError:
+            pass
+
+
+class TestCommentId:
+    def test_generate_creates_unique_ids(self) -> None:
+        id1 = CommentId.generate()
+        id2 = CommentId.generate()
+        assert id1 != id2
+
+    def test_from_str_roundtrip(self) -> None:
+        raw = "770e8400-e29b-41d4-a716-446655440000"
+        comment_id = CommentId.from_str(raw)
+        assert str(comment_id.value) == raw
+
+    def test_equality_same_uuid(self) -> None:
+        raw = uuid.UUID("770e8400-e29b-41d4-a716-446655440000")
+        assert CommentId(value=raw) == CommentId(value=raw)
+
+    def test_frozen(self) -> None:
+        comment_id = CommentId.generate()
+        try:
+            comment_id.value = uuid.uuid4()  # type: ignore[misc]
             raise AssertionError("Expected FrozenInstanceError")  # noqa: TRY301
         except AttributeError:
             pass

@@ -8,6 +8,7 @@ from contexts.record.domain.events import (
     RecordCreated,
     RecordDraftSaved,
     RecordPublished,
+    ViewersChanged,
 )
 from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
@@ -221,10 +222,145 @@ class TestRecordVisibility:
 
         assert record.is_visible_to(other) is False
 
-    def test_published_visible_to_anyone(self) -> None:
+    def test_published_visible_to_organizer(self) -> None:
         organizer = UserId.generate()
         record = _make_record(organizer_id=organizer)
         record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        assert record.is_visible_to(organizer) is True
+
+    def test_published_visible_to_counterpart(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        assert record.is_visible_to(counterpart) is True
+
+    def test_published_visible_to_viewer(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        viewer = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+        record.set_viewers(
+            viewer_ids=[viewer],
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 10, 40),
+        )
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        assert record.is_visible_to(viewer) is True
+
+    def test_published_not_visible_to_non_viewer(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
         other = UserId.generate()
 
-        assert record.is_visible_to(other) is True
+        assert record.is_visible_to(other) is False
+
+
+class TestRecordViewers:
+    def test_organizer_can_set_viewers(self) -> None:
+        organizer = UserId.generate()
+        viewer1 = UserId.generate()
+        viewer2 = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.set_viewers(viewer_ids=[viewer1, viewer2], actor_id=organizer, now=now)
+
+        assert viewer1 in record.viewers
+        assert viewer2 in record.viewers
+        assert len(record.viewers) == 2
+
+    def test_non_organizer_cannot_set_viewers(self) -> None:
+        organizer = UserId.generate()
+        other = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
+            record.set_viewers(
+                viewer_ids=[UserId.generate()],
+                actor_id=other,
+                now=datetime(2026, 3, 20, 11, 0),
+            )
+
+    def test_excludes_organizer_from_viewers(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+
+        record.set_viewers(
+            viewer_ids=[organizer],
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 11, 0),
+        )
+
+        assert record.viewers == []
+
+    def test_excludes_counterpart_from_viewers(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+
+        record.set_viewers(
+            viewer_ids=[counterpart],
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 11, 0),
+        )
+
+        assert record.viewers == []
+
+    def test_deduplicates_viewers(self) -> None:
+        organizer = UserId.generate()
+        viewer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+
+        record.set_viewers(
+            viewer_ids=[viewer, viewer, viewer],
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 11, 0),
+        )
+
+        assert record.viewers == [viewer]
+
+    def test_emits_viewers_changed_event(self) -> None:
+        organizer = UserId.generate()
+        viewer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.collect_events()  # clear creation event
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.set_viewers(viewer_ids=[viewer], actor_id=organizer, now=now)
+
+        events = record.collect_events()
+        viewer_events = [e for e in events if isinstance(e, ViewersChanged)]
+        assert len(viewer_events) == 1
+        assert viewer_events[0].record_id == record.id
+        assert viewer_events[0].viewer_ids == (viewer,)
+        assert viewer_events[0].changed_at == now
+
+    def test_updates_timestamp(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.set_viewers(viewer_ids=[], actor_id=organizer, now=now)
+
+        assert record.updated_at == now
+
+    def test_viewers_property_returns_copy(self) -> None:
+        organizer = UserId.generate()
+        viewer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.set_viewers(
+            viewer_ids=[viewer],
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 11, 0),
+        )
+
+        returned = record.viewers
+        returned.append(UserId.generate())
+
+        assert len(record.viewers) == 1
