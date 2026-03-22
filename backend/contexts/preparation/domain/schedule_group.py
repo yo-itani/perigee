@@ -236,7 +236,7 @@ class ScheduleGroup:
         for schedule_id in self._schedule_ids:
             agenda = Agenda.create(
                 schedule_id=schedule_id,
-                topic=agenda_template.topic.value,
+                topic=agenda_template.topic,
                 added_by=actor_id,
                 now=now,
             )

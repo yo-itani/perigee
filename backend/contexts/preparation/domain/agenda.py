@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from contexts.preparation.domain.comment import Comment
+from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import AgendaId, CommentId, ScheduleId
 from shared.domain.value_objects import UserId
@@ -58,27 +59,24 @@ class Agenda:
     def create(
         *,
         schedule_id: ScheduleId,
-        topic: str,
+        topic: Topic,
         added_by: UserId,
         now: datetime | None = None,
     ) -> Agenda:
-        """Factory method to create a new agenda item.
-
-        Raises:
-            InvalidTopicError: If topic is empty, contains newlines,
-                or exceeds max length.
-        """
+        """Factory method to create a new agenda item."""
         ts = now or datetime.now(UTC)
         return Agenda(
             _id=AgendaId.generate(),
             _schedule_id=schedule_id,
-            _topic=Topic(topic),
+            _topic=topic,
             _added_by=added_by,
             _comments=[],
             _created_at=ts,
         )
 
-    def add_comment(self, *, author_id: UserId, body: str, now: datetime) -> Comment:
+    def add_comment(
+        self, *, author_id: UserId, body: CommentBody, now: datetime
+    ) -> Comment:
         """Add a comment to this agenda topic.
 
         Both organizer and counterpart can comment (no restriction).

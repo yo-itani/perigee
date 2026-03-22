@@ -5,7 +5,6 @@ import pytest
 from contexts.preparation.domain.agenda_template import AgendaTemplate
 from contexts.preparation.domain.events import TemplateSaved
 from contexts.preparation.domain.exceptions import (
-    InvalidTemplateNameError,
     UnauthorizedTemplateOperationError,
 )
 from contexts.preparation.domain.template import Template
@@ -14,12 +13,13 @@ from shared.domain.value_objects import UserId
 
 _NOW = datetime(2026, 3, 20, 10, 0)
 _LATER = datetime(2026, 3, 20, 11, 0)
+_DEFAULT_TEMPLATE_NAME = TemplateName("Monthly 1on1")
 
 
 def _make_template(
     *,
     organizer_id: UserId | None = None,
-    name: str = "Monthly 1on1",
+    name: TemplateName = _DEFAULT_TEMPLATE_NAME,
     default_counterparts: list[UserId] | None = None,
     agenda_templates: list[AgendaTemplate] | None = None,
     now: datetime = _NOW,
@@ -48,25 +48,9 @@ class TestTemplateCreate:
         assert tmpl.default_counterparts == cps
         assert tmpl.agenda_templates == ats
 
-    def test_name_strips_whitespace(self) -> None:
-        tmpl = _make_template(name="  Padded Name  ")
-        assert tmpl.name == TemplateName("Padded Name")
-
-    def test_empty_name_raises(self) -> None:
-        with pytest.raises(InvalidTemplateNameError, match="must not be empty"):
-            _make_template(name="")
-
-    def test_whitespace_only_name_raises(self) -> None:
-        with pytest.raises(InvalidTemplateNameError, match="must not be empty"):
-            _make_template(name="   ")
-
-    def test_name_exceeds_max_length_raises(self) -> None:
-        with pytest.raises(InvalidTemplateNameError, match="must not exceed"):
-            _make_template(name="a" * 101)
-
-    def test_name_exactly_max_length_is_valid(self) -> None:
-        tmpl = _make_template(name="a" * 100)
-        assert len(tmpl.name.value) == 100
+    def test_name_is_stored_as_given(self) -> None:
+        tmpl = _make_template(name=TemplateName("Custom Name"))
+        assert tmpl.name == TemplateName("Custom Name")
 
     def test_emits_template_saved_event(self) -> None:
         tmpl = _make_template()
@@ -92,7 +76,7 @@ class TestTemplateUpdate:
 
         tmpl.update(
             actor_id=organizer,
-            name="Updated Name",
+            name=TemplateName("Updated Name"),
             default_counterparts=new_cps,
             agenda_templates=new_ats,
             now=_LATER,
@@ -110,7 +94,7 @@ class TestTemplateUpdate:
 
         tmpl.update(
             actor_id=organizer,
-            name="New Name",
+            name=TemplateName("New Name"),
             default_counterparts=[],
             agenda_templates=[],
             now=_LATER,
@@ -132,20 +116,7 @@ class TestTemplateUpdate:
         ):
             tmpl.update(
                 actor_id=other,
-                name="New Name",
-                default_counterparts=[],
-                agenda_templates=[],
-                now=_LATER,
-            )
-
-    def test_update_with_invalid_name_raises(self) -> None:
-        organizer = UserId.generate()
-        tmpl = _make_template(organizer_id=organizer)
-
-        with pytest.raises(InvalidTemplateNameError, match="must not be empty"):
-            tmpl.update(
-                actor_id=organizer,
-                name="",
+                name=TemplateName("New Name"),
                 default_counterparts=[],
                 agenda_templates=[],
                 now=_LATER,

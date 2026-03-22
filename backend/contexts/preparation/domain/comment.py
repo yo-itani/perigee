@@ -47,19 +47,15 @@ class Comment:
         *,
         agenda_id: AgendaId,
         author_id: UserId,
-        body: str,
+        body: CommentBody,
         now: datetime | None = None,
     ) -> Comment:
-        """Factory method to create a new comment.
-
-        Raises:
-            InvalidCommentBodyError: If body is empty or exceeds max length.
-        """
+        """Factory method to create a new comment."""
         ts = now or datetime.now(UTC)
         return Comment(
             _id=CommentId.generate(),
             _agenda_id=agenda_id,
             _author_id=author_id,
-            _body=CommentBody(body),
+            _body=body,
             _created_at=ts,
         )
