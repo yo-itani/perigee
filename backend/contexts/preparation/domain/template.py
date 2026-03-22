@@ -6,13 +6,11 @@ from datetime import UTC, datetime
 from contexts.preparation.domain.agenda_template import AgendaTemplate
 from contexts.preparation.domain.events import TemplateSaved
 from contexts.preparation.domain.exceptions import (
-    InvalidTemplateNameError,
     UnauthorizedTemplateOperationError,
 )
+from contexts.preparation.domain.template_name import TemplateName
 from contexts.preparation.domain.value_objects import TemplateId
 from shared.domain.value_objects import UserId
-
-_TEMPLATE_NAME_MAX_LENGTH = 100
 
 
 @dataclass
@@ -28,7 +26,7 @@ class Template:
 
     id: TemplateId
     organizer_id: UserId
-    _name: str
+    _name: TemplateName
     _default_counterparts: list[UserId]
     _agenda_templates: list[AgendaTemplate]
     created_at: datetime
@@ -36,7 +34,7 @@ class Template:
     _events: list[TemplateSaved] = field(default_factory=list, repr=False)
 
     @property
-    def name(self) -> str:
+    def name(self) -> TemplateName:
         return self._name
 
     @property
@@ -83,13 +81,13 @@ class Template:
             InvalidTemplateNameError: If name is empty or too long.
         """
         ts = now or datetime.now(UTC)
-        validated_name = _validate_template_name(name)
+        template_name = TemplateName(name)
         template_id = TemplateId.generate()
 
         template = Template(
             id=template_id,
             organizer_id=organizer_id,
-            _name=validated_name,
+            _name=template_name,
             _default_counterparts=list(default_counterparts)
             if default_counterparts
             else [],
@@ -100,7 +98,7 @@ class Template:
         template._events.append(
             TemplateSaved(
                 template_id=template_id,
-                name=validated_name,
+                name=str(template_name),
                 organizer_id=organizer_id,
                 occurred_at=ts,
             )
@@ -133,28 +131,16 @@ class Template:
             raise UnauthorizedTemplateOperationError(
                 "Only the organizer can update this template."
             )
-        validated_name = _validate_template_name(name)
-        self._name = validated_name
+        template_name = TemplateName(name)
+        self._name = template_name
         self._default_counterparts = list(default_counterparts)
         self._agenda_templates = list(agenda_templates)
         self._updated_at = now
         self._events.append(
             TemplateSaved(
                 template_id=self.id,
-                name=validated_name,
+                name=str(template_name),
                 organizer_id=self.organizer_id,
                 occurred_at=now,
             )
         )
-
-
-def _validate_template_name(name: str) -> str:
-    """Validate and normalize a template name."""
-    stripped = name.strip()
-    if not stripped:
-        raise InvalidTemplateNameError("Template name must not be empty.")
-    if len(stripped) > _TEMPLATE_NAME_MAX_LENGTH:
-        raise InvalidTemplateNameError(
-            f"Template name must not exceed {_TEMPLATE_NAME_MAX_LENGTH} characters."
-        )
-    return stripped

@@ -9,6 +9,7 @@ from contexts.preparation.domain.exceptions import (
     UnauthorizedTemplateOperationError,
 )
 from contexts.preparation.domain.template import Template
+from contexts.preparation.domain.template_name import TemplateName
 from shared.domain.value_objects import UserId
 
 _NOW = datetime(2026, 3, 20, 10, 0)
@@ -35,7 +36,7 @@ def _make_template(
 class TestTemplateCreate:
     def test_creates_with_defaults(self) -> None:
         tmpl = _make_template()
-        assert tmpl.name == "Monthly 1on1"
+        assert tmpl.name == TemplateName("Monthly 1on1")
         assert tmpl.default_counterparts == []
         assert tmpl.agenda_templates == []
         assert tmpl.created_at == _NOW
@@ -49,7 +50,7 @@ class TestTemplateCreate:
 
     def test_name_strips_whitespace(self) -> None:
         tmpl = _make_template(name="  Padded Name  ")
-        assert tmpl.name == "Padded Name"
+        assert tmpl.name == TemplateName("Padded Name")
 
     def test_empty_name_raises(self) -> None:
         with pytest.raises(InvalidTemplateNameError, match="must not be empty"):
@@ -65,7 +66,7 @@ class TestTemplateCreate:
 
     def test_name_exactly_max_length_is_valid(self) -> None:
         tmpl = _make_template(name="a" * 100)
-        assert len(tmpl.name) == 100
+        assert len(tmpl.name.value) == 100
 
     def test_emits_template_saved_event(self) -> None:
         tmpl = _make_template()
@@ -97,7 +98,7 @@ class TestTemplateUpdate:
             now=_LATER,
         )
 
-        assert tmpl.name == "Updated Name"
+        assert tmpl.name == TemplateName("Updated Name")
         assert tmpl.default_counterparts == new_cps
         assert tmpl.agenda_templates == new_ats
         assert tmpl.updated_at == _LATER
