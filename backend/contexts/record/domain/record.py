@@ -39,7 +39,7 @@ class Record:
     organizer_id: UserId
     counterpart_id: UserId
     schedule_id: ScheduleId | None
-    _memo: str
+    _memo: Memo
     _status: RecordStatus
     _viewers: list[UserId]
     conducted_at: datetime
@@ -48,7 +48,7 @@ class Record:
     _events: list[_RecordEvent] = field(default_factory=list, repr=False)
 
     @property
-    def memo(self) -> str:
+    def memo(self) -> Memo:
         return self._memo
 
     @property
@@ -80,7 +80,7 @@ class Record:
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
             schedule_id=schedule_id,
-            _memo="",
+            _memo=Memo(""),
             _status=RecordStatus.DRAFT,
             _viewers=[],
             conducted_at=conducted_at,
@@ -103,7 +103,7 @@ class Record:
         """Update memo content. Only the organizer may edit."""
         self._assert_organizer(actor_id)
         self._assert_draft()
-        self._memo = memo.value
+        self._memo = memo
         self._updated_at = now
         self._events.append(
             MemoUpdated(

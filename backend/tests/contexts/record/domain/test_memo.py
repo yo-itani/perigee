@@ -38,8 +38,5 @@ class TestMemo:
 
     def test_frozen(self) -> None:
         memo = Memo("hello")
-        try:
+        with pytest.raises(AttributeError):
             memo.value = "changed"  # type: ignore[misc]
-            raise AssertionError("Expected FrozenInstanceError")  # noqa: TRY301
-        except AttributeError:
-            pass

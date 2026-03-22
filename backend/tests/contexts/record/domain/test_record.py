@@ -41,7 +41,7 @@ class TestRecordCreate:
     def test_creates_draft_with_empty_memo(self) -> None:
         record = _make_record()
         assert record.status == RecordStatus.DRAFT
-        assert record.memo == ""
+        assert record.memo == Memo("")
 
     def test_creates_without_schedule_id(self) -> None:
         record = _make_record()
@@ -82,7 +82,7 @@ class TestRecordUpdateMemo:
 
         record.update_memo(memo=Memo("Discussion notes"), actor_id=organizer, now=now)
 
-        assert record.memo == "Discussion notes"
+        assert record.memo == Memo("Discussion notes")
         assert record.updated_at == now
 
     def test_non_organizer_cannot_update_memo(self) -> None:

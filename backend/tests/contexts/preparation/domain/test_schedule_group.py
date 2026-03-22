@@ -4,6 +4,7 @@ import pytest
 
 from contexts.preparation.domain.agenda import Agenda
 from contexts.preparation.domain.agenda_template import AgendaTemplate
+from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.events import (
     AgendaAddedViaGroup,
     AgendaRemovedViaGroup,
@@ -369,8 +370,6 @@ class TestScheduleGroupRemoveAgenda:
         )
         # Add comment to the agenda
         agenda = schedules_agendas[schedule_ids[0]][0]
-        from contexts.preparation.domain.comment_body import CommentBody
-
         agenda.add_comment(
             author_id=UserId.generate(), body=CommentBody("A comment"), now=_LATER
         )
