@@ -76,6 +76,7 @@ git checkout -b feature/$ARGUMENTS-<説明>
 - **ドメイン層**: 純粋な Python で書く。FastAPI・SQLAlchemy 等のフレームワーク依存なし
 - **ドメイン例外**: ビジネスルール違反には `ValueError` / `PermissionError` ではなくドメイン固有の例外クラスを使う（例: `RecordAlreadyPublishedError`）。コンテキストの `domain/exceptions.py` に配置する
 - **フィールドのカプセル化**: 状態遷移や不変条件を持つフィールド、およびドメインメソッド経由でのみ変更すべきフィールドは `_` プレフィックス + read-only `@property` で公開し、直接代入を防ぐ
+- **値オブジェクトの配置**: ID型・Enumは `domain/value_objects.py` にまとめる。ドメイン固有のバリデーションを持つ値オブジェクト（`Topic`, `CommentBody` 等）は `domain/<vo_name>.py` として個別ファイルに切り出す
 - **ドメインイベント管理**: イベントは `_events` リストに蓄積し、`collect_events()` メソッドで取得＆クリアする
 - **datetime の扱い**: ファクトリメソッド（`create()`）では `now: datetime | None = None` で `datetime.now(UTC)` フォールバック可。操作メソッドでは `now: datetime` を必須引数にする
 

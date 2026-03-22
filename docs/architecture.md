@@ -112,6 +112,18 @@ class Record:
         return events
 ```
 
+### 値オブジェクトの配置
+
+値オブジェクトは性質に応じて配置先を分ける。
+
+| 種類 | 配置先 | 例 |
+|---|---|---|
+| ID型（UUID ラッパー）、Enum | `domain/value_objects.py` | `ScheduleId`, `RecordStatus` |
+| ドメイン固有のバリデーションを持つ値オブジェクト | `domain/<vo_name>.py`（個別ファイル） | `Topic`, `CommentBody`, `TemplateName` |
+
+- ID型・Enum はバリデーションロジックが薄く（UUID パース程度）、数が多いため `value_objects.py` にまとめる
+- ドメイン固有の不変条件を持つ値オブジェクト（空禁止、最大長、改行禁止等）は関心が独立しているため個別ファイルに切り出す
+
 ### datetime の扱い
 
 - **ファクトリメソッド（`create()`）**: `now: datetime | None = None` で受け取り、省略時は `datetime.now(UTC)` をフォールバックとして使用する

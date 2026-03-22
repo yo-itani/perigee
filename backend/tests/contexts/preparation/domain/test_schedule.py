@@ -192,6 +192,26 @@ class TestScheduleCreate:
         assert len(events) == 1
         assert schedule.collect_events() == []
 
+    def test_schedule_group_id_defaults_to_none(self) -> None:
+        schedule = _make_schedule()
+        assert schedule.schedule_group_id is None
+
+    def test_schedule_group_id_set_when_provided(self) -> None:
+        from contexts.preparation.domain.value_objects import ScheduleGroupId
+
+        group_id = ScheduleGroupId.generate()
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = Schedule.create(
+            organizer_id=org,
+            counterpart_id=cp,
+            scheduled_at=_FUTURE,
+            requested_by=org,
+            schedule_group_id=group_id,
+            now=_NOW,
+        )
+        assert schedule.schedule_group_id == group_id
+
 
 # ===========================================================================
 # Confirm

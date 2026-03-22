@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import (
+    AgendaId,
+    ScheduleGroupId,
+    ScheduleId,
+    TemplateId,
+)
 from shared.domain.value_objects import UserId
 
 
@@ -63,4 +68,54 @@ class ScheduleCancelled:
     organizer_id: UserId
     counterpart_id: UserId
     cancelled_by: UserId
+    occurred_at: datetime
+
+
+# ------------------------------------------------------------------
+# ScheduleGroup events
+# ------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ScheduleGroupCreated:
+    """Raised when a new schedule group is created."""
+
+    schedule_group_id: ScheduleGroupId
+    organizer_id: UserId
+    template_id: TemplateId | None
+    occurred_at: datetime
+
+
+@dataclass(frozen=True)
+class AgendaAddedViaGroup:
+    """Raised when an agenda topic is added to all schedules via group."""
+
+    schedule_group_id: ScheduleGroupId
+    topic: str
+    target_schedule_ids: list[ScheduleId]
+    occurred_at: datetime
+
+
+@dataclass(frozen=True)
+class AgendaRemovedViaGroup:
+    """Raised when an agenda topic is removed from all schedules via group."""
+
+    schedule_group_id: ScheduleGroupId
+    topic: str
+    removed_agenda_ids: list[AgendaId]
+    occurred_at: datetime
+
+
+# ------------------------------------------------------------------
+# Template events
+# ------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class TemplateSaved:
+    """Raised when a template is saved (created or updated)."""
+
+    template_id: TemplateId
+    name: str
+    organizer_id: UserId
     occurred_at: datetime
