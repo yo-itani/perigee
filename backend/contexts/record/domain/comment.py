@@ -32,21 +32,17 @@ class Comment:
         *,
         record_id: RecordId,
         author_id: UserId,
-        body: str,
+        body: CommentBody,
         now: datetime | None = None,
     ) -> Comment:
-        """Create a new comment.
-
-        Raises:
-            InvalidCommentBodyError: If body is empty or exceeds max length.
-        """
+        """Create a new comment."""
         comment_id = CommentId.generate()
         ts = now or datetime.now(UTC)
         comment = Comment(
             id=comment_id,
             record_id=record_id,
             author_id=author_id,
-            body=CommentBody(body),
+            body=body,
             created_at=ts,
         )
         comment._events.append(

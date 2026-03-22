@@ -1,25 +1,20 @@
 from datetime import datetime
 
-import pytest
-
 from contexts.preparation.domain.agenda import Agenda
 from contexts.preparation.domain.comment_body import CommentBody
-from contexts.preparation.domain.exceptions import (
-    InvalidCommentBodyError,
-    InvalidTopicError,
-)
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
 _NOW = datetime(2026, 3, 20, 10, 0)
 _LATER = datetime(2026, 3, 20, 11, 0)
+_DEFAULT_TOPIC = Topic("Discuss project status")
 
 
 def _make_agenda(
     *,
     schedule_id: ScheduleId | None = None,
-    topic: str = "Discuss project status",
+    topic: Topic = _DEFAULT_TOPIC,
     added_by: UserId | None = None,
     now: datetime = _NOW,
 ) -> Agenda:
@@ -43,24 +38,8 @@ class TestAgendaCreate:
         a2 = _make_agenda()
         assert a1.id != a2.id
 
-    def test_empty_topic_raises(self) -> None:
-        with pytest.raises(InvalidTopicError, match="must not be empty"):
-            _make_agenda(topic="")
-
-    def test_whitespace_only_topic_raises(self) -> None:
-        with pytest.raises(InvalidTopicError, match="must not be empty"):
-            _make_agenda(topic="   ")
-
-    def test_newline_topic_raises(self) -> None:
-        with pytest.raises(InvalidTopicError, match="must not contain newlines"):
-            _make_agenda(topic="line1\nline2")
-
-    def test_topic_exceeds_max_length_raises(self) -> None:
-        with pytest.raises(InvalidTopicError, match="must not exceed"):
-            _make_agenda(topic="a" * 201)
-
-    def test_topic_strips_whitespace(self) -> None:
-        agenda = _make_agenda(topic="  padded  ")
+    def test_topic_is_stored_as_given(self) -> None:
+        agenda = _make_agenda(topic=Topic("padded"))
         assert agenda.topic == Topic("padded")
 
 
@@ -71,7 +50,7 @@ class TestAgendaComment:
 
         comment = agenda.add_comment(
             author_id=author,
-            body="Let's focus on timeline",
+            body=CommentBody("Let's focus on timeline"),
             now=_LATER,
         )
 
@@ -85,15 +64,17 @@ class TestAgendaComment:
         user1 = UserId.generate()
         user2 = UserId.generate()
 
-        agenda.add_comment(author_id=user1, body="Comment 1", now=_LATER)
-        agenda.add_comment(author_id=user2, body="Comment 2", now=_LATER)
+        agenda.add_comment(author_id=user1, body=CommentBody("Comment 1"), now=_LATER)
+        agenda.add_comment(author_id=user2, body=CommentBody("Comment 2"), now=_LATER)
 
         assert len(agenda.comments) == 2
 
     def test_find_comment(self) -> None:
         agenda = _make_agenda()
         author = UserId.generate()
-        comment = agenda.add_comment(author_id=author, body="Some comment", now=_LATER)
+        comment = agenda.add_comment(
+            author_id=author, body=CommentBody("Some comment"), now=_LATER
+        )
 
         found = agenda.find_comment(comment.id)
         assert found is not None
@@ -111,31 +92,11 @@ class TestAgendaComment:
         comments = agenda.comments
         assert comments is not agenda.comments  # different list instances
 
-    def test_empty_comment_body_raises(self) -> None:
-        agenda = _make_agenda()
-        with pytest.raises(InvalidCommentBodyError, match="must not be empty"):
-            agenda.add_comment(author_id=UserId.generate(), body="", now=_LATER)
-
-    def test_whitespace_only_comment_body_raises(self) -> None:
-        agenda = _make_agenda()
-        with pytest.raises(InvalidCommentBodyError, match="must not be empty"):
-            agenda.add_comment(author_id=UserId.generate(), body="   ", now=_LATER)
-
-    def test_comment_body_exceeds_max_length_raises(self) -> None:
-        agenda = _make_agenda()
-        with pytest.raises(InvalidCommentBodyError, match="must not exceed"):
-            agenda.add_comment(author_id=UserId.generate(), body="a" * 2001, now=_LATER)
-
-    def test_comment_body_at_max_length_is_valid(self) -> None:
+    def test_comment_body_is_stored_as_given(self) -> None:
         agenda = _make_agenda()
         comment = agenda.add_comment(
-            author_id=UserId.generate(), body="a" * 2000, now=_LATER
-        )
-        assert len(str(comment.body)) == 2000
-
-    def test_comment_body_strips_whitespace(self) -> None:
-        agenda = _make_agenda()
-        comment = agenda.add_comment(
-            author_id=UserId.generate(), body="  hello  ", now=_LATER
+            author_id=UserId.generate(),
+            body=CommentBody("hello"),
+            now=_LATER,
         )
         assert comment.body == CommentBody("hello")

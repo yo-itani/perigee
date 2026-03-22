@@ -47,7 +47,7 @@ class ActionItem:
         *,
         counterpart_id: UserId,
         record_id: RecordId,
-        title: str,
+        title: ActionItemTitle,
         actor_id: UserId,
         organizer_id: UserId,
         now: datetime | None = None,
@@ -55,14 +55,13 @@ class ActionItem:
         """Create a new action item. Only the organizer may add."""
         if actor_id != organizer_id:
             raise UnauthorizedOperationError("Only the organizer can add action items.")
-        action_item_title = ActionItemTitle(title)
         action_item_id = ActionItemId.generate()
         ts = now or datetime.now(UTC)
         action_item = ActionItem(
             id=action_item_id,
             counterpart_id=counterpart_id,
             record_id=record_id,
-            title=action_item_title,
+            title=title,
             _is_completed=False,
             created_at=ts,
         )
@@ -71,7 +70,7 @@ class ActionItem:
                 action_item_id=action_item_id,
                 counterpart_id=counterpart_id,
                 record_id=record_id,
-                title=action_item_title.value,
+                title=title.value,
                 created_at=ts,
             )
         )

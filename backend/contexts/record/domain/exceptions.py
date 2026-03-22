@@ -34,3 +34,10 @@ class InvalidCommentBodyError(Exception):
 
     def __init__(self, message: str = "Invalid comment body.") -> None:
         super().__init__(message)
+
+
+class InvalidMemoError(Exception):
+    """Raised when a memo fails validation."""
+
+    def __init__(self, message: str = "Invalid memo.") -> None:
+        super().__init__(message)

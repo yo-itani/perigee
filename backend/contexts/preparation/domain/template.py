@@ -63,7 +63,7 @@ class Template:
     def create(
         *,
         organizer_id: UserId,
-        name: str,
+        name: TemplateName,
         default_counterparts: list[UserId] | None = None,
         agenda_templates: list[AgendaTemplate] | None = None,
         now: datetime | None = None,
@@ -76,18 +76,14 @@ class Template:
             default_counterparts: Default counterpart user IDs.
             agenda_templates: Default agenda templates.
             now: Current time (defaults to UTC now).
-
-        Raises:
-            InvalidTemplateNameError: If name is empty or too long.
         """
         ts = now or datetime.now(UTC)
-        template_name = TemplateName(name)
         template_id = TemplateId.generate()
 
         template = Template(
             id=template_id,
             organizer_id=organizer_id,
-            _name=template_name,
+            _name=name,
             _default_counterparts=list(default_counterparts)
             if default_counterparts
             else [],
@@ -98,7 +94,7 @@ class Template:
         template._events.append(
             TemplateSaved(
                 template_id=template_id,
-                name=str(template_name),
+                name=str(name),
                 organizer_id=organizer_id,
                 occurred_at=ts,
             )
@@ -113,7 +109,7 @@ class Template:
         self,
         *,
         actor_id: UserId,
-        name: str,
+        name: TemplateName,
         default_counterparts: list[UserId],
         agenda_templates: list[AgendaTemplate],
         now: datetime,
@@ -125,21 +121,19 @@ class Template:
         Raises:
             UnauthorizedTemplateOperationError: If actor is not the
                 organizer.
-            InvalidTemplateNameError: If name is empty or too long.
         """
         if actor_id != self.organizer_id:
             raise UnauthorizedTemplateOperationError(
                 "Only the organizer can update this template."
             )
-        template_name = TemplateName(name)
-        self._name = template_name
+        self._name = name
         self._default_counterparts = list(default_counterparts)
         self._agenda_templates = list(agenda_templates)
         self._updated_at = now
         self._events.append(
             TemplateSaved(
                 template_id=self.id,
-                name=str(template_name),
+                name=str(name),
                 organizer_id=self.organizer_id,
                 occurred_at=now,
             )

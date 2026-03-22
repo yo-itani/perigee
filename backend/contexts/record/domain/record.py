@@ -15,6 +15,7 @@ from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
+from contexts.record.domain.memo import Memo
 from contexts.record.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import UserId
 
@@ -38,7 +39,7 @@ class Record:
     organizer_id: UserId
     counterpart_id: UserId
     schedule_id: ScheduleId | None
-    _memo: str
+    _memo: Memo
     _status: RecordStatus
     _viewers: list[UserId]
     conducted_at: datetime
@@ -47,7 +48,7 @@ class Record:
     _events: list[_RecordEvent] = field(default_factory=list, repr=False)
 
     @property
-    def memo(self) -> str:
+    def memo(self) -> Memo:
         return self._memo
 
     @property
@@ -79,7 +80,7 @@ class Record:
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
             schedule_id=schedule_id,
-            _memo="",
+            _memo=Memo(""),
             _status=RecordStatus.DRAFT,
             _viewers=[],
             conducted_at=conducted_at,
@@ -98,7 +99,7 @@ class Record:
         )
         return record
 
-    def update_memo(self, *, memo: str, actor_id: UserId, now: datetime) -> None:
+    def update_memo(self, *, memo: Memo, actor_id: UserId, now: datetime) -> None:
         """Update memo content. Only the organizer may edit."""
         self._assert_organizer(actor_id)
         self._assert_draft()

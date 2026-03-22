@@ -14,6 +14,7 @@ from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
+from contexts.record.domain.memo import Memo
 from contexts.record.domain.record import Record
 from contexts.record.domain.value_objects import RecordStatus
 from shared.domain.value_objects import UserId
@@ -40,7 +41,7 @@ class TestRecordCreate:
     def test_creates_draft_with_empty_memo(self) -> None:
         record = _make_record()
         assert record.status == RecordStatus.DRAFT
-        assert record.memo == ""
+        assert record.memo == Memo("")
 
     def test_creates_without_schedule_id(self) -> None:
         record = _make_record()
@@ -79,9 +80,9 @@ class TestRecordUpdateMemo:
         record = _make_record(organizer_id=organizer)
         now = datetime(2026, 3, 20, 11, 0)
 
-        record.update_memo(memo="Discussion notes", actor_id=organizer, now=now)
+        record.update_memo(memo=Memo("Discussion notes"), actor_id=organizer, now=now)
 
-        assert record.memo == "Discussion notes"
+        assert record.memo == Memo("Discussion notes")
         assert record.updated_at == now
 
     def test_non_organizer_cannot_update_memo(self) -> None:
@@ -91,7 +92,7 @@ class TestRecordUpdateMemo:
 
         with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
             record.update_memo(
-                memo="hack", actor_id=other, now=datetime(2026, 3, 20, 11, 0)
+                memo=Memo("hack"), actor_id=other, now=datetime(2026, 3, 20, 11, 0)
             )
 
     def test_cannot_update_memo_when_published(self) -> None:
@@ -101,7 +102,7 @@ class TestRecordUpdateMemo:
 
         with pytest.raises(RecordAlreadyPublishedError):
             record.update_memo(
-                memo="late edit",
+                memo=Memo("late edit"),
                 actor_id=organizer,
                 now=datetime(2026, 3, 20, 11, 0),
             )
@@ -112,7 +113,7 @@ class TestRecordUpdateMemo:
         record.collect_events()  # clear creation event
         now = datetime(2026, 3, 20, 11, 0)
 
-        record.update_memo(memo="Updated", actor_id=organizer, now=now)
+        record.update_memo(memo=Memo("Updated"), actor_id=organizer, now=now)
 
         events = record.collect_events()
         memo_events = [e for e in events if isinstance(e, MemoUpdated)]

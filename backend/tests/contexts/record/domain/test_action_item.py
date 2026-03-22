@@ -6,11 +6,12 @@ from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.events import ActionItemAdded, ActionItemCompleted
 from contexts.record.domain.exceptions import (
     ActionItemAlreadyCompletedError,
-    InvalidActionItemTitleError,
     UnauthorizedOperationError,
 )
 from contexts.record.domain.value_objects import ActionItemTitle, RecordId
 from shared.domain.value_objects import UserId
+
+_DEFAULT_TITLE = ActionItemTitle("Follow up on project status")
 
 
 def _make_action_item(
@@ -18,7 +19,7 @@ def _make_action_item(
     organizer_id: UserId | None = None,
     counterpart_id: UserId | None = None,
     record_id: RecordId | None = None,
-    title: str = "Follow up on project status",
+    title: ActionItemTitle = _DEFAULT_TITLE,
     now: datetime | None = None,
 ) -> ActionItem:
     """Helper to create an action item with sensible defaults."""
@@ -47,52 +48,14 @@ class TestActionItemCreate:
             ActionItem.create(
                 counterpart_id=UserId.generate(),
                 record_id=RecordId.generate(),
-                title="Task",
+                title=ActionItemTitle("Task"),
                 actor_id=other,
                 organizer_id=organizer,
             )
 
-    def test_title_must_not_be_empty(self) -> None:
-        organizer = UserId.generate()
-
-        with pytest.raises(InvalidActionItemTitleError, match="must not be empty"):
-            ActionItem.create(
-                counterpart_id=UserId.generate(),
-                record_id=RecordId.generate(),
-                title="   ",
-                actor_id=organizer,
-                organizer_id=organizer,
-            )
-
-    def test_title_must_not_contain_newlines(self) -> None:
-        organizer = UserId.generate()
-
-        with pytest.raises(
-            InvalidActionItemTitleError, match="must not contain newlines"
-        ):
-            ActionItem.create(
-                counterpart_id=UserId.generate(),
-                record_id=RecordId.generate(),
-                title="line1\nline2",
-                actor_id=organizer,
-                organizer_id=organizer,
-            )
-
-    def test_title_must_not_exceed_max_length(self) -> None:
-        organizer = UserId.generate()
-
-        with pytest.raises(InvalidActionItemTitleError, match="must not exceed"):
-            ActionItem.create(
-                counterpart_id=UserId.generate(),
-                record_id=RecordId.generate(),
-                title="a" * 201,
-                actor_id=organizer,
-                organizer_id=organizer,
-            )
-
-    def test_title_strips_whitespace(self) -> None:
-        item = _make_action_item(title="  some task  ")
-        assert item.title.value == "some task"
+    def test_title_is_stored_as_given(self) -> None:
+        item = _make_action_item(title=ActionItemTitle("some task"))
+        assert item.title == ActionItemTitle("some task")
 
     def test_emits_action_item_added_event(self) -> None:
         item = _make_action_item()

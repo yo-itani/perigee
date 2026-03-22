@@ -1,20 +1,19 @@
 from datetime import datetime
 
-import pytest
-
 from contexts.record.domain.comment import Comment
 from contexts.record.domain.comment_body import CommentBody
 from contexts.record.domain.events import CommentAdded
-from contexts.record.domain.exceptions import InvalidCommentBodyError
 from contexts.record.domain.value_objects import RecordId
 from shared.domain.value_objects import UserId
+
+_DEFAULT_BODY = CommentBody("Great discussion today!")
 
 
 def _make_comment(
     *,
     record_id: RecordId | None = None,
     author_id: UserId | None = None,
-    body: str = "Great discussion today!",
+    body: CommentBody = _DEFAULT_BODY,
     now: datetime | None = None,
 ) -> Comment:
     """Helper to create a comment with sensible defaults."""
@@ -44,17 +43,9 @@ class TestCommentCreate:
         comment = _make_comment(now=now)
         assert comment.created_at == now
 
-    def test_body_must_not_be_empty(self) -> None:
-        with pytest.raises(InvalidCommentBodyError, match="must not be empty"):
-            _make_comment(body="   ")
-
-    def test_body_must_not_exceed_max_length(self) -> None:
-        with pytest.raises(InvalidCommentBodyError, match="must not exceed"):
-            _make_comment(body="a" * 2001)
-
-    def test_body_strips_whitespace(self) -> None:
-        comment = _make_comment(body="  some comment  ")
-        assert comment.body.value == "some comment"
+    def test_body_is_stored_as_given(self) -> None:
+        comment = _make_comment(body=CommentBody("some comment"))
+        assert comment.body == CommentBody("some comment")
 
     def test_emits_comment_added_event(self) -> None:
         now = datetime(2026, 3, 20, 11, 0)
