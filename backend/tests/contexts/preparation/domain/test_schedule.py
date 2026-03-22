@@ -7,6 +7,7 @@ from contexts.preparation.domain.events import (
     ScheduleConfirmed,
     ScheduleCreated,
     ScheduleRejected,
+    ScheduleRenamed,
     ScheduleRescheduled,
 )
 from contexts.preparation.domain.exceptions import (
@@ -16,6 +17,7 @@ from contexts.preparation.domain.exceptions import (
     UnauthorizedScheduleOperationError,
 )
 from contexts.preparation.domain.schedule import Schedule
+from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import (
     ConfirmationRequestType,
     ConfirmationResolution,
@@ -31,6 +33,7 @@ _NOW = datetime(2026, 3, 20, 10, 0)
 _FUTURE = datetime(2026, 4, 1, 10, 0)
 _FUTURE2 = datetime(2026, 4, 2, 10, 0)
 _LATER = datetime(2026, 3, 20, 11, 0)
+_DEFAULT_TITLE = ScheduleTitle("Weekly 1on1")
 
 
 def _make_schedule(
@@ -39,6 +42,7 @@ def _make_schedule(
     counterpart_id: UserId | None = None,
     scheduled_at: datetime = _FUTURE,
     requested_by: UserId | None = None,
+    title: ScheduleTitle = _DEFAULT_TITLE,
     now: datetime = _NOW,
 ) -> Schedule:
     """Create a schedule with sensible defaults (organizer creates it)."""
@@ -49,6 +53,7 @@ def _make_schedule(
         counterpart_id=cp,
         scheduled_at=scheduled_at,
         requested_by=requested_by or org,
+        title=title,
         now=now,
     )
 
@@ -58,6 +63,7 @@ def _make_confirmed_schedule(
     organizer_id: UserId | None = None,
     counterpart_id: UserId | None = None,
     scheduled_at: datetime = _FUTURE,
+    title: ScheduleTitle = _DEFAULT_TITLE,
     now: datetime = _NOW,
 ) -> Schedule:
     """Create a confirmed schedule."""
@@ -68,6 +74,7 @@ def _make_confirmed_schedule(
         counterpart_id=cp,
         scheduled_at=scheduled_at,
         requested_by=org,
+        title=title,
         now=now,
     )
     schedule.confirm(actor_id=cp, now=_LATER)
@@ -88,6 +95,7 @@ def _make_cancelled_schedule(
         counterpart_id=cp,
         scheduled_at=_FUTURE,
         requested_by=org,
+        title=ScheduleTitle("Weekly 1on1"),
         now=_NOW,
     )
     schedule.cancel(actor_id=org, now=_LATER)
@@ -124,6 +132,7 @@ class TestScheduleCreate:
             counterpart_id=cp,
             scheduled_at=_FUTURE,
             requested_by=org,
+            title=ScheduleTitle("Weekly 1on1"),
             now=_NOW,
         )
         events = schedule.collect_events()
@@ -145,6 +154,7 @@ class TestScheduleCreate:
             counterpart_id=cp,
             scheduled_at=_FUTURE,
             requested_by=cp,
+            title=ScheduleTitle("Weekly 1on1"),
             now=_NOW,
         )
         assert schedule.confirmation_requests[0].requested_by == cp
@@ -167,6 +177,7 @@ class TestScheduleCreate:
                 counterpart_id=user,
                 scheduled_at=_FUTURE,
                 requested_by=user,
+                title=ScheduleTitle("Weekly 1on1"),
                 now=_NOW,
             )
 
@@ -177,6 +188,7 @@ class TestScheduleCreate:
                 organizer_id=UserId.generate(),
                 counterpart_id=UserId.generate(),
                 scheduled_at=_FUTURE,
+                title=ScheduleTitle("Weekly 1on1"),
                 requested_by=other,
                 now=_NOW,
             )
@@ -207,6 +219,7 @@ class TestScheduleCreate:
             counterpart_id=cp,
             scheduled_at=_FUTURE,
             requested_by=org,
+            title=ScheduleTitle("Weekly 1on1"),
             schedule_group_id=group_id,
             now=_NOW,
         )
@@ -665,6 +678,7 @@ class TestAggregateInvariants:
             counterpart_id=cp,
             scheduled_at=_FUTURE,
             requested_by=org,
+            title=ScheduleTitle("Weekly 1on1"),
             now=_NOW,
         )
 
@@ -703,3 +717,55 @@ class TestAggregateInvariants:
         )
         assert pending_count == 0
         assert len(schedule.confirmation_requests) == 3
+
+
+# ===========================================================================
+# Title
+# ===========================================================================
+
+
+class TestScheduleTitle:
+    def test_create_sets_title(self) -> None:
+        schedule = _make_schedule(title=ScheduleTitle("Monthly 1on1"))
+        assert schedule.title == ScheduleTitle("Monthly 1on1")
+
+    def test_rename(self) -> None:
+        schedule = _make_schedule(title=ScheduleTitle("Old title"))
+        schedule.collect_events()
+
+        schedule.rename(new_title=ScheduleTitle("New title"), now=_LATER)
+
+        assert schedule.title == ScheduleTitle("New title")
+        assert schedule.updated_at == _LATER
+
+    def test_rename_emits_event(self) -> None:
+        schedule = _make_schedule(title=ScheduleTitle("Old title"))
+        schedule.collect_events()
+
+        schedule.rename(new_title=ScheduleTitle("New title"), now=_LATER)
+
+        events = schedule.collect_events()
+        assert len(events) == 1
+        event = events[0]
+        assert isinstance(event, ScheduleRenamed)
+        assert event.schedule_id == schedule.id
+        assert event.new_title == "New title"
+        assert event.occurred_at == _LATER
+
+    def test_rename_same_title_is_noop(self) -> None:
+        schedule = _make_schedule(title=ScheduleTitle("Same title"))
+        schedule.collect_events()
+
+        schedule.rename(new_title=ScheduleTitle("Same title"), now=_LATER)
+
+        assert schedule.collect_events() == []
+        assert schedule.updated_at == _NOW  # unchanged
+
+    def test_rename_same_title_after_normalization_is_noop(self) -> None:
+        schedule = _make_schedule(title=ScheduleTitle("Same title"))
+        schedule.collect_events()
+
+        schedule.rename(new_title=ScheduleTitle("  Same title  "), now=_LATER)
+
+        assert schedule.collect_events() == []
+        assert schedule.updated_at == _NOW  # unchanged

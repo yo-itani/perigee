@@ -65,6 +65,16 @@ class InconsistentScheduleAgendasError(Exception):
         super().__init__(message)
 
 
+class InconsistentSchedulesError(Exception):
+    """Raised when a schedules list does not match registered schedule IDs."""
+
+    def __init__(
+        self,
+        message: str = "Schedules do not match registered schedule IDs.",
+    ) -> None:
+        super().__init__(message)
+
+
 class UnauthorizedScheduleGroupOperationError(Exception):
     """Raised when a user without permission attempts a ScheduleGroup operation."""
 
@@ -76,6 +86,13 @@ class UnauthorizedTemplateOperationError(Exception):
     """Raised when a user without permission attempts a Template operation."""
 
     def __init__(self, message: str = "Unauthorized template operation.") -> None:
+        super().__init__(message)
+
+
+class InvalidScheduleTitleError(Exception):
+    """Raised when a schedule title fails validation."""
+
+    def __init__(self, message: str = "Invalid schedule title.") -> None:
         super().__init__(message)
 
 

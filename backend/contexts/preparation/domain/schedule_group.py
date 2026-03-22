@@ -9,11 +9,15 @@ from contexts.preparation.domain.events import (
     AgendaAddedViaGroup,
     AgendaRemovedViaGroup,
     ScheduleGroupCreated,
+    ScheduleGroupRenamed,
 )
 from contexts.preparation.domain.exceptions import (
     InconsistentScheduleAgendasError,
+    InconsistentSchedulesError,
     UnauthorizedScheduleGroupOperationError,
 )
+from contexts.preparation.domain.schedule import Schedule
+from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import (
     AgendaId,
@@ -24,7 +28,10 @@ from contexts.preparation.domain.value_objects import (
 from shared.domain.value_objects import UserId
 
 type _ScheduleGroupEvent = (
-    ScheduleGroupCreated | AgendaAddedViaGroup | AgendaRemovedViaGroup
+    ScheduleGroupCreated
+    | ScheduleGroupRenamed
+    | AgendaAddedViaGroup
+    | AgendaRemovedViaGroup
 )
 
 
@@ -49,11 +56,16 @@ class ScheduleGroup:
     id: ScheduleGroupId
     organizer_id: UserId
     template_id: TemplateId | None
+    _title: ScheduleTitle
     _agenda_templates: list[AgendaTemplate]
     _schedule_ids: list[ScheduleId]
     created_at: datetime
     _updated_at: datetime
     _events: list[_ScheduleGroupEvent] = field(default_factory=list, repr=False)
+
+    @property
+    def title(self) -> ScheduleTitle:
+        return self._title
 
     @property
     def agenda_templates(self) -> list[AgendaTemplate]:
@@ -81,6 +93,7 @@ class ScheduleGroup:
     def create(
         *,
         organizer_id: UserId,
+        title: ScheduleTitle,
         agenda_templates: list[AgendaTemplate] | None = None,
         template_id: TemplateId | None = None,
         now: datetime | None = None,
@@ -89,6 +102,7 @@ class ScheduleGroup:
 
         Args:
             organizer_id: The organizer creating this group.
+            title: The title of the schedule group.
             agenda_templates: Initial agenda templates (optional).
             template_id: Source template ID if created from a template.
             now: Current time (defaults to UTC now).
@@ -99,6 +113,7 @@ class ScheduleGroup:
             id=group_id,
             organizer_id=organizer_id,
             template_id=template_id,
+            _title=title,
             _agenda_templates=list(agenda_templates) if agenda_templates else [],
             _schedule_ids=[],
             created_at=ts,
@@ -117,6 +132,60 @@ class ScheduleGroup:
     # ------------------------------------------------------------------
     # Commands
     # ------------------------------------------------------------------
+
+    def rename(
+        self,
+        *,
+        title: ScheduleTitle,
+        actor_id: UserId,
+        now: datetime,
+        schedules: list[Schedule],
+    ) -> None:
+        """Rename the schedule group and propagate to all child schedules.
+
+        Checks are performed in the following order:
+        1. Authorization — the actor must be the organizer.
+        2. No-op detection — if the title is unchanged, return immediately
+           without inspecting *schedules* at all.
+        3. Consistency — *schedules* must match the registered schedule IDs.
+        4. Mutation — update the group and propagate to child schedules.
+
+        All child schedules are renamed regardless of their status.
+
+        Args:
+            title: The new title for the group and its schedules.
+            actor_id: The user performing the operation (must be organizer).
+            now: Current time.
+            schedules: All child Schedule entities to propagate the rename to.
+                Must match the registered schedule IDs exactly.
+                Only validated when the title actually changes.
+
+        Raises:
+            UnauthorizedScheduleGroupOperationError: If actor is not the
+                organizer.
+            InconsistentSchedulesError: If schedules do not match the
+                registered schedule IDs (only when title differs).
+        """
+        self._assert_organizer(actor_id)
+
+        if title == self._title:
+            return
+
+        self._assert_schedules_complete(schedules)
+        self._title = title
+        self._updated_at = now
+
+        for schedule in schedules:
+            schedule.rename(new_title=title, now=now)
+
+        self._events.append(
+            ScheduleGroupRenamed(
+                schedule_group_id=self.id,
+                new_title=title.value,
+                renamed_schedule_ids=list(self._schedule_ids),
+                occurred_at=now,
+            )
+        )
 
     def register_schedule(self, schedule_id: ScheduleId) -> None:
         """Register a schedule as belonging to this group.
@@ -261,6 +330,16 @@ class ScheduleGroup:
         if actor_id != self.organizer_id:
             raise UnauthorizedScheduleGroupOperationError(
                 "Only the organizer can operate on this schedule group."
+            )
+
+    def _assert_schedules_complete(self, schedules: list[Schedule]) -> None:
+        """Verify schedules list matches all registered schedule IDs."""
+        provided = {s.id for s in schedules}
+        expected = set(self._schedule_ids)
+        if provided != expected:
+            raise InconsistentSchedulesError(
+                f"Provided schedule IDs {provided} do not match "
+                f"registered schedule IDs {expected}."
             )
 
     def _assert_schedules_agendas_complete(
