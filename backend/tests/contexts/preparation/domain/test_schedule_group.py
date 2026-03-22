@@ -13,6 +13,7 @@ from contexts.preparation.domain.exceptions import (
     UnauthorizedScheduleGroupOperationError,
 )
 from contexts.preparation.domain.schedule_group import ScheduleGroup
+from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import ScheduleId, TemplateId
 from shared.domain.value_objects import UserId
 
@@ -124,7 +125,7 @@ class TestScheduleGroupAddAgenda:
         assert len(new_agendas) == 3
         for sid in schedule_ids:
             assert len(schedules_agendas[sid]) == 1
-            assert schedules_agendas[sid][0].topic == "New topic"
+            assert schedules_agendas[sid][0].topic == Topic("New topic")
         # Template also updated
         assert AgendaTemplate("New topic") in group.agenda_templates
 

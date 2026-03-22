@@ -35,8 +35,8 @@ class Comment:
         return self._author_id
 
     @property
-    def body(self) -> str:
-        return self._body.value
+    def body(self) -> CommentBody:
+        return self._body
 
     @property
     def created_at(self) -> datetime:

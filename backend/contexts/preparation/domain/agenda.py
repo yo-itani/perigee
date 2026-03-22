@@ -39,8 +39,8 @@ class Agenda:
         return self._schedule_id
 
     @property
-    def topic(self) -> str:
-        return self._topic.value
+    def topic(self) -> Topic:
+        return self._topic
 
     @property
     def added_by(self) -> UserId:

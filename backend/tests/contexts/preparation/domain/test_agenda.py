@@ -3,10 +3,12 @@ from datetime import datetime
 import pytest
 
 from contexts.preparation.domain.agenda import Agenda
+from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.exceptions import (
     InvalidCommentBodyError,
     InvalidTopicError,
 )
+from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import ScheduleId
 from shared.domain.value_objects import UserId
 
@@ -32,7 +34,7 @@ def _make_agenda(
 class TestAgendaCreate:
     def test_creates_with_defaults(self) -> None:
         agenda = _make_agenda()
-        assert agenda.topic == "Discuss project status"
+        assert agenda.topic == Topic("Discuss project status")
         assert agenda.comments == []
         assert agenda.created_at == _NOW
 
@@ -59,7 +61,7 @@ class TestAgendaCreate:
 
     def test_topic_strips_whitespace(self) -> None:
         agenda = _make_agenda(topic="  padded  ")
-        assert agenda.topic == "padded"
+        assert agenda.topic == Topic("padded")
 
 
 class TestAgendaComment:
@@ -75,7 +77,7 @@ class TestAgendaComment:
 
         assert len(agenda.comments) == 1
         assert comment.author_id == author
-        assert comment.body == "Let's focus on timeline"
+        assert comment.body == CommentBody("Let's focus on timeline")
         assert comment.agenda_id == agenda.id
 
     def test_multiple_comments(self) -> None:
@@ -129,11 +131,11 @@ class TestAgendaComment:
         comment = agenda.add_comment(
             author_id=UserId.generate(), body="a" * 2000, now=_LATER
         )
-        assert len(comment.body) == 2000
+        assert len(str(comment.body)) == 2000
 
     def test_comment_body_strips_whitespace(self) -> None:
         agenda = _make_agenda()
         comment = agenda.add_comment(
             author_id=UserId.generate(), body="  hello  ", now=_LATER
         )
-        assert comment.body == "hello"
+        assert comment.body == CommentBody("hello")

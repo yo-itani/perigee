@@ -230,7 +230,7 @@ class ScheduleGroup:
             agendas = schedules_agendas[schedule_id]
             to_remove: list[int] = []
             for idx, agenda in enumerate(agendas):
-                if agenda.topic == topic:
+                if str(agenda.topic) == topic:
                     removed_ids.append(agenda.id)
                     to_remove.append(idx)
                     break  # Remove one matching agenda per schedule
