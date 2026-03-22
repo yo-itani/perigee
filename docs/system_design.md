@@ -102,7 +102,9 @@
 | CommentAdded | 事前準備, 記録 | 通知 | コメント追加時にSlack通知を送信 |
 | ActionItemCompleted | 記録 | 参照 | アクションアイテム完了をリードモデルに反映 |
 | WorkspaceCreated | ワークスペース | - | Workspace が作成された |
-| MembershipChanged | ワークスペース | - | メンバーの追加・削除・ロール変更（Captain 提案に影響） |
+| MemberAdded | ワークスペース | - | メンバー追加（Captain 提案に影響） |
+| MemberRemoved | ワークスペース | - | メンバー削除（Captain 提案に影響） |
+| MemberRoleChanged | ワークスペース | - | ロール変更（Captain ↔ Member。Captain 提案に影響） |
 | WorkspaceHierarchyChanged | ワークスペース | - | 親 Workspace の変更（今後のデフォルト公開先サジェストに影響。過去の Record には影響しない） |
 
 #### コード例（ドメインイベント）
