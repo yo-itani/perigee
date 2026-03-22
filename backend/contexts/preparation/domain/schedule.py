@@ -9,6 +9,7 @@ from contexts.preparation.domain.events import (
     ScheduleConfirmed,
     ScheduleCreated,
     ScheduleRejected,
+    ScheduleRenamed,
     ScheduleRescheduled,
 )
 from contexts.preparation.domain.exceptions import (
@@ -17,6 +18,7 @@ from contexts.preparation.domain.exceptions import (
     ScheduleAlreadyCancelledError,
     UnauthorizedScheduleOperationError,
 )
+from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import (
     ConfirmationRequestType,
     ConfirmationResolution,
@@ -32,6 +34,7 @@ type _ScheduleEvent = (
     | ScheduleRejected
     | ScheduleRescheduled
     | ScheduleCancelled
+    | ScheduleRenamed
 )
 
 
@@ -54,12 +57,17 @@ class Schedule:
     organizer_id: UserId
     counterpart_id: UserId
     schedule_group_id: ScheduleGroupId | None
+    _title: ScheduleTitle
     _scheduled_at: datetime
     _status: ScheduleStatus
     _confirmation_requests: list[ConfirmationRequest]
     created_at: datetime
     _updated_at: datetime
     _events: list[_ScheduleEvent] = field(default_factory=list, repr=False)
+
+    @property
+    def title(self) -> ScheduleTitle:
+        return self._title
 
     @property
     def scheduled_at(self) -> datetime:
@@ -94,6 +102,7 @@ class Schedule:
         counterpart_id: UserId,
         scheduled_at: datetime,
         requested_by: UserId,
+        title: str,
         schedule_group_id: ScheduleGroupId | None = None,
         now: datetime | None = None,
     ) -> Schedule:
@@ -105,6 +114,7 @@ class Schedule:
             scheduled_at: Proposed datetime for the meeting.
             requested_by: The user creating the schedule (must be
                 organizer or counterpart).
+            title: The title of the schedule.
             schedule_group_id: Optional group ID if created via
                 ScheduleGroup.
             now: Current time (defaults to UTC now).
@@ -114,6 +124,7 @@ class Schedule:
                 or scheduled_at is in the past.
             UnauthorizedScheduleOperationError: If requested_by is
                 neither the organizer nor the counterpart.
+            InvalidScheduleTitleError: If title fails validation.
         """
         ts = now or datetime.now(UTC)
 
@@ -131,6 +142,7 @@ class Schedule:
                 "Only the organizer or counterpart can create a schedule."
             )
 
+        schedule_title = ScheduleTitle(title)
         schedule_id = ScheduleId.generate()
         creation_request = ConfirmationRequest.create(
             request_type=ConfirmationRequestType.CREATION,
@@ -144,6 +156,7 @@ class Schedule:
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
             schedule_group_id=schedule_group_id,
+            _title=schedule_title,
             _scheduled_at=scheduled_at,
             _status=ScheduleStatus.REQUESTED,
             _confirmation_requests=[creation_request],
@@ -364,6 +377,32 @@ class Schedule:
                 scheduled_at=self._scheduled_at,
                 confirmed_by=None,
                 is_auto=True,
+                occurred_at=now,
+            )
+        )
+
+    def rename(self, *, new_title: str, now: datetime) -> None:
+        """Rename the schedule.
+
+        No-op if the new title is the same as the current title
+        (after normalization).
+
+        Args:
+            new_title: The new title for the schedule.
+            now: Current time.
+
+        Raises:
+            InvalidScheduleTitleError: If new_title fails validation.
+        """
+        title = ScheduleTitle(new_title)
+        if title == self._title:
+            return
+        self._title = title
+        self._updated_at = now
+        self._events.append(
+            ScheduleRenamed(
+                schedule_id=self.id,
+                new_title=title.value,
                 occurred_at=now,
             )
         )

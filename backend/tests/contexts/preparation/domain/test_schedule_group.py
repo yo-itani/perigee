@@ -8,12 +8,17 @@ from contexts.preparation.domain.events import (
     AgendaAddedViaGroup,
     AgendaRemovedViaGroup,
     ScheduleGroupCreated,
+    ScheduleGroupRenamed,
+    ScheduleRenamed,
 )
 from contexts.preparation.domain.exceptions import (
     InconsistentScheduleAgendasError,
+    InvalidScheduleTitleError,
     UnauthorizedScheduleGroupOperationError,
 )
+from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_group import ScheduleGroup
+from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import ScheduleId, TemplateId
 from shared.domain.value_objects import UserId
@@ -25,12 +30,14 @@ _LATER = datetime(2026, 3, 20, 11, 0)
 def _make_group(
     *,
     organizer_id: UserId | None = None,
+    title: str = "Weekly 1on1",
     agenda_templates: list[AgendaTemplate] | None = None,
     template_id: TemplateId | None = None,
     now: datetime = _NOW,
 ) -> ScheduleGroup:
     return ScheduleGroup.create(
         organizer_id=organizer_id or UserId.generate(),
+        title=title,
         agenda_templates=agenda_templates,
         template_id=template_id,
         now=now,
@@ -493,3 +500,137 @@ class TestScheduleGroupProperties:
         group.register_schedule(ScheduleId.generate())
         returned = group.schedule_ids
         assert returned is not group.schedule_ids
+
+
+_FUTURE = datetime(2026, 4, 1, 10, 0)
+
+
+def _make_child_schedule(
+    *,
+    organizer_id: UserId,
+    counterpart_id: UserId,
+    title: str = "Weekly 1on1",
+) -> Schedule:
+    """Create a schedule for use as a child of a ScheduleGroup."""
+    return Schedule.create(
+        organizer_id=organizer_id,
+        counterpart_id=counterpart_id,
+        scheduled_at=_FUTURE,
+        requested_by=organizer_id,
+        title=title,
+        now=_NOW,
+    )
+
+
+class TestScheduleGroupTitle:
+    def test_create_sets_title(self) -> None:
+        group = _make_group(title="Monthly 1on1")
+        assert group.title == ScheduleTitle("Monthly 1on1")
+
+    def test_create_with_invalid_title_raises(self) -> None:
+        with pytest.raises(InvalidScheduleTitleError):
+            _make_group(title="")
+
+    def test_rename(self) -> None:
+        organizer = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Old title")
+        group.collect_events()
+
+        group.rename(title="New title", now=_LATER, schedules=[])
+
+        assert group.title == ScheduleTitle("New title")
+        assert group.updated_at == _LATER
+
+    def test_rename_emits_event(self) -> None:
+        organizer = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Old title")
+        sid = ScheduleId.generate()
+        group.register_schedule(sid)
+        group.collect_events()
+
+        group.rename(title="New title", now=_LATER, schedules=[])
+
+        events = group.collect_events()
+        assert len(events) == 1
+        event = events[0]
+        assert isinstance(event, ScheduleGroupRenamed)
+        assert event.schedule_group_id == group.id
+        assert event.new_title == "New title"
+        assert event.renamed_schedule_ids == [sid]
+        assert event.occurred_at == _LATER
+
+    def test_rename_propagates_to_child_schedules(self) -> None:
+        organizer = UserId.generate()
+        cp1 = UserId.generate()
+        cp2 = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Old title")
+
+        s1 = _make_child_schedule(
+            organizer_id=organizer, counterpart_id=cp1, title="Old title"
+        )
+        s2 = _make_child_schedule(
+            organizer_id=organizer, counterpart_id=cp2, title="Old title"
+        )
+        group.register_schedule(s1.id)
+        group.register_schedule(s2.id)
+        s1.collect_events()
+        s2.collect_events()
+        group.collect_events()
+
+        group.rename(title="New title", now=_LATER, schedules=[s1, s2])
+
+        assert s1.title == ScheduleTitle("New title")
+        assert s2.title == ScheduleTitle("New title")
+        # Each child schedule should have emitted a ScheduleRenamed event
+        s1_events = s1.collect_events()
+        assert len(s1_events) == 1
+        assert isinstance(s1_events[0], ScheduleRenamed)
+        s2_events = s2.collect_events()
+        assert len(s2_events) == 1
+        assert isinstance(s2_events[0], ScheduleRenamed)
+
+    def test_rename_same_title_is_noop(self) -> None:
+        organizer = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Same title")
+        group.collect_events()
+
+        group.rename(title="Same title", now=_LATER, schedules=[])
+
+        assert group.collect_events() == []
+        assert group.updated_at == _NOW  # unchanged
+
+    def test_rename_same_title_after_normalization_is_noop(self) -> None:
+        organizer = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Same title")
+        group.collect_events()
+
+        group.rename(title="  Same title  ", now=_LATER, schedules=[])
+
+        assert group.collect_events() == []
+        assert group.updated_at == _NOW  # unchanged
+
+    def test_rename_with_invalid_title_raises(self) -> None:
+        group = _make_group(title="Valid title")
+
+        with pytest.raises(InvalidScheduleTitleError):
+            group.rename(title="", now=_LATER, schedules=[])
+
+    def test_rename_propagates_regardless_of_schedule_status(self) -> None:
+        """All child schedules are renamed regardless of their status."""
+        organizer = UserId.generate()
+        cp = UserId.generate()
+        group = _make_group(organizer_id=organizer, title="Old title")
+
+        # Create a confirmed schedule
+        schedule = _make_child_schedule(
+            organizer_id=organizer, counterpart_id=cp, title="Old title"
+        )
+        schedule.confirm(actor_id=cp, now=_LATER)
+        group.register_schedule(schedule.id)
+        schedule.collect_events()
+        group.collect_events()
+
+        rename_time = datetime(2026, 3, 20, 12, 0)
+        group.rename(title="New title", now=rename_time, schedules=[schedule])
+
+        assert schedule.title == ScheduleTitle("New title")

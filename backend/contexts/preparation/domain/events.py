@@ -71,6 +71,15 @@ class ScheduleCancelled:
     occurred_at: datetime
 
 
+@dataclass(frozen=True)
+class ScheduleRenamed:
+    """Raised when a schedule is renamed."""
+
+    schedule_id: ScheduleId
+    new_title: str
+    occurred_at: datetime
+
+
 # ------------------------------------------------------------------
 # ScheduleGroup events
 # ------------------------------------------------------------------
@@ -83,6 +92,16 @@ class ScheduleGroupCreated:
     schedule_group_id: ScheduleGroupId
     organizer_id: UserId
     template_id: TemplateId | None
+    occurred_at: datetime
+
+
+@dataclass(frozen=True)
+class ScheduleGroupRenamed:
+    """Raised when a schedule group is renamed."""
+
+    schedule_group_id: ScheduleGroupId
+    new_title: str
+    renamed_schedule_ids: list[ScheduleId]
     occurred_at: datetime
 
 
