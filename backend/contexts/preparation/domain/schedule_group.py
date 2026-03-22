@@ -13,6 +13,7 @@ from contexts.preparation.domain.events import (
 )
 from contexts.preparation.domain.exceptions import (
     InconsistentScheduleAgendasError,
+    InconsistentSchedulesError,
     UnauthorizedScheduleGroupOperationError,
 )
 from contexts.preparation.domain.schedule import Schedule
@@ -140,6 +141,7 @@ class ScheduleGroup:
         self,
         *,
         title: str,
+        actor_id: UserId,
         now: datetime,
         schedules: list[Schedule],
     ) -> None:
@@ -152,12 +154,21 @@ class ScheduleGroup:
 
         Args:
             title: The new title for the group and its schedules.
+            actor_id: The user performing the operation (must be organizer).
             now: Current time.
             schedules: All child Schedule entities to propagate the rename to.
+                Must match the registered schedule IDs exactly.
 
         Raises:
+            UnauthorizedScheduleGroupOperationError: If actor is not the
+                organizer.
+            InconsistentSchedulesError: If schedules do not match the
+                registered schedule IDs.
             InvalidScheduleTitleError: If title fails validation.
         """
+        self._assert_organizer(actor_id)
+        self._assert_schedules_complete(schedules)
+
         new_title = ScheduleTitle(title)
         if new_title == self._title:
             return
@@ -319,6 +330,16 @@ class ScheduleGroup:
         if actor_id != self.organizer_id:
             raise UnauthorizedScheduleGroupOperationError(
                 "Only the organizer can operate on this schedule group."
+            )
+
+    def _assert_schedules_complete(self, schedules: list[Schedule]) -> None:
+        """Verify schedules list matches all registered schedule IDs."""
+        provided = {s.id for s in schedules}
+        expected = set(self._schedule_ids)
+        if provided != expected:
+            raise InconsistentSchedulesError(
+                f"Provided schedule IDs {provided} do not match "
+                f"registered schedule IDs {expected}."
             )
 
     def _assert_schedules_agendas_complete(

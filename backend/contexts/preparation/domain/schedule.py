@@ -387,6 +387,10 @@ class Schedule:
         No-op if the new title is the same as the current title
         (after normalization).
 
+        Cancelled schedules can also be renamed. This is intentional
+        because ScheduleGroup.rename propagates to all child schedules
+        regardless of their status.
+
         Args:
             new_title: The new title for the schedule.
             now: Current time.
