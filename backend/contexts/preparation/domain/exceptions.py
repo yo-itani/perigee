@@ -54,6 +54,17 @@ class AgendaEditNotAllowedError(Exception):
         super().__init__(message)
 
 
+class InconsistentScheduleAgendasError(Exception):
+    """Raised when schedules_agendas dict is missing keys
+    for registered schedule IDs."""
+
+    def __init__(
+        self,
+        message: str = "schedules_agendas is missing registered schedule IDs.",
+    ) -> None:
+        super().__init__(message)
+
+
 class UnauthorizedScheduleGroupOperationError(Exception):
     """Raised when a user without permission attempts a ScheduleGroup operation."""
 

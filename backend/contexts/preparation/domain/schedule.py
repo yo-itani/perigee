@@ -20,6 +20,7 @@ from contexts.preparation.domain.exceptions import (
 from contexts.preparation.domain.value_objects import (
     ConfirmationRequestType,
     ConfirmationResolution,
+    ScheduleGroupId,
     ScheduleId,
     ScheduleStatus,
 )
@@ -52,6 +53,7 @@ class Schedule:
     id: ScheduleId
     organizer_id: UserId
     counterpart_id: UserId
+    schedule_group_id: ScheduleGroupId | None
     _scheduled_at: datetime
     _status: ScheduleStatus
     _confirmation_requests: list[ConfirmationRequest]
@@ -92,6 +94,7 @@ class Schedule:
         counterpart_id: UserId,
         scheduled_at: datetime,
         requested_by: UserId,
+        schedule_group_id: ScheduleGroupId | None = None,
         now: datetime | None = None,
     ) -> Schedule:
         """Create a new schedule in Requested status.
@@ -102,6 +105,8 @@ class Schedule:
             scheduled_at: Proposed datetime for the meeting.
             requested_by: The user creating the schedule (must be
                 organizer or counterpart).
+            schedule_group_id: Optional group ID if created via
+                ScheduleGroup.
             now: Current time (defaults to UTC now).
 
         Raises:
@@ -138,6 +143,7 @@ class Schedule:
             id=schedule_id,
             organizer_id=organizer_id,
             counterpart_id=counterpart_id,
+            schedule_group_id=schedule_group_id,
             _scheduled_at=scheduled_at,
             _status=ScheduleStatus.REQUESTED,
             _confirmation_requests=[creation_request],

@@ -11,8 +11,10 @@ from contexts.preparation.domain.events import (
     ScheduleGroupCreated,
 )
 from contexts.preparation.domain.exceptions import (
+    InconsistentScheduleAgendasError,
     UnauthorizedScheduleGroupOperationError,
 )
+from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import (
     AgendaId,
     ScheduleGroupId,
@@ -142,8 +144,7 @@ class ScheduleGroup:
             actor_id: The user performing the operation (must be organizer).
             schedules_agendas: Mutable agenda lists keyed by schedule ID.
                 New agendas are appended to each list. Must contain keys
-                for all registered schedule IDs; missing keys are skipped
-                (new Agenda is still created but not appended to the dict).
+                for all registered schedule IDs.
             now: Current time.
 
         Returns:
@@ -152,8 +153,11 @@ class ScheduleGroup:
         Raises:
             UnauthorizedScheduleGroupOperationError: If actor is not the
                 organizer.
+            InconsistentScheduleAgendasError: If schedules_agendas is
+                missing keys for registered schedule IDs.
         """
         self._assert_organizer(actor_id)
+        self._assert_schedules_agendas_complete(schedules_agendas)
 
         agenda_template = AgendaTemplate(topic)
         self._agenda_templates.append(agenda_template)
@@ -168,8 +172,7 @@ class ScheduleGroup:
                 now=now,
             )
             new_agendas.append(agenda)
-            if schedule_id in schedules_agendas:
-                schedules_agendas[schedule_id].append(agenda)
+            schedules_agendas[schedule_id].append(agenda)
 
         self._events.append(
             AgendaAddedViaGroup(
@@ -207,13 +210,18 @@ class ScheduleGroup:
         Raises:
             UnauthorizedScheduleGroupOperationError: If actor is not the
                 organizer.
+            InconsistentScheduleAgendasError: If schedules_agendas is
+                missing keys for registered schedule IDs.
         """
         self._assert_organizer(actor_id)
+        self._assert_schedules_agendas_complete(schedules_agendas)
+
+        normalized_topic = Topic(topic).value
 
         # Remove first matching template; if none found, this is a no-op.
         found = False
         for i, tmpl in enumerate(self._agenda_templates):
-            if tmpl.topic.value == topic:
+            if tmpl.topic.value == normalized_topic:
                 self._agenda_templates.pop(i)
                 found = True
                 break
@@ -225,12 +233,10 @@ class ScheduleGroup:
 
         removed_ids: list[AgendaId] = []
         for schedule_id in self._schedule_ids:
-            if schedule_id not in schedules_agendas:
-                continue
             agendas = schedules_agendas[schedule_id]
             to_remove: list[int] = []
             for idx, agenda in enumerate(agendas):
-                if str(agenda.topic) == topic:
+                if agenda.topic.value == normalized_topic:
                     removed_ids.append(agenda.id)
                     to_remove.append(idx)
                     break  # Remove one matching agenda per schedule
@@ -240,7 +246,7 @@ class ScheduleGroup:
         self._events.append(
             AgendaRemovedViaGroup(
                 schedule_group_id=self.id,
-                topic=topic,
+                topic=normalized_topic,
                 removed_agenda_ids=removed_ids,
                 occurred_at=now,
             )
@@ -255,4 +261,14 @@ class ScheduleGroup:
         if actor_id != self.organizer_id:
             raise UnauthorizedScheduleGroupOperationError(
                 "Only the organizer can operate on this schedule group."
+            )
+
+    def _assert_schedules_agendas_complete(
+        self, schedules_agendas: dict[ScheduleId, list[Agenda]]
+    ) -> None:
+        """Verify schedules_agendas has keys for all schedule IDs."""
+        missing = set(self._schedule_ids) - schedules_agendas.keys()
+        if missing:
+            raise InconsistentScheduleAgendasError(
+                f"schedules_agendas is missing keys for schedule IDs: {missing}"
             )

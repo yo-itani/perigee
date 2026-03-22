@@ -10,6 +10,7 @@ from contexts.preparation.domain.events import (
     ScheduleGroupCreated,
 )
 from contexts.preparation.domain.exceptions import (
+    InconsistentScheduleAgendasError,
     UnauthorizedScheduleGroupOperationError,
 )
 from contexts.preparation.domain.schedule_group import ScheduleGroup
@@ -201,6 +202,30 @@ class TestScheduleGroupAddAgenda:
         # Template still added even with no schedules
         assert AgendaTemplate("Topic") in group.agenda_templates
 
+    def test_add_agenda_fails_when_schedules_agendas_missing_keys(self) -> None:
+        """Adding fails if schedules_agendas misses schedule IDs."""
+        organizer = UserId.generate()
+        group, schedule_ids = _make_group_with_schedules(
+            organizer_id=organizer, schedule_count=3
+        )
+        # Only provide 2 of 3 schedule IDs
+        partial_agendas: dict[ScheduleId, list[Agenda]] = {
+            schedule_ids[0]: [],
+            schedule_ids[1]: [],
+        }
+
+        with pytest.raises(InconsistentScheduleAgendasError, match="missing keys"):
+            group.add_agenda_to_schedules(
+                topic="Topic",
+                actor_id=organizer,
+                schedules_agendas=partial_agendas,
+                now=_LATER,
+            )
+
+        # Verify no partial mutation: no template added, timestamp unchanged
+        assert group.agenda_templates == []
+        assert group.updated_at == _NOW
+
     def test_duplicate_topic_allowed(self) -> None:
         """Duplicate agenda topics are permitted."""
         organizer = UserId.generate()
@@ -349,6 +374,59 @@ class TestScheduleGroupRemoveAgenda:
         # Agenda is removed (including its comments)
         assert len(removed_ids) == 1
         assert len(schedules_agendas[schedule_ids[0]]) == 0
+
+    def test_remove_agenda_normalizes_topic(self) -> None:
+        """Removing with whitespace-padded topic matches the normalized stored topic."""
+        organizer = UserId.generate()
+        group, schedule_ids = _make_group_with_schedules(
+            organizer_id=organizer, schedule_count=1
+        )
+        schedules_agendas: dict[ScheduleId, list[Agenda]] = {
+            sid: [] for sid in schedule_ids
+        }
+        group.add_agenda_to_schedules(
+            topic="  目標確認  ",
+            actor_id=organizer,
+            schedules_agendas=schedules_agendas,
+            now=_LATER,
+        )
+        assert len(schedules_agendas[schedule_ids[0]]) == 1
+
+        # Remove with different whitespace
+        removed_ids = group.remove_agenda_from_schedules(
+            topic="  目標確認  ",
+            actor_id=organizer,
+            schedules_agendas=schedules_agendas,
+            now=_LATER,
+        )
+
+        assert len(removed_ids) == 1
+        assert len(schedules_agendas[schedule_ids[0]]) == 0
+        assert group.agenda_templates == []
+
+    def test_remove_agenda_fails_when_schedules_agendas_missing_keys(self) -> None:
+        """Removing fails if schedules_agendas misses schedule IDs."""
+        organizer = UserId.generate()
+        group, schedule_ids = _make_group_with_schedules(
+            organizer_id=organizer, schedule_count=2
+        )
+        group = _make_group(
+            organizer_id=organizer,
+            agenda_templates=[AgendaTemplate("Topic")],
+        )
+        sid1 = ScheduleId.generate()
+        sid2 = ScheduleId.generate()
+        group.register_schedule(sid1)
+        group.register_schedule(sid2)
+
+        # Only provide one of two schedule IDs
+        with pytest.raises(InconsistentScheduleAgendasError, match="missing keys"):
+            group.remove_agenda_from_schedules(
+                topic="Topic",
+                actor_id=organizer,
+                schedules_agendas={sid1: []},
+                now=_LATER,
+            )
 
     def test_remove_nonexistent_topic_is_noop(self) -> None:
         """Removing a topic that has no matching template is a no-op."""
