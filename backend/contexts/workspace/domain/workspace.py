@@ -12,6 +12,7 @@ from contexts.workspace.domain.events import (
     WorkspaceRenamed,
 )
 from contexts.workspace.domain.exceptions import (
+    CircularHierarchyError,
     DuplicateMembershipError,
     MembershipNotFoundError,
 )
@@ -55,7 +56,8 @@ class Workspace:
 
     Business rules:
     - Workspace has a recursive parent-child hierarchy (root has no parent).
-    - Circular hierarchy validation is handled at the application layer.
+    - Self-referencing parent is rejected at the domain layer.
+    - Full ancestor-chain cycle detection is handled at the application layer.
     - Duplicate membership is prohibited (same user cannot join twice).
     - Multiple Captains are allowed per workspace.
     - A user can belong to multiple workspaces.
@@ -135,7 +137,12 @@ class Workspace:
     # ------------------------------------------------------------------
 
     def rename(self, *, new_name: WorkspaceName, now: datetime) -> None:
-        """Rename the workspace."""
+        """Rename the workspace.
+
+        No-op if the new name is the same as the current name.
+        """
+        if self._name == new_name:
+            return
         old_name = self._name
         self._name = new_name
         self._updated_at = now
@@ -153,10 +160,17 @@ class Workspace:
     ) -> None:
         """Change the parent workspace.
 
-        Circular hierarchy validation must be performed at the application
-        layer using WorkspaceRepository.get_ancestors() before calling this
-        method.
+        Raises:
+            CircularHierarchyError: If new_parent_id equals self.id.
+
+        Note: Full ancestor-chain cycle detection must be performed at the
+        application layer using WorkspaceRepository.get_ancestors().
+        No-op if the new parent is the same as the current parent.
         """
+        if new_parent_id is not None and new_parent_id == self.id:
+            raise CircularHierarchyError()
+        if self._parent_id == new_parent_id:
+            return
         old_parent_id = self._parent_id
         self._parent_id = new_parent_id
         self._updated_at = now
@@ -225,6 +239,8 @@ class Workspace:
     ) -> None:
         """Change a member's role.
 
+        No-op if the new role is the same as the current role.
+
         Raises:
             MembershipNotFoundError: If the user is not a member.
         """
@@ -232,6 +248,8 @@ class Workspace:
         if membership is None:
             raise MembershipNotFoundError()
 
+        if membership.role == new_role:
+            return
         old_role = membership.role
         membership._role = new_role
         self._updated_at = now

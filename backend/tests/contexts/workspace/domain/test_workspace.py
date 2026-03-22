@@ -11,6 +11,7 @@ from contexts.workspace.domain.events import (
     WorkspaceRenamed,
 )
 from contexts.workspace.domain.exceptions import (
+    CircularHierarchyError,
     DuplicateMembershipError,
     MembershipNotFoundError,
 )
@@ -106,6 +107,18 @@ class TestWorkspaceRename:
         assert event.new_name == "New Name"
         assert event.occurred_at == now
 
+    def test_rename_same_name_is_noop(self) -> None:
+        ws = _make_workspace(name="Same")
+        ws.collect_events()  # clear creation event
+        original_updated_at = ws.updated_at
+        now = datetime(2026, 3, 20, 11, 0)
+
+        ws.rename(new_name=WorkspaceName("Same"), now=now)
+
+        assert ws.name == WorkspaceName("Same")
+        assert ws.updated_at == original_updated_at
+        assert ws.collect_events() == []
+
 
 class TestWorkspaceChangeParent:
     def test_changes_parent(self) -> None:
@@ -144,6 +157,38 @@ class TestWorkspaceChangeParent:
         assert event.old_parent_id == old_parent
         assert event.new_parent_id == new_parent
         assert event.occurred_at == now
+
+    def test_self_referencing_parent_raises(self) -> None:
+        ws = _make_workspace()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        with pytest.raises(CircularHierarchyError):
+            ws.change_parent(new_parent_id=ws.id, now=now)
+
+    def test_change_parent_same_value_is_noop(self) -> None:
+        parent = WorkspaceId.generate()
+        ws = _make_workspace(parent_id=parent)
+        ws.collect_events()  # clear creation event
+        original_updated_at = ws.updated_at
+        now = datetime(2026, 3, 20, 11, 0)
+
+        ws.change_parent(new_parent_id=parent, now=now)
+
+        assert ws.parent_id == parent
+        assert ws.updated_at == original_updated_at
+        assert ws.collect_events() == []
+
+    def test_change_parent_none_to_none_is_noop(self) -> None:
+        ws = _make_workspace()  # root, parent_id=None
+        ws.collect_events()
+        original_updated_at = ws.updated_at
+        now = datetime(2026, 3, 20, 11, 0)
+
+        ws.change_parent(new_parent_id=None, now=now)
+
+        assert ws.parent_id is None
+        assert ws.updated_at == original_updated_at
+        assert ws.collect_events() == []
 
 
 class TestWorkspaceAddMember:
@@ -334,6 +379,24 @@ class TestWorkspaceChangeMemberRole:
         )
 
         assert ws.updated_at == change_now
+
+    def test_change_role_same_value_is_noop(self) -> None:
+        ws = _make_workspace()
+        user = UserId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+        ws.add_member(user_id=user, role=MembershipRole.MEMBER, now=now)
+        ws.collect_events()  # clear previous events
+        original_updated_at = ws.updated_at
+
+        ws.change_member_role(
+            user_id=user,
+            new_role=MembershipRole.MEMBER,
+            now=datetime(2026, 3, 20, 12, 0),
+        )
+
+        assert ws.memberships[0].role == MembershipRole.MEMBER
+        assert ws.updated_at == original_updated_at
+        assert ws.collect_events() == []
 
 
 class TestWorkspaceHierarchy:
