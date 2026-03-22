@@ -16,8 +16,7 @@ backend/
       domain/
         value_objects.py   # ScheduleId, ScheduleGroupId など
     session/               # 実施：アジェンダ確認、メモ、アクションアイテム登録
-    record/                # 記録：メモの整理・仕上げ、下書き
-    followup/              # フォローアップ：記録の公開・共有、コメント、フォローアップ
+    record/                # 記録：メモの整理・仕上げ、下書き→公開、コメント・フィードバック、フォローアップ
     notification/          # Slack通知
     # read_model/, settings/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
@@ -150,11 +149,12 @@ class Record:
 |---|---|
 | preparation | 事前準備（Preparation）：スケジューリング + アジェンダ + 事前コメント |
 | session | 実施（Session） |
-| record | 記録（Record） |
-| followup | フォローアップ（FollowUp）：公開・共有・コメント・フォローアップ |
+| record | 記録（Record）：メモの整理・仕上げ + 公開・共有 + コメント・フィードバック + フォローアップ |
 | notification | 通知（Slack） |
 | read_model | 参照（リードモデル） |
 | settings | ユーザーごとの通知設定・デフォルト公開先 |
+
+> **統合の経緯**: イベントストーミング v17 の結果、旧 FollowUp コンテキストの責務（公開・共有、コメント、アクションアイテム完了）を Record に統合した。公開は Record の状態遷移であり、コメント等のドメインロジックも薄いため、独立コンテキストとしては不適切と判断した。実コード側の `backend/contexts/followup/`（空パッケージ）は削除済み。
 
 ## コンテキスト間連携
 
