@@ -143,7 +143,12 @@ class ScheduleGroup:
     ) -> None:
         """Rename the schedule group and propagate to all child schedules.
 
-        No-op if the new title is the same as the current title.
+        Checks are performed in the following order:
+        1. Authorization — the actor must be the organizer.
+        2. No-op detection — if the title is unchanged, return immediately
+           without inspecting *schedules* at all.
+        3. Consistency — *schedules* must match the registered schedule IDs.
+        4. Mutation — update the group and propagate to child schedules.
 
         All child schedules are renamed regardless of their status.
 
@@ -153,18 +158,20 @@ class ScheduleGroup:
             now: Current time.
             schedules: All child Schedule entities to propagate the rename to.
                 Must match the registered schedule IDs exactly.
+                Only validated when the title actually changes.
 
         Raises:
             UnauthorizedScheduleGroupOperationError: If actor is not the
                 organizer.
             InconsistentSchedulesError: If schedules do not match the
-                registered schedule IDs.
+                registered schedule IDs (only when title differs).
         """
         self._assert_organizer(actor_id)
-        self._assert_schedules_complete(schedules)
 
         if title == self._title:
             return
+
+        self._assert_schedules_complete(schedules)
         self._title = title
         self._updated_at = now
 

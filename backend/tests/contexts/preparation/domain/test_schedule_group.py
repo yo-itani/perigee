@@ -640,6 +640,26 @@ class TestScheduleGroupTitle:
         assert group.collect_events() == []
         assert group.updated_at == _NOW  # unchanged
 
+    def test_rename_same_title_with_incomplete_schedules_is_noop(self) -> None:
+        """No-op rename skips schedule consistency check entirely."""
+        organizer = UserId.generate()
+        group = _make_group(organizer_id=organizer, title=ScheduleTitle("Same title"))
+        # Register a schedule ID so that the group expects one child.
+        group.register_schedule(ScheduleId.generate())
+        group.collect_events()
+
+        # Pass an empty schedules list (incomplete), but title is unchanged.
+        # This must NOT raise InconsistentSchedulesError.
+        group.rename(
+            title=ScheduleTitle("Same title"),
+            actor_id=organizer,
+            now=_LATER,
+            schedules=[],
+        )
+
+        assert group.collect_events() == []
+        assert group.updated_at == _NOW  # unchanged
+
     def test_rename_propagates_regardless_of_schedule_status(self) -> None:
         """All child schedules are renamed regardless of their status."""
         organizer = UserId.generate()
