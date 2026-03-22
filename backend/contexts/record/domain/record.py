@@ -9,6 +9,7 @@ from contexts.record.domain.events import (
     RecordCreated,
     RecordDraftSaved,
     RecordPublished,
+    ViewersChanged,
 )
 from contexts.record.domain.exceptions import (
     RecordAlreadyPublishedError,
@@ -17,7 +18,9 @@ from contexts.record.domain.exceptions import (
 from contexts.record.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import UserId
 
-type _RecordEvent = RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished
+type _RecordEvent = (
+    RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished | ViewersChanged
+)
 
 
 @dataclass
@@ -37,6 +40,7 @@ class Record:
     schedule_id: ScheduleId | None
     _memo: str
     _status: RecordStatus
+    _viewers: list[UserId]
     conducted_at: datetime
     created_at: datetime
     _updated_at: datetime
@@ -49,6 +53,10 @@ class Record:
     @property
     def status(self) -> RecordStatus:
         return self._status
+
+    @property
+    def viewers(self) -> list[UserId]:
+        return list(self._viewers)
 
     @property
     def updated_at(self) -> datetime:
@@ -73,6 +81,7 @@ class Record:
             schedule_id=schedule_id,
             _memo="",
             _status=RecordStatus.DRAFT,
+            _viewers=[],
             conducted_at=conducted_at,
             created_at=ts,
             _updated_at=ts,
@@ -133,15 +142,46 @@ class Record:
             )
         )
 
+    def set_viewers(
+        self, *, viewer_ids: list[UserId], actor_id: UserId, now: datetime
+    ) -> None:
+        """Set the viewers list. Only the organizer may change viewers.
+
+        organizer_id and counterpart_id are implicitly included and will be
+        excluded from the explicit viewers list. Duplicates are removed.
+        """
+        self._assert_organizer(actor_id)
+        implicit = {self.organizer_id, self.counterpart_id}
+        seen: set[UserId] = set()
+        deduplicated: list[UserId] = []
+        for vid in viewer_ids:
+            if vid not in implicit and vid not in seen:
+                seen.add(vid)
+                deduplicated.append(vid)
+        self._viewers = deduplicated
+        self._updated_at = now
+        self._events.append(
+            ViewersChanged(
+                record_id=self.id,
+                organizer_id=self.organizer_id,
+                viewer_ids=tuple(deduplicated),
+                changed_at=now,
+            )
+        )
+
     def is_visible_to(self, user_id: UserId) -> bool:
         """Check if the record is visible to a given user.
 
         Draft records are only visible to the organizer.
-        Published records visibility is managed by the Publishing context.
+        Published records are visible to organizer, counterpart, and viewers.
         """
         if self._status == RecordStatus.DRAFT:
             return user_id == self.organizer_id
-        return True
+        return (
+            user_id == self.organizer_id
+            or user_id == self.counterpart_id
+            or user_id in self._viewers
+        )
 
     def collect_events(self) -> list[_RecordEvent]:
         """Return accumulated events and clear the internal list."""

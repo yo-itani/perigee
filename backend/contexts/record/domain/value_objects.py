@@ -71,6 +71,21 @@ class ActionItemId:
         return ActionItemId(value=uuid.UUID(raw))
 
 
+@dataclass(frozen=True)
+class CommentId:
+    """Comment identifier (UUID-based value object)."""
+
+    value: uuid.UUID
+
+    @staticmethod
+    def generate() -> CommentId:
+        return CommentId(value=uuid.uuid4())
+
+    @staticmethod
+    def from_str(raw: str) -> CommentId:
+        return CommentId(value=uuid.UUID(raw))
+
+
 class RecordStatus(Enum):
     """Record status: Draft -> Published (one-way transition)."""
 
