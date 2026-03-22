@@ -171,3 +171,23 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - コンテキスト間はドメインイベントで連携する（例：「記録が公開された」→ notification が Slack通知を送信）
 - 他コンテキストのエンティティを直接importしない。参照が必要な場合はIDで参照する
 - オーガナイザー・カウンターパートの概念は各コンテキストが必要に応じてIDで参照する（専用のidentityコンテキストは設けない）
+
+## インフラ層の設計規約
+
+### ORM テーブル定義
+
+- テーブル定義は各コンテキスト（または shared）の `infrastructure/tables.py` に配置し、`foundation/db/base.py` の `Base` を継承する
+- 全テーブルに `TimestampMixin` を適用する（`created_at` / `updated_at` を自動付与）
+- 新規テーブル追加時は `foundation/db/models.py` に明示 import を追加する（Alembic 自動検出の漏れ防止）
+
+### datetime の扱い（インフラ層）
+
+- DB セッションは `connect_args={"init_command": "SET time_zone='+00:00'"}` で UTC 固定
+- `NOW()` / `CURRENT_TIMESTAMP` は常に UTC を返す
+- アプリ層で datetime を生成する場合は `datetime.now(UTC)` を使用する
+- 表示層で各ユーザーのタイムゾーンに変換する
+
+### リポジトリ
+
+- リポジトリインターフェースは `domain/` に ABC で定義する
+- SQLAlchemy 実装は `infrastructure/` に配置する（依存性逆転）
