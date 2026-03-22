@@ -12,16 +12,17 @@
 ```
 backend/
   contexts/
+    workspace/             # ワークスペース：組織・グループの階層管理、所属、Captain / Member ロール
     preparation/           # 事前準備：スケジューリング、アジェンダ、事前コメント
       domain/
         value_objects.py   # ScheduleId, ScheduleGroupId など
     record/                # 記録：アジェンダ確認、メモ、アクションアイテム登録、メモの整理・仕上げ、下書き→公開、コメント・フィードバック、フォローアップ
-    notification/          # Slack通知
-    # read_model/, settings/ は実装時に追加予定
+    notification/          # Slack通知（通知設定も含む）
+    # read_model/ は実装時に追加予定
   shared/                  # ドメイン共有（値オブジェクト、エンティティ、イベント基底クラス）
     domain/
       value_objects.py     # UserId など（コンテキスト共通の値オブジェクト）
-      user.py              # User エンティティ（最小構成）
+      user.py              # User エンティティ（名前・メールアドレス・Slack ID を含む）
       user_repository.py   # UserRepository インターフェース
       events.py            # 基底クラス
     infrastructure/
@@ -146,15 +147,24 @@ class Record:
 
 | コンテキスト | system_design上の対応 |
 |---|---|
+| workspace | ワークスペース（Workspace）：組織・グループの階層管理 + 所属（Membership） + Captain / Member ロール |
 | preparation | 事前準備（Preparation）：スケジューリング + アジェンダ + 事前コメント |
-| record | 記録（Record）：アジェンダ確認 + メモ + アクションアイテム登録 + メモの整理・仕上げ + 公開・共有 + コメント・フィードバック + フォローアップ |
-| notification | 通知（Slack） |
+| record | 記録（Record）：アジェンダ確認 + メモ + アクションアイテム登録 + メモの整理・仕上げ + 公開・共有 + コメント・フィードバック + フォローアップ + デフォルト公開先管理 |
+| notification | 通知（Slack）+ 通知設定（ユーザーごと） |
 | read_model | 参照（リードモデル） |
-| settings | ユーザーごとの通知設定・デフォルト公開先 |
+
+> **Settings コンテキスト廃止の経緯**: 当初はユーザーごとの通知設定・デフォルト公開先を管理する Settings コンテキストを計画していたが、通知設定は Notification コンテキスト内で管理する方が自然であり、デフォルト公開先は Workspace の Captain 提案として Record コンテキストが参照する形で対応できるため、独立コンテキストとしては不要と判断した。
 
 > **統合の経緯**: イベントストーミング v17 の結果、旧 FollowUp コンテキストの責務（公開・共有、コメント、アクションアイテム完了）を Record に統合した。公開は Record の状態遷移であり、コメント等のドメインロジックも薄いため、独立コンテキストとしては不適切と判断した。実コード側の `backend/contexts/followup/`（空パッケージ）は削除済み。
 >
 > さらに Session（実施）コンテキストも Record に統合した。Session はまだ何も実装されておらず、実施中の操作（アジェンダ確認・メモ・アクションアイテム登録）は Record の責務として扱えるため、独立コンテキストとしては不要と判断した。実コード側の `backend/contexts/session/`（空パッケージ）は削除済み。
+
+## Workspace コンテキストと他コンテキストの関係
+
+Workspace コンテキストは組織・グループの階層と所属を管理する基盤的なコンテキストである。他のコンテキストは Workspace の情報をIDで参照する。
+
+- **Record → Workspace**: 公開画面表示時に、カウンターパートの所属 Workspace を起点に祖先 Workspace の Captain を取得し、デフォルト Viewer として提案する。Viewer の確定は公開実行時にスナップショットとして Record 側に保存される。
+- **Notification → Workspace**: 将来的に Workspace 単位の通知設定に対応する場合に参照する。
 
 ## コンテキスト間連携
 
