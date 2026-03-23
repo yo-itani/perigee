@@ -91,6 +91,10 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
         self._session.add(workspace_row)
         await self._session.flush()
 
+        # Sync DB-persisted timestamps back to the domain entity
+        await self._session.refresh(workspace_row)
+        entity._updated_at = workspace_row.updated_at
+
     async def _update(self, entity: Workspace, existing: WorkspaceTable) -> None:
         now = datetime.now(UTC)
 
@@ -145,8 +149,10 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
 
         await self._session.flush()
 
-        # Reflect the persisted updated_at back to the domain entity
-        entity._updated_at = now
+        # Refresh from DB to get the actual persisted updated_at value,
+        # avoiding precision mismatch between Python datetime and DB DATETIME(6).
+        await self._session.refresh(existing)
+        entity._updated_at = existing.updated_at
 
     @staticmethod
     def _to_entity(row: WorkspaceTable) -> Workspace:

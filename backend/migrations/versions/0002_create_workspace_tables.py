@@ -9,6 +9,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.mysql import DATETIME
 
 revision: str = "0002"
 down_revision: str | None = "0001"
@@ -24,14 +25,16 @@ def upgrade() -> None:
         sa.Column("parent_id", sa.CHAR(36), nullable=True),
         sa.Column(
             "created_at",
-            sa.DateTime(),
-            server_default=sa.func.now(),
+            DATETIME(fsp=6),
+            server_default=sa.func.now(6),
             nullable=False,
         ),
         sa.Column(
             "updated_at",
-            sa.DateTime(),
-            server_default=sa.text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+            DATETIME(fsp=6),
+            server_default=sa.text(
+                "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)"
+            ),
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
@@ -51,14 +54,16 @@ def upgrade() -> None:
         sa.Column("role", sa.VARCHAR(20), nullable=False),
         sa.Column(
             "created_at",
-            sa.DateTime(),
-            server_default=sa.func.now(),
+            DATETIME(fsp=6),
+            server_default=sa.func.now(6),
             nullable=False,
         ),
         sa.Column(
             "updated_at",
-            sa.DateTime(),
-            server_default=sa.text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+            DATETIME(fsp=6),
+            server_default=sa.text(
+                "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)"
+            ),
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
