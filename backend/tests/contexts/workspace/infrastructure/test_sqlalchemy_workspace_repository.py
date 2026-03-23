@@ -15,7 +15,6 @@ from contexts.workspace.domain.workspace_name import WorkspaceName
 from contexts.workspace.infrastructure.sqlalchemy_workspace_repository import (
     SqlAlchemyWorkspaceRepository,
 )
-from foundation.domain.exceptions import OptimisticLockError
 from shared.domain.value_objects import UserId
 from shared.infrastructure.tables import UserTable
 
@@ -70,70 +69,6 @@ class TestSaveAndGetById:
         assert len(loaded.memberships) == 1
         assert loaded.memberships[0].user_id == user_id
         assert loaded.memberships[0].role == MembershipRole.CAPTAIN
-
-
-class TestOptimisticLock:
-    """Optimistic lock using updated_at."""
-
-    async def test_successive_saves_succeed(self, session: AsyncSession) -> None:
-        """Normal consecutive save should succeed (updated_at is synced)."""
-        repo = SqlAlchemyWorkspaceRepository(session)
-
-        ws = _make_workspace(name="V1")
-        await repo.save(ws)
-        await session.commit()
-
-        ws.rename(new_name=WorkspaceName("V2"), now=datetime(2026, 3, 20, 12, 0))
-        await repo.save(ws)
-        await session.commit()
-
-        ws.rename(new_name=WorkspaceName("V3"), now=datetime(2026, 3, 20, 13, 0))
-        await repo.save(ws)
-        await session.commit()
-
-        loaded = await repo.get_by_id(ws.id)
-        assert loaded is not None
-        assert loaded.name == WorkspaceName("V3")
-
-    async def test_stale_entity_raises_optimistic_lock_error(
-        self,
-        session_factory: async_sessionmaker[AsyncSession],
-    ) -> None:
-        """When another transaction updates first, the stale save must fail."""
-        # Session 1: create workspace
-        async with session_factory() as s1:
-            repo1 = SqlAlchemyWorkspaceRepository(s1)
-            ws = _make_workspace(name="Original")
-            await repo1.save(ws)
-            await s1.commit()
-            ws_id = ws.id
-
-        # Session 2: load and update
-        async with session_factory() as s2:
-            repo2 = SqlAlchemyWorkspaceRepository(s2)
-            ws_s2 = await repo2.get_by_id(ws_id)
-            assert ws_s2 is not None
-            ws_s2.rename(
-                new_name=WorkspaceName("Updated by S2"),
-                now=datetime(2026, 3, 20, 14, 0),
-            )
-            await repo2.save(ws_s2)
-            await s2.commit()
-
-        # Session 3: load with stale data from session 1's view and try to save
-        async with session_factory() as s3:
-            repo3 = SqlAlchemyWorkspaceRepository(s3)
-            # Simulate stale entity: load fresh then manually set old updated_at
-            ws_stale = await repo3.get_by_id(ws_id)
-            assert ws_stale is not None
-            # Overwrite updated_at with the original (stale) value
-            ws_stale._updated_at = ws.updated_at
-            ws_stale.rename(
-                new_name=WorkspaceName("Stale update"),
-                now=datetime(2026, 3, 20, 15, 0),
-            )
-            with pytest.raises(OptimisticLockError):
-                await repo3.save(ws_stale)
 
 
 class TestGetAncestors:

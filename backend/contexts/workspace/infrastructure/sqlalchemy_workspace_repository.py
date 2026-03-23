@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import CursorResult, select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.workspace.domain.value_objects import (
@@ -14,7 +14,6 @@ from contexts.workspace.domain.workspace import Membership, Workspace
 from contexts.workspace.domain.workspace_name import WorkspaceName
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from contexts.workspace.infrastructure.tables import MembershipTable, WorkspaceTable
-from foundation.domain.exceptions import OptimisticLockError
 from shared.domain.value_objects import UserId
 
 
@@ -91,29 +90,13 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
         self._session.add(workspace_row)
         await self._session.flush()
 
-        # Sync DB-persisted timestamps back to the domain entity
-        await self._session.refresh(workspace_row)
-        entity._updated_at = workspace_row.updated_at
-
     async def _update(self, entity: Workspace, existing: WorkspaceTable) -> None:
         now = datetime.now(UTC)
 
-        # Optimistic lock: UPDATE with WHERE updated_at = expected
-        cursor_result: CursorResult[tuple[()]] = await self._session.execute(  # type: ignore[assignment]
-            update(WorkspaceTable)
-            .where(WorkspaceTable.id == str(entity.id.value))
-            .where(WorkspaceTable.updated_at == entity.updated_at)
-            .values(
-                name=entity.name.value,
-                parent_id=(str(entity.parent_id.value) if entity.parent_id else None),
-                updated_at=now,
-            )
-        )
-        if cursor_result.rowcount == 0:
-            raise OptimisticLockError("Workspace", str(entity.id.value))
-
-        # Sync the ORM instance so relationship operations see the latest state
-        await self._session.refresh(existing)
+        # Update workspace fields (last-write-wins)
+        existing.name = entity.name.value
+        existing.parent_id = str(entity.parent_id.value) if entity.parent_id else None
+        existing.updated_at = now
 
         # Reconcile memberships: build a map of current DB memberships
         existing_membership_map: dict[str, MembershipTable] = {
@@ -148,11 +131,6 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
                 existing.memberships.remove(db_m)
 
         await self._session.flush()
-
-        # Refresh from DB to get the actual persisted updated_at value,
-        # avoiding precision mismatch between Python datetime and DB DATETIME(6).
-        await self._session.refresh(existing)
-        entity._updated_at = existing.updated_at
 
     @staticmethod
     def _to_entity(row: WorkspaceTable) -> Workspace:
