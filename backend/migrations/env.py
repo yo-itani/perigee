@@ -5,14 +5,16 @@ from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import foundation.db.models  # noqa: F401
 from foundation.config.settings import settings
+from foundation.db.base import Base
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
@@ -41,6 +43,7 @@ async def run_async_migrations() -> None:
     connectable = create_async_engine(
         settings.database_url,
         poolclass=pool.NullPool,
+        connect_args={"init_command": "SET time_zone='+00:00'"},
     )
 
     async with connectable.connect() as connection:
