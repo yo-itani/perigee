@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import CursorResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.workspace.domain.value_objects import (
@@ -92,13 +92,24 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
         await self._session.flush()
 
     async def _update(self, entity: Workspace, existing: WorkspaceTable) -> None:
-        if existing.updated_at != entity.updated_at:
+        now = datetime.now(UTC)
+
+        # Optimistic lock: UPDATE with WHERE updated_at = expected
+        cursor_result: CursorResult[tuple[()]] = await self._session.execute(  # type: ignore[assignment]
+            update(WorkspaceTable)
+            .where(WorkspaceTable.id == str(entity.id.value))
+            .where(WorkspaceTable.updated_at == entity.updated_at)
+            .values(
+                name=entity.name.value,
+                parent_id=(str(entity.parent_id.value) if entity.parent_id else None),
+                updated_at=now,
+            )
+        )
+        if cursor_result.rowcount == 0:
             raise OptimisticLockError("Workspace", str(entity.id.value))
 
-        now = datetime.now(UTC)
-        existing.name = entity.name.value
-        existing.parent_id = str(entity.parent_id.value) if entity.parent_id else None
-        existing.updated_at = now
+        # Sync the ORM instance so relationship operations see the latest state
+        await self._session.refresh(existing)
 
         # Reconcile memberships: build a map of current DB memberships
         existing_membership_map: dict[str, MembershipTable] = {
@@ -133,6 +144,9 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
                 existing.memberships.remove(db_m)
 
         await self._session.flush()
+
+        # Reflect the persisted updated_at back to the domain entity
+        entity._updated_at = now
 
     @staticmethod
     def _to_entity(row: WorkspaceTable) -> Workspace:
