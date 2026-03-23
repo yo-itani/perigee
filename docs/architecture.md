@@ -202,24 +202,12 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - 各コンテキストのリポジトリインターフェースは `foundation/domain/base_repository.py` の `BaseRepository[TEntity, TId]` を継承する
 - SQLAlchemy 実装は `infrastructure/` に配置する（依存性逆転）
 
-### 楽観的ロック
+### 競合制御（楽観ロック）
 
-- `updated_at` カラムを利用した楽観的ロックを採用する（version カラムは追加しない）
-- 集約ルートは取得時の `updated_at` を保持し、`save()` 時に照合する
-- リポジトリの `save()` 実装では `WHERE id = :id AND updated_at = :expected` で更新を行い、affected rows が 0 の場合は `OptimisticLockError` を送出する
-- `OptimisticLockError` は `foundation/domain/exceptions.py` に定義されている
-
-```python
-# リポジトリ実装での楽観的ロックの例
-result = await session.execute(
-    update(RecordTable)
-    .where(RecordTable.id == entity.id.value)
-    .where(RecordTable.updated_at == entity.updated_at)  # 楽観ロック
-    .values(...)
-)
-if result.rowcount == 0:
-    raise OptimisticLockError("Record", str(entity.id.value))
-```
+- 楽観ロックはプロジェクト全体の必須規約ではなく、コンテキストごとの要件に応じて個別に判断する
+- 競合制御が必要なコンテキストでは楽観ロック（`version` カラム等）を個別に検討する
+- `updated_at` はログ用途のみとして扱い、楽観ロックの照合には使用しない
+- `OptimisticLockError` は `foundation/domain/exceptions.py` に定義されており、必要に応じて利用できる
 
 ### foundation/db/models.py 登録ルール
 
