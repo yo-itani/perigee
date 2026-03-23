@@ -89,12 +89,12 @@ class Record:
         )
         record._events.append(
             RecordCreated(
+                occurred_at=ts,
                 record_id=record_id,
                 organizer_id=organizer_id,
                 counterpart_id=counterpart_id,
                 schedule_id=schedule_id,
                 conducted_at=conducted_at,
-                created_at=ts,
             )
         )
         return record
@@ -107,9 +107,9 @@ class Record:
         self._updated_at = now
         self._events.append(
             MemoUpdated(
+                occurred_at=now,
                 record_id=self.id,
                 organizer_id=self.organizer_id,
-                updated_at=now,
             )
         )
 
@@ -120,9 +120,9 @@ class Record:
         self._updated_at = now
         self._events.append(
             RecordDraftSaved(
+                occurred_at=now,
                 record_id=self.id,
                 organizer_id=self.organizer_id,
-                saved_at=now,
             )
         )
 
@@ -137,9 +137,9 @@ class Record:
         self._updated_at = now
         self._events.append(
             RecordPublished(
+                occurred_at=now,
                 record_id=self.id,
                 organizer_id=self.organizer_id,
-                published_at=now,
             )
         )
 
@@ -163,10 +163,10 @@ class Record:
         self._updated_at = now
         self._events.append(
             ViewersChanged(
+                occurred_at=now,
                 record_id=self.id,
                 organizer_id=self.organizer_id,
                 viewer_ids=tuple(deduplicated),
-                changed_at=now,
             )
         )
 

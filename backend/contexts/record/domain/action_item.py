@@ -67,11 +67,11 @@ class ActionItem:
         )
         action_item._events.append(
             ActionItemAdded(
+                occurred_at=ts,
                 action_item_id=action_item_id,
                 counterpart_id=counterpart_id,
                 record_id=record_id,
                 title=title.value,
-                created_at=ts,
             )
         )
         return action_item
@@ -87,9 +87,9 @@ class ActionItem:
         self._is_completed = True
         self._events.append(
             ActionItemCompleted(
+                occurred_at=now,
                 action_item_id=self.id,
                 counterpart_id=self.counterpart_id,
-                completed_at=now,
             )
         )
 

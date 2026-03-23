@@ -110,5 +110,5 @@ class TestActionItemComplete:
         events = item.collect_events()
         completed_events = [e for e in events if isinstance(e, ActionItemCompleted)]
         assert len(completed_events) == 1
-        assert completed_events[0].completed_at == now
+        assert completed_events[0].occurred_at == now
         assert completed_events[0].counterpart_id == counterpart

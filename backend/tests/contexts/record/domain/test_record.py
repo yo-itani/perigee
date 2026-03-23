@@ -119,7 +119,7 @@ class TestRecordUpdateMemo:
         memo_events = [e for e in events if isinstance(e, MemoUpdated)]
         assert len(memo_events) == 1
         assert memo_events[0].record_id == record.id
-        assert memo_events[0].updated_at == now
+        assert memo_events[0].occurred_at == now
 
 
 class TestRecordSaveDraft:
@@ -159,7 +159,7 @@ class TestRecordSaveDraft:
         events = record.collect_events()
         draft_events = [e for e in events if isinstance(e, RecordDraftSaved)]
         assert len(draft_events) == 1
-        assert draft_events[0].saved_at == now
+        assert draft_events[0].occurred_at == now
 
 
 class TestRecordPublish:
@@ -200,7 +200,7 @@ class TestRecordPublish:
         events = record.collect_events()
         pub_events = [e for e in events if isinstance(e, RecordPublished)]
         assert len(pub_events) == 1
-        assert pub_events[0].published_at == now
+        assert pub_events[0].occurred_at == now
 
 
 class TestRecordVisibility:
@@ -340,7 +340,7 @@ class TestRecordViewers:
         assert len(viewer_events) == 1
         assert viewer_events[0].record_id == record.id
         assert viewer_events[0].viewer_ids == (viewer,)
-        assert viewer_events[0].changed_at == now
+        assert viewer_events[0].occurred_at == now
 
     def test_updates_timestamp(self) -> None:
         organizer = UserId.generate()

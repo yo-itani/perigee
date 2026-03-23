@@ -58,7 +58,7 @@ class TestCommentCreate:
         assert event.comment_id == comment.id
         assert event.record_id == comment.record_id
         assert event.author_id == comment.author_id
-        assert event.created_at == now
+        assert event.occurred_at == now
 
     def test_collect_events_clears_list(self) -> None:
         comment = _make_comment()
