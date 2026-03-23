@@ -24,8 +24,5 @@ class BaseRepository[TEntity, TId](ABC):
         """Persist the entity (insert or update).
 
         Implementations must determine whether the entity is new or
-        existing and issue the appropriate SQL statement.  When
-        performing an update, implementations should use optimistic
-        locking by including ``WHERE updated_at = :expected`` to
-        detect concurrent modifications (see ``OptimisticLockError``).
+        existing and issue the appropriate SQL statement.
         """
