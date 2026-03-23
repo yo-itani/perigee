@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,8 +64,6 @@ class SqlAlchemyRecordRepository(RecordRepository):
         await self._session.flush()
 
     async def _update(self, entity: Record, existing: RecordTable) -> None:
-        now = datetime.now(UTC)
-
         # Update scalar fields
         existing.memo = entity.memo.value
         existing.status = entity.status.value
@@ -74,7 +71,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
         existing.schedule_id = (
             str(entity.schedule_id.value) if entity.schedule_id else None
         )
-        existing.updated_at = now
+        existing.updated_at = entity.updated_at
 
         # Replace viewers: delete all, then re-insert
         existing.viewers.clear()
@@ -85,8 +82,8 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 id=str(uuid.uuid4()),
                 record_id=str(entity.id.value),
                 user_id=str(viewer_id.value),
-                created_at=now,
-                updated_at=now,
+                created_at=entity.updated_at,
+                updated_at=entity.updated_at,
             )
             existing.viewers.append(new_viewer)
 

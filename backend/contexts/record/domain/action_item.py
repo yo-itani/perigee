@@ -36,11 +36,16 @@ class ActionItem:
     title: ActionItemTitle
     _is_completed: bool
     created_at: datetime
+    _updated_at: datetime
     _events: list[_ActionItemEvent] = field(default_factory=list, repr=False)
 
     @property
     def is_completed(self) -> bool:
         return self._is_completed
+
+    @property
+    def updated_at(self) -> datetime:
+        return self._updated_at
 
     @staticmethod
     def create(
@@ -64,6 +69,7 @@ class ActionItem:
             title=title,
             _is_completed=False,
             created_at=ts,
+            _updated_at=ts,
         )
         action_item._events.append(
             ActionItemAdded(
@@ -85,6 +91,7 @@ class ActionItem:
         if self._is_completed:
             raise ActionItemAlreadyCompletedError("Action item is already completed.")
         self._is_completed = True
+        self._updated_at = now
         self._events.append(
             ActionItemCompleted(
                 occurred_at=now,
