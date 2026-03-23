@@ -36,6 +36,13 @@ class InvalidCommentBodyError(Exception):
         super().__init__(message)
 
 
+class CommentAlreadyExistsError(Exception):
+    """Raised when attempting to save a comment that already exists."""
+
+    def __init__(self, message: str = "Comment already exists.") -> None:
+        super().__init__(message)
+
+
 class InvalidMemoError(Exception):
     """Raised when a memo fails validation."""
 

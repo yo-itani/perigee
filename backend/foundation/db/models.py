@@ -13,6 +13,12 @@ from contexts.preparation.infrastructure.tables import (
     TemplateDefaultCounterpartTable,  # noqa: F401
     TemplateTable,  # noqa: F401
 )
+from contexts.record.infrastructure.tables import (
+    ActionItemTable,  # noqa: F401
+    CommentTable,  # noqa: F401
+    RecordTable,  # noqa: F401
+    RecordViewerTable,  # noqa: F401
+)
 from contexts.workspace.infrastructure.tables import (
     MembershipTable,  # noqa: F401
     WorkspaceTable,  # noqa: F401
@@ -20,8 +26,12 @@ from contexts.workspace.infrastructure.tables import (
 from shared.infrastructure.tables import UserTable  # noqa: F401
 
 __all__ = [
+    "ActionItemTable",
+    "CommentTable",
     "ConfirmationRequestTable",
     "MembershipTable",
+    "RecordTable",
+    "RecordViewerTable",
     "ScheduleGroupAgendaTemplateTable",
     "ScheduleGroupTable",
     "ScheduleTable",
