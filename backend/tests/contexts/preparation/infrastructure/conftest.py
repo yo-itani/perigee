@@ -50,7 +50,11 @@ async def test_engine() -> AsyncGenerator[AsyncEngine]:
 async def session(
     test_engine: AsyncEngine,
 ) -> AsyncGenerator[AsyncSession]:
-    """Provide a transactional session that rolls back after each test."""
+    """Provide a session that rolls back uncommitted changes after each test.
+
+    Note: committed data persists across tests within the same session.
+    Each test is responsible for its own data setup.
+    """
     session_factory = async_sessionmaker(
         test_engine,
         class_=AsyncSession,

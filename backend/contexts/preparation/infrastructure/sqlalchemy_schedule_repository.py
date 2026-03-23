@@ -122,8 +122,8 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                     proposed_at=cr.proposed_at,
                     resolution=cr.resolution.value,
                     resolved_by=(str(cr.resolved_by.value) if cr.resolved_by else None),
-                    created_at=now,
-                    updated_at=now,
+                    created_at=cr.created_at,
+                    updated_at=cr.created_at,
                 )
                 existing.confirmation_requests.append(new_cr)
 
