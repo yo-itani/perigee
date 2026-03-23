@@ -57,6 +57,11 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
     ) -> None:
         if exc_type is not None:
             await self.rollback()
+        elif self._session is not None and self._session.in_transaction():
+            # Explicitly roll back uncommitted changes on normal exit so the
+            # transaction boundary is visible in the code rather than relying
+            # on SQLAlchemy's implicit rollback-on-close behaviour.
+            await self.rollback()
         if self._session is not None:
             await self._session.close()
             self._session = None

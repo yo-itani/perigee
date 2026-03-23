@@ -99,3 +99,5 @@ class TestInMemoryEventDispatcher:
         dispatcher.register(_SampleEvent, handler)
         assert _SampleEvent in dispatcher.handlers
         assert len(dispatcher.handlers[_SampleEvent]) == 1
+        # Values are tuples — callers cannot mutate internal state
+        assert isinstance(dispatcher.handlers[_SampleEvent], tuple)

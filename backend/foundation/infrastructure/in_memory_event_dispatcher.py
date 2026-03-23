@@ -46,6 +46,10 @@ class InMemoryEventDispatcher(EventDispatcher):
                 await handler(event)
 
     @property
-    def handlers(self) -> dict[type[Any], list[EventHandler]]:
-        """Expose registered handlers (useful for testing)."""
-        return dict(self._handlers)
+    def handlers(self) -> dict[type[Any], tuple[EventHandler, ...]]:
+        """Expose registered handlers as an immutable view (useful for testing).
+
+        Values are tuples so that callers cannot mutate the internal
+        handler lists.
+        """
+        return {k: tuple(v) for k, v in self._handlers.items()}
