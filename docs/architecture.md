@@ -28,6 +28,15 @@ backend/
     infrastructure/
       in_memory_user_repository.py  # UserRepository の固定データ仮実装
   foundation/              # 技術基盤（ドメイン非依存）
+    domain/
+      base_repository.py   # BaseRepository[TEntity, TId] ABC
+      event_dispatcher.py  # EventDispatcher ABC
+      exceptions.py        # OptimisticLockError
+    application/
+      unit_of_work.py      # UnitOfWork ABC
+    infrastructure/
+      sqlalchemy_unit_of_work.py      # SQLAlchemy UoW 実装
+      in_memory_event_dispatcher.py   # インメモリ EventDispatcher 実装
     db/                    # SQLAlchemy async engine/session
     auth/                  # 認証ミドルウェア
     config/                # pydantic-settings
@@ -190,4 +199,67 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 ### リポジトリ
 
 - リポジトリインターフェースは `domain/` に ABC で定義する
+- 各コンテキストのリポジトリインターフェースは `foundation/domain/base_repository.py` の `BaseRepository[TEntity, TId]` を継承する
 - SQLAlchemy 実装は `infrastructure/` に配置する（依存性逆転）
+
+### 楽観的ロック
+
+- `updated_at` カラムを利用した楽観的ロックを採用する（version カラムは追加しない）
+- 集約ルートは取得時の `updated_at` を保持し、`save()` 時に照合する
+- リポジトリの `save()` 実装では `WHERE id = :id AND updated_at = :expected` で更新を行い、affected rows が 0 の場合は `OptimisticLockError` を送出する
+- `OptimisticLockError` は `foundation/domain/exceptions.py` に定義されている
+
+```python
+# リポジトリ実装での楽観的ロックの例
+result = await session.execute(
+    update(RecordTable)
+    .where(RecordTable.id == entity.id.value)
+    .where(RecordTable.updated_at == entity.updated_at)  # 楽観ロック
+    .values(...)
+)
+if result.rowcount == 0:
+    raise OptimisticLockError("Record", str(entity.id.value))
+```
+
+### foundation/db/models.py 登録ルール
+
+- 新規テーブルを追加した場合は、必ず `foundation/db/models.py` に明示 import を追加すること
+- Alembic の autogenerate は `Base.metadata` を参照するため、import されていないテーブルは検出されない
+- import の形式: `from <context>.infrastructure.tables import <TableClass>  # noqa: F401`
+
+```python
+# foundation/db/models.py の例
+from shared.infrastructure.tables import UserTable  # noqa: F401
+from contexts.preparation.infrastructure.tables import ScheduleTable  # noqa: F401
+```
+
+### UnitOfWork + EventDispatcher 統合パターン
+
+- `UnitOfWork.commit()` は DB commit のみを行い、イベントディスパッチは含まない
+- アプリケーションサービスが commit 後に明示的にイベントをディスパッチする
+- これにより、DB コミットとイベント処理の責務を分離し、テスト容易性を確保する
+
+```python
+# アプリケーションサービスでの使用例
+class PublishRecordService:
+    def __init__(
+        self,
+        uow: UnitOfWork,
+        record_repo: RecordRepository,
+        event_dispatcher: EventDispatcher,
+    ) -> None:
+        self._uow = uow
+        self._record_repo = record_repo
+        self._event_dispatcher = event_dispatcher
+
+    async def execute(self, record_id: RecordId, actor_id: UserId) -> None:
+        async with self._uow:
+            record = await self._record_repo.get_by_id(record_id)
+            record.publish(actor_id=actor_id, now=datetime.now(UTC))
+            await self._record_repo.save(record)
+            events = record.collect_events()
+            await self._uow.commit()
+
+        # commit 成功後にイベントをディスパッチ
+        await self._event_dispatcher.dispatch(events)
+```

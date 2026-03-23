@@ -47,10 +47,10 @@ class Comment:
         )
         comment._events.append(
             CommentAdded(
+                occurred_at=ts,
                 comment_id=comment_id,
                 record_id=record_id,
                 author_id=author_id,
-                created_at=ts,
             )
         )
         return comment
