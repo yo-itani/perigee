@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.preparation.domain.agenda import Agenda
+from contexts.preparation.domain.agenda import AddedByTag, Agenda
 from contexts.preparation.domain.agenda_repository import AgendaRepository
 from contexts.preparation.domain.exceptions import UnauthorizedScheduleOperationError
 from contexts.preparation.domain.schedule import Schedule
@@ -108,6 +108,7 @@ class SendConsultationRequestService:
                 schedule_id=schedule.id,
                 topic=Topic(topic_str),
                 added_by=input_dto.counterpart_id,
+                added_by_tag=AddedByTag.COUNTERPART,
                 now=now,
             )
             agendas.append(agenda)
