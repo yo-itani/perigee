@@ -14,13 +14,17 @@ from contexts.preparation.domain.schedule_group_repository import (
     ScheduleGroupRepository,
 )
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
+from contexts.preparation.domain.template import Template
+from contexts.preparation.domain.template_repository import TemplateRepository
 from contexts.preparation.domain.value_objects import (
     AgendaId,
     ScheduleGroupId,
     ScheduleId,
+    TemplateId,
 )
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
+from shared.domain.value_objects import UserId
 
 
 class StubUnitOfWork(UnitOfWork):
@@ -125,6 +129,31 @@ class InMemoryAgendaRepository(AgendaRepository):
     @property
     def agendas(self) -> dict[AgendaId, Agenda]:
         return dict(self._store)
+
+
+class InMemoryTemplateRepository(TemplateRepository):
+    """In-memory template repository for unit testing."""
+
+    def __init__(self) -> None:
+        self._store: dict[TemplateId, Template] = {}
+
+    async def get_by_id(self, entity_id: TemplateId) -> Template | None:
+        return self._store.get(entity_id)
+
+    async def save(self, entity: Template) -> None:
+        self._store[entity.id] = entity
+
+    async def list_by_organizer(self, organizer_id: UserId) -> list[Template]:
+        return [t for t in self._store.values() if t.organizer_id == organizer_id]
+
+    @property
+    def templates(self) -> dict[TemplateId, Template]:
+        return dict(self._store)
+
+
+@pytest.fixture
+def template_repo() -> InMemoryTemplateRepository:
+    return InMemoryTemplateRepository()
 
 
 @pytest.fixture
