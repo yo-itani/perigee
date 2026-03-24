@@ -86,8 +86,19 @@ class SendReminderService:
             return
 
         reminder_minutes = setting.reminder_minutes_before
-        reminder_threshold = schedule.scheduled_at - timedelta(minutes=reminder_minutes)
-        if reminder_threshold > now:
+        # Normalize tz-aware/naive: scheduled_at from DB is tz-naive (UTC),
+        # while now may be tz-aware. Strip tzinfo to compare consistently.
+        scheduled_at = schedule.scheduled_at
+        comparable_now = now.replace(tzinfo=None) if now.tzinfo is not None else now
+        comparable_scheduled_at = (
+            scheduled_at.replace(tzinfo=None)
+            if scheduled_at.tzinfo is not None
+            else scheduled_at
+        )
+        reminder_threshold = comparable_scheduled_at - timedelta(
+            minutes=reminder_minutes
+        )
+        if reminder_threshold > comparable_now:
             return
 
         already_sent = await self._reminder_log_repo.exists(
