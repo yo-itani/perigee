@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
 from contexts.record.domain.value_objects import ActionItemId, CommentId, RecordId
 from shared.domain.events import DomainEvent
 from shared.domain.value_objects import UserId
@@ -26,6 +26,15 @@ class MemoUpdated(DomainEvent):
 
     record_id: RecordId
     organizer_id: UserId
+
+
+@dataclass(frozen=True)
+class AgendaConfirmed(DomainEvent):
+    """Raised when an agenda item is confirmed (checked) during a 1-on-1."""
+
+    record_id: RecordId
+    agenda_id: AgendaId
+    confirmed_by: UserId
 
 
 @dataclass(frozen=True)
