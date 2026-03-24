@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from contexts.preparation.application.rename_schedule_group_service import (
+    RenameScheduleGroupInput,
     RenameScheduleGroupService,
+    ScheduleGroupNotFoundError,
 )
 from contexts.preparation.domain.events import ScheduleGroupRenamed, ScheduleRenamed
 from contexts.preparation.domain.exceptions import (
@@ -17,7 +19,6 @@ from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_group import ScheduleGroup
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import ScheduleGroupId
-from foundation.domain.exceptions import EntityNotFoundError
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -91,9 +92,11 @@ class TestRenameScheduleGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            new_title="New Title",
-            actor_id=organizer,
+            RenameScheduleGroupInput(
+                schedule_group_id=group.id,
+                new_title="New Title",
+                actor_id=organizer,
+            )
         )
 
         updated_group = await schedule_group_repo.get_by_id(group.id)
@@ -135,9 +138,11 @@ class TestRenameScheduleGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            new_title="New Title",
-            actor_id=organizer,
+            RenameScheduleGroupInput(
+                schedule_group_id=group.id,
+                new_title="New Title",
+                actor_id=organizer,
+            )
         )
 
         group_events = [e for e in dispatched if isinstance(e, ScheduleGroupRenamed)]
@@ -174,9 +179,11 @@ class TestRenameScheduleGroup:
         )
 
         await service_with_capture.execute(
-            schedule_group_id=group.id,
-            new_title="Original Title",
-            actor_id=organizer,
+            RenameScheduleGroupInput(
+                schedule_group_id=group.id,
+                new_title="Original Title",
+                actor_id=organizer,
+            )
         )
 
         assert len(dispatched) == 0
@@ -197,21 +204,25 @@ class TestRenameScheduleGroup:
 
         with pytest.raises(UnauthorizedScheduleGroupOperationError):
             await service.execute(
-                schedule_group_id=group.id,
-                new_title="New",
-                actor_id=other,
+                RenameScheduleGroupInput(
+                    schedule_group_id=group.id,
+                    new_title="New",
+                    actor_id=other,
+                )
             )
 
     async def test_raises_not_found(
         self,
         service: RenameScheduleGroupService,
     ) -> None:
-        """Raises EntityNotFoundError for nonexistent group."""
-        with pytest.raises(EntityNotFoundError):
+        """Raises ScheduleGroupNotFoundError for nonexistent group."""
+        with pytest.raises(ScheduleGroupNotFoundError):
             await service.execute(
-                schedule_group_id=ScheduleGroupId.generate(),
-                new_title="New",
-                actor_id=UserId.generate(),
+                RenameScheduleGroupInput(
+                    schedule_group_id=ScheduleGroupId.generate(),
+                    new_title="New",
+                    actor_id=UserId.generate(),
+                )
             )
 
     async def test_commits_via_uow(
@@ -229,8 +240,10 @@ class TestRenameScheduleGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            new_title="New Title",
-            actor_id=organizer,
+            RenameScheduleGroupInput(
+                schedule_group_id=group.id,
+                new_title="New Title",
+                actor_id=organizer,
+            )
         )
         assert uow.committed is True

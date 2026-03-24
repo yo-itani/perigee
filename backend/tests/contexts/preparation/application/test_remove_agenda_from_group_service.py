@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from contexts.preparation.application.remove_agenda_from_group_service import (
+    RemoveAgendaFromGroupInput,
     RemoveAgendaFromGroupService,
+    ScheduleGroupNotFoundError,
 )
 from contexts.preparation.domain.agenda import Agenda
 from contexts.preparation.domain.agenda_template import AgendaTemplate
@@ -20,7 +22,6 @@ from contexts.preparation.domain.schedule_group import ScheduleGroup
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import ScheduleGroupId
-from foundation.domain.exceptions import EntityNotFoundError
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -121,9 +122,11 @@ class TestRemoveAgendaFromGroup:
         assert len(agenda_repo.agendas) == 4
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic A",
-            actor_id=organizer,
+            RemoveAgendaFromGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic A",
+                actor_id=organizer,
+            )
         )
 
         # Should have 2 remaining (Topic B for each schedule)
@@ -152,9 +155,11 @@ class TestRemoveAgendaFromGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic A",
-            actor_id=organizer,
+            RemoveAgendaFromGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic A",
+                actor_id=organizer,
+            )
         )
 
         updated_group = await schedule_group_repo.get_by_id(group.id)
@@ -199,9 +204,11 @@ class TestRemoveAgendaFromGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic A",
-            actor_id=organizer,
+            RemoveAgendaFromGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic A",
+                actor_id=organizer,
+            )
         )
 
         assert len(dispatched) == 1
@@ -229,9 +236,11 @@ class TestRemoveAgendaFromGroup:
 
         # Should succeed without error (no-op)
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Nonexistent",
-            actor_id=organizer,
+            RemoveAgendaFromGroupInput(
+                schedule_group_id=group.id,
+                topic="Nonexistent",
+                actor_id=organizer,
+            )
         )
 
         # Agendas unchanged
@@ -260,21 +269,25 @@ class TestRemoveAgendaFromGroup:
 
         with pytest.raises(UnauthorizedScheduleGroupOperationError):
             await service.execute(
-                schedule_group_id=group.id,
-                topic="Topic",
-                actor_id=other,
+                RemoveAgendaFromGroupInput(
+                    schedule_group_id=group.id,
+                    topic="Topic",
+                    actor_id=other,
+                )
             )
 
     async def test_raises_not_found(
         self,
         service: RemoveAgendaFromGroupService,
     ) -> None:
-        """Raises EntityNotFoundError for nonexistent group."""
-        with pytest.raises(EntityNotFoundError):
+        """Raises ScheduleGroupNotFoundError for nonexistent group."""
+        with pytest.raises(ScheduleGroupNotFoundError):
             await service.execute(
-                schedule_group_id=ScheduleGroupId.generate(),
-                topic="Topic",
-                actor_id=UserId.generate(),
+                RemoveAgendaFromGroupInput(
+                    schedule_group_id=ScheduleGroupId.generate(),
+                    topic="Topic",
+                    actor_id=UserId.generate(),
+                )
             )
 
     async def test_commits_via_uow(
@@ -299,8 +312,10 @@ class TestRemoveAgendaFromGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic",
-            actor_id=organizer,
+            RemoveAgendaFromGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic",
+                actor_id=organizer,
+            )
         )
         assert uow.committed is True

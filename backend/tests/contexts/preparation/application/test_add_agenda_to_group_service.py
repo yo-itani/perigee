@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from contexts.preparation.application.add_agenda_to_group_service import (
+    AddAgendaToGroupInput,
     AddAgendaToGroupService,
+    ScheduleGroupNotFoundError,
 )
 from contexts.preparation.domain.events import AgendaAddedViaGroup
 from contexts.preparation.domain.exceptions import (
@@ -17,7 +19,6 @@ from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_group import ScheduleGroup
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import ScheduleGroupId
-from foundation.domain.exceptions import EntityNotFoundError
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -95,9 +96,11 @@ class TestAddAgendaToGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="New topic",
-            actor_id=organizer,
+            AddAgendaToGroupInput(
+                schedule_group_id=group.id,
+                topic="New topic",
+                actor_id=organizer,
+            )
         )
 
         assert len(agenda_repo.agendas) == 2
@@ -120,9 +123,11 @@ class TestAddAgendaToGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="New topic",
-            actor_id=organizer,
+            AddAgendaToGroupInput(
+                schedule_group_id=group.id,
+                topic="New topic",
+                actor_id=organizer,
+            )
         )
 
         updated_group = await schedule_group_repo.get_by_id(group.id)
@@ -161,9 +166,11 @@ class TestAddAgendaToGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic",
-            actor_id=organizer,
+            AddAgendaToGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic",
+                actor_id=organizer,
+            )
         )
 
         assert len(dispatched) == 1
@@ -185,21 +192,25 @@ class TestAddAgendaToGroup:
 
         with pytest.raises(UnauthorizedScheduleGroupOperationError):
             await service.execute(
-                schedule_group_id=group.id,
-                topic="Topic",
-                actor_id=other,
+                AddAgendaToGroupInput(
+                    schedule_group_id=group.id,
+                    topic="Topic",
+                    actor_id=other,
+                )
             )
 
     async def test_raises_not_found(
         self,
         service: AddAgendaToGroupService,
     ) -> None:
-        """Raises EntityNotFoundError for nonexistent group."""
-        with pytest.raises(EntityNotFoundError):
+        """Raises ScheduleGroupNotFoundError for nonexistent group."""
+        with pytest.raises(ScheduleGroupNotFoundError):
             await service.execute(
-                schedule_group_id=ScheduleGroupId.generate(),
-                topic="Topic",
-                actor_id=UserId.generate(),
+                AddAgendaToGroupInput(
+                    schedule_group_id=ScheduleGroupId.generate(),
+                    topic="Topic",
+                    actor_id=UserId.generate(),
+                )
             )
 
     async def test_commits_via_uow(
@@ -217,8 +228,10 @@ class TestAddAgendaToGroup:
         )
 
         await service.execute(
-            schedule_group_id=group.id,
-            topic="Topic",
-            actor_id=organizer,
+            AddAgendaToGroupInput(
+                schedule_group_id=group.id,
+                topic="Topic",
+                actor_id=organizer,
+            )
         )
         assert uow.committed is True

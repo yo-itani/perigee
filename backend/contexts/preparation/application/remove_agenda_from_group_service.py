@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from contexts.preparation.domain.agenda_repository import AgendaRepository
@@ -12,9 +13,25 @@ from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.value_objects import ScheduleGroupId
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
-from foundation.domain.exceptions import EntityNotFoundError
 from shared.domain.events import DomainEvent
 from shared.domain.value_objects import UserId
+
+
+class ScheduleGroupNotFoundError(Exception):
+    """Raised when the specified ScheduleGroup does not exist."""
+
+    def __init__(self, schedule_group_id: ScheduleGroupId) -> None:
+        self.schedule_group_id = schedule_group_id
+        super().__init__(f"ScheduleGroup not found: {schedule_group_id.value}")
+
+
+@dataclass(frozen=True)
+class RemoveAgendaFromGroupInput:
+    """Input DTO for RemoveAgendaFromGroupService."""
+
+    schedule_group_id: ScheduleGroupId
+    topic: str
+    actor_id: UserId
 
 
 class RemoveAgendaFromGroupService:
@@ -40,28 +57,23 @@ class RemoveAgendaFromGroupService:
 
     async def execute(
         self,
-        *,
-        schedule_group_id: ScheduleGroupId,
-        topic: str,
-        actor_id: UserId,
+        input_dto: RemoveAgendaFromGroupInput,
     ) -> None:
         """Remove an agenda topic from all schedules in the group.
 
         Args:
-            schedule_group_id: The target group.
-            topic: The agenda topic to remove.
-            actor_id: The user performing the operation (must be organizer).
+            input_dto: Input parameters for removing an agenda from a group.
 
         Raises:
-            EntityNotFoundError: If the schedule group does not exist.
+            ScheduleGroupNotFoundError: If the schedule group does not exist.
             UnauthorizedScheduleGroupOperationError: If actor is not the
                 organizer.
         """
         now = datetime.now(UTC)
 
-        group = await self._schedule_group_repo.get_by_id(schedule_group_id)
+        group = await self._schedule_group_repo.get_by_id(input_dto.schedule_group_id)
         if group is None:
-            raise EntityNotFoundError("ScheduleGroup", str(schedule_group_id.value))
+            raise ScheduleGroupNotFoundError(input_dto.schedule_group_id)
 
         # Load existing agendas for all schedules in the group
         schedules_agendas = await self._agenda_repo.get_by_schedule_ids(
@@ -69,8 +81,8 @@ class RemoveAgendaFromGroupService:
         )
 
         removed_ids = group.remove_agenda_from_schedules(
-            topic=topic,
-            actor_id=actor_id,
+            topic=input_dto.topic,
+            actor_id=input_dto.actor_id,
             schedules_agendas=schedules_agendas,
             now=now,
         )

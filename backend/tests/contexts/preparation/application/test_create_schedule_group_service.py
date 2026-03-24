@@ -8,6 +8,8 @@ import pytest
 
 from contexts.preparation.application.create_schedule_group_service import (
     CounterpartSchedule,
+    CreateScheduleGroupInput,
+    CreateScheduleGroupOutput,
     CreateScheduleGroupService,
 )
 from contexts.preparation.domain.events import ScheduleCreated, ScheduleGroupCreated
@@ -58,19 +60,22 @@ class TestCreateScheduleGroup:
         cp2 = UserId.generate()
         future = datetime.now(UTC) + timedelta(days=1)
 
-        group_id = await service.execute(
-            organizer_id=organizer,
-            title="Weekly 1on1",
-            counterpart_schedules=[
-                CounterpartSchedule(counterpart_id=cp1, scheduled_at=future),
-                CounterpartSchedule(
-                    counterpart_id=cp2,
-                    scheduled_at=future + timedelta(hours=1),
-                ),
-            ],
+        output = await service.execute(
+            CreateScheduleGroupInput(
+                organizer_id=organizer,
+                title="Weekly 1on1",
+                counterpart_schedules=[
+                    CounterpartSchedule(counterpart_id=cp1, scheduled_at=future),
+                    CounterpartSchedule(
+                        counterpart_id=cp2,
+                        scheduled_at=future + timedelta(hours=1),
+                    ),
+                ],
+            )
         )
 
-        group = await schedule_group_repo.get_by_id(group_id)
+        assert isinstance(output, CreateScheduleGroupOutput)
+        group = await schedule_group_repo.get_by_id(output.schedule_group_id)
         assert group is not None
         assert group.title.value == "Weekly 1on1"
         assert group.organizer_id == organizer
@@ -92,12 +97,14 @@ class TestCreateScheduleGroup:
         time2 = datetime.now(UTC) + timedelta(days=2)
 
         await service.execute(
-            organizer_id=organizer,
-            title="Weekly 1on1",
-            counterpart_schedules=[
-                CounterpartSchedule(counterpart_id=cp1, scheduled_at=time1),
-                CounterpartSchedule(counterpart_id=cp2, scheduled_at=time2),
-            ],
+            CreateScheduleGroupInput(
+                organizer_id=organizer,
+                title="Weekly 1on1",
+                counterpart_schedules=[
+                    CounterpartSchedule(counterpart_id=cp1, scheduled_at=time1),
+                    CounterpartSchedule(counterpart_id=cp2, scheduled_at=time2),
+                ],
+            )
         )
 
         schedules = list(schedule_repo.schedules.values())
@@ -119,16 +126,18 @@ class TestCreateScheduleGroup:
         future = datetime.now(UTC) + timedelta(days=1)
 
         await service.execute(
-            organizer_id=organizer,
-            title="Weekly 1on1",
-            counterpart_schedules=[
-                CounterpartSchedule(counterpart_id=cp1, scheduled_at=future),
-                CounterpartSchedule(
-                    counterpart_id=cp2,
-                    scheduled_at=future + timedelta(hours=1),
-                ),
-            ],
-            agenda_topics=["Progress update", "Blockers"],
+            CreateScheduleGroupInput(
+                organizer_id=organizer,
+                title="Weekly 1on1",
+                counterpart_schedules=[
+                    CounterpartSchedule(counterpart_id=cp1, scheduled_at=future),
+                    CounterpartSchedule(
+                        counterpart_id=cp2,
+                        scheduled_at=future + timedelta(hours=1),
+                    ),
+                ],
+                agenda_topics=["Progress update", "Blockers"],
+            )
         )
 
         # 2 counterparts * 2 topics = 4 agendas
@@ -149,13 +158,15 @@ class TestCreateScheduleGroup:
         """Verifies that the service commits the transaction."""
         future = datetime.now(UTC) + timedelta(days=1)
         await service.execute(
-            organizer_id=UserId.generate(),
-            title="Test",
-            counterpart_schedules=[
-                CounterpartSchedule(
-                    counterpart_id=UserId.generate(), scheduled_at=future
-                ),
-            ],
+            CreateScheduleGroupInput(
+                organizer_id=UserId.generate(),
+                title="Test",
+                counterpart_schedules=[
+                    CounterpartSchedule(
+                        counterpart_id=UserId.generate(), scheduled_at=future
+                    ),
+                ],
+            )
         )
         assert uow.committed is True
 
@@ -187,17 +198,19 @@ class TestCreateScheduleGroup:
 
         future = datetime.now(UTC) + timedelta(days=1)
         await svc.execute(
-            organizer_id=UserId.generate(),
-            title="Test",
-            counterpart_schedules=[
-                CounterpartSchedule(
-                    counterpart_id=UserId.generate(), scheduled_at=future
-                ),
-                CounterpartSchedule(
-                    counterpart_id=UserId.generate(),
-                    scheduled_at=future + timedelta(hours=1),
-                ),
-            ],
+            CreateScheduleGroupInput(
+                organizer_id=UserId.generate(),
+                title="Test",
+                counterpart_schedules=[
+                    CounterpartSchedule(
+                        counterpart_id=UserId.generate(), scheduled_at=future
+                    ),
+                    CounterpartSchedule(
+                        counterpart_id=UserId.generate(),
+                        scheduled_at=future + timedelta(hours=1),
+                    ),
+                ],
+            )
         )
 
         schedule_created_events = [
@@ -217,13 +230,15 @@ class TestCreateScheduleGroup:
         """Created schedules start in REQUESTED status."""
         future = datetime.now(UTC) + timedelta(days=1)
         await service.execute(
-            organizer_id=UserId.generate(),
-            title="Test",
-            counterpart_schedules=[
-                CounterpartSchedule(
-                    counterpart_id=UserId.generate(), scheduled_at=future
-                ),
-            ],
+            CreateScheduleGroupInput(
+                organizer_id=UserId.generate(),
+                title="Test",
+                counterpart_schedules=[
+                    CounterpartSchedule(
+                        counterpart_id=UserId.generate(), scheduled_at=future
+                    ),
+                ],
+            )
         )
 
         for schedule in schedule_repo.schedules.values():
@@ -240,18 +255,20 @@ class TestCreateScheduleGroup:
         future = datetime.now(UTC) + timedelta(days=1)
         template_id_str = str(uuid.uuid4())
 
-        group_id = await service.execute(
-            organizer_id=UserId.generate(),
-            title="From template",
-            counterpart_schedules=[
-                CounterpartSchedule(
-                    counterpart_id=UserId.generate(), scheduled_at=future
-                ),
-            ],
-            template_id=template_id_str,
+        output = await service.execute(
+            CreateScheduleGroupInput(
+                organizer_id=UserId.generate(),
+                title="From template",
+                counterpart_schedules=[
+                    CounterpartSchedule(
+                        counterpart_id=UserId.generate(), scheduled_at=future
+                    ),
+                ],
+                template_id=template_id_str,
+            )
         )
 
-        group = await schedule_group_repo.get_by_id(group_id)
+        group = await schedule_group_repo.get_by_id(output.schedule_group_id)
         assert group is not None
         assert group.template_id is not None
         assert str(group.template_id.value) == template_id_str
@@ -263,13 +280,15 @@ class TestCreateScheduleGroup:
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
         """Creating a group with no counterparts succeeds with no schedules."""
-        group_id = await service.execute(
-            organizer_id=UserId.generate(),
-            title="Empty group",
-            counterpart_schedules=[],
+        output = await service.execute(
+            CreateScheduleGroupInput(
+                organizer_id=UserId.generate(),
+                title="Empty group",
+                counterpart_schedules=[],
+            )
         )
 
-        group = await schedule_group_repo.get_by_id(group_id)
+        group = await schedule_group_repo.get_by_id(output.schedule_group_id)
         assert group is not None
         assert len(group.schedule_ids) == 0
         assert len(schedule_repo.schedules) == 0
@@ -282,13 +301,15 @@ class TestCreateScheduleGroup:
         future = datetime.now(UTC) + timedelta(days=1)
         with pytest.raises(InvalidScheduleTitleError):
             await service.execute(
-                organizer_id=UserId.generate(),
-                title="   ",
-                counterpart_schedules=[
-                    CounterpartSchedule(
-                        counterpart_id=UserId.generate(), scheduled_at=future
-                    ),
-                ],
+                CreateScheduleGroupInput(
+                    organizer_id=UserId.generate(),
+                    title="   ",
+                    counterpart_schedules=[
+                        CounterpartSchedule(
+                            counterpart_id=UserId.generate(), scheduled_at=future
+                        ),
+                    ],
+                )
             )
 
     async def test_rejects_same_organizer_and_counterpart(
@@ -300,9 +321,11 @@ class TestCreateScheduleGroup:
         future = datetime.now(UTC) + timedelta(days=1)
         with pytest.raises(InvalidScheduleOperationError):
             await service.execute(
-                organizer_id=user,
-                title="Self 1on1",
-                counterpart_schedules=[
-                    CounterpartSchedule(counterpart_id=user, scheduled_at=future),
-                ],
+                CreateScheduleGroupInput(
+                    organizer_id=user,
+                    title="Self 1on1",
+                    counterpart_schedules=[
+                        CounterpartSchedule(counterpart_id=user, scheduled_at=future),
+                    ],
+                )
             )

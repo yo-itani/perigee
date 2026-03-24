@@ -7,7 +7,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from contexts.preparation.application.cancel_schedule_group_service import (
+    CancelScheduleGroupInput,
     CancelScheduleGroupService,
+    ScheduleGroupNotFoundError,
 )
 from contexts.preparation.domain.events import ScheduleCancelled
 from contexts.preparation.domain.exceptions import (
@@ -18,7 +20,6 @@ from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_group import ScheduleGroup
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleStatus
-from foundation.domain.exceptions import EntityNotFoundError
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -96,8 +97,10 @@ class TestCancelScheduleGroup:
             await schedule_repo.save(s)
 
         await service.execute(
-            schedule_group_id=group.id,
-            actor_id=organizer,
+            CancelScheduleGroupInput(
+                schedule_group_id=group.id,
+                actor_id=organizer,
+            )
         )
 
         for s_id in group.schedule_ids:
@@ -136,7 +139,12 @@ class TestCancelScheduleGroup:
         for s in schedules:
             await schedule_repo.save(s)
 
-        await service.execute(schedule_group_id=group.id, actor_id=organizer)
+        await service.execute(
+            CancelScheduleGroupInput(
+                schedule_group_id=group.id,
+                actor_id=organizer,
+            )
+        )
 
         assert len(dispatched) == 2
         assert all(isinstance(e, ScheduleCancelled) for e in dispatched)
@@ -160,19 +168,23 @@ class TestCancelScheduleGroup:
 
         with pytest.raises(UnauthorizedScheduleGroupOperationError):
             await service.execute(
-                schedule_group_id=group.id,
-                actor_id=other_user,
+                CancelScheduleGroupInput(
+                    schedule_group_id=group.id,
+                    actor_id=other_user,
+                )
             )
 
     async def test_raises_not_found(
         self,
         service: CancelScheduleGroupService,
     ) -> None:
-        """Raises EntityNotFoundError for nonexistent group."""
-        with pytest.raises(EntityNotFoundError):
+        """Raises ScheduleGroupNotFoundError for nonexistent group."""
+        with pytest.raises(ScheduleGroupNotFoundError):
             await service.execute(
-                schedule_group_id=ScheduleGroupId.generate(),
-                actor_id=UserId.generate(),
+                CancelScheduleGroupInput(
+                    schedule_group_id=ScheduleGroupId.generate(),
+                    actor_id=UserId.generate(),
+                )
             )
 
     async def test_all_or_nothing_on_already_cancelled(
@@ -197,8 +209,10 @@ class TestCancelScheduleGroup:
 
         with pytest.raises(ScheduleAlreadyCancelledError):
             await service.execute(
-                schedule_group_id=group.id,
-                actor_id=organizer,
+                CancelScheduleGroupInput(
+                    schedule_group_id=group.id,
+                    actor_id=organizer,
+                )
             )
 
         # Second schedule should NOT have been cancelled (all-or-nothing)
@@ -223,7 +237,12 @@ class TestCancelScheduleGroup:
         for s in schedules:
             await schedule_repo.save(s)
 
-        await service.execute(schedule_group_id=group.id, actor_id=organizer)
+        await service.execute(
+            CancelScheduleGroupInput(
+                schedule_group_id=group.id,
+                actor_id=organizer,
+            )
+        )
         assert uow.committed is True
 
     async def test_empty_group_succeeds(
@@ -242,4 +261,9 @@ class TestCancelScheduleGroup:
         await schedule_group_repo.save(group)
 
         # Should not raise
-        await service.execute(schedule_group_id=group.id, actor_id=organizer)
+        await service.execute(
+            CancelScheduleGroupInput(
+                schedule_group_id=group.id,
+                actor_id=organizer,
+            )
+        )

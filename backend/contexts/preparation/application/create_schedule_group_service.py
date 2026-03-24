@@ -24,10 +24,28 @@ from shared.domain.value_objects import UserId
 
 @dataclass(frozen=True)
 class CounterpartSchedule:
-    """Input DTO: per-counterpart scheduling parameters."""
+    """Per-counterpart scheduling parameters."""
 
     counterpart_id: UserId
     scheduled_at: datetime
+
+
+@dataclass(frozen=True)
+class CreateScheduleGroupInput:
+    """Input DTO for CreateScheduleGroupService."""
+
+    organizer_id: UserId
+    title: str
+    counterpart_schedules: list[CounterpartSchedule]
+    agenda_topics: list[str] | None = None
+    template_id: str | None = None
+
+
+@dataclass(frozen=True)
+class CreateScheduleGroupOutput:
+    """Output DTO for CreateScheduleGroupService."""
+
+    schedule_group_id: ScheduleGroupId
 
 
 class CreateScheduleGroupService:
@@ -56,33 +74,28 @@ class CreateScheduleGroupService:
 
     async def execute(
         self,
-        *,
-        organizer_id: UserId,
-        title: str,
-        counterpart_schedules: list[CounterpartSchedule],
-        agenda_topics: list[str] | None = None,
-        template_id: str | None = None,
-    ) -> ScheduleGroupId:
+        input_dto: CreateScheduleGroupInput,
+    ) -> CreateScheduleGroupOutput:
         """Create a schedule group and return its id.
 
         Args:
-            organizer_id: The user creating the group (organizer).
-            title: Title for the schedule group and its schedules.
-            counterpart_schedules: Per-counterpart scheduling info.
-            agenda_topics: Optional agenda topics to expand to all schedules.
-            template_id: Optional source template ID.
+            input_dto: Input parameters for creating a schedule group.
 
         Returns:
-            The id of the newly created schedule group.
+            Output containing the id of the newly created schedule group.
         """
         now = datetime.now(UTC)
-        schedule_title = ScheduleTitle(title)
-        tid = TemplateId.from_str(template_id) if template_id else None
+        schedule_title = ScheduleTitle(input_dto.title)
+        tid = (
+            TemplateId.from_str(input_dto.template_id)
+            if input_dto.template_id
+            else None
+        )
 
-        templates = [AgendaTemplate(t) for t in (agenda_topics or [])]
+        templates = [AgendaTemplate(t) for t in (input_dto.agenda_topics or [])]
 
         group = ScheduleGroup.create(
-            organizer_id=organizer_id,
+            organizer_id=input_dto.organizer_id,
             title=schedule_title,
             agenda_templates=templates,
             template_id=tid,
@@ -93,12 +106,12 @@ class CreateScheduleGroupService:
         all_agendas: list[Agenda] = []
         schedules: list[Schedule] = []
 
-        for cs in counterpart_schedules:
+        for cs in input_dto.counterpart_schedules:
             schedule = Schedule.create(
-                organizer_id=organizer_id,
+                organizer_id=input_dto.organizer_id,
                 counterpart_id=cs.counterpart_id,
                 scheduled_at=cs.scheduled_at,
-                requested_by=organizer_id,
+                requested_by=input_dto.organizer_id,
                 title=schedule_title,
                 schedule_group_id=group.id,
                 now=now,
@@ -111,7 +124,7 @@ class CreateScheduleGroupService:
                 agenda = Agenda.create(
                     schedule_id=schedule.id,
                     topic=tmpl.topic,
-                    added_by=organizer_id,
+                    added_by=input_dto.organizer_id,
                     now=now,
                 )
                 all_agendas.append(agenda)
@@ -132,4 +145,4 @@ class CreateScheduleGroupService:
 
         await self._event_dispatcher.dispatch(all_events)
 
-        return group.id
+        return CreateScheduleGroupOutput(schedule_group_id=group.id)

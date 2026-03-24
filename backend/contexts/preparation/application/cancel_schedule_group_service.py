@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from contexts.preparation.domain.exceptions import (
@@ -14,9 +15,24 @@ from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.value_objects import ScheduleGroupId
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
-from foundation.domain.exceptions import EntityNotFoundError
 from shared.domain.events import DomainEvent
 from shared.domain.value_objects import UserId
+
+
+class ScheduleGroupNotFoundError(Exception):
+    """Raised when the specified ScheduleGroup does not exist."""
+
+    def __init__(self, schedule_group_id: ScheduleGroupId) -> None:
+        self.schedule_group_id = schedule_group_id
+        super().__init__(f"ScheduleGroup not found: {schedule_group_id.value}")
+
+
+@dataclass(frozen=True)
+class CancelScheduleGroupInput:
+    """Input DTO for CancelScheduleGroupService."""
+
+    schedule_group_id: ScheduleGroupId
+    actor_id: UserId
 
 
 class CancelScheduleGroupService:
@@ -40,18 +56,15 @@ class CancelScheduleGroupService:
 
     async def execute(
         self,
-        *,
-        schedule_group_id: ScheduleGroupId,
-        actor_id: UserId,
+        input_dto: CancelScheduleGroupInput,
     ) -> None:
         """Cancel all schedules in the group.
 
         Args:
-            schedule_group_id: The group to cancel.
-            actor_id: The user performing the operation (must be organizer).
+            input_dto: Input parameters for cancelling a schedule group.
 
         Raises:
-            EntityNotFoundError: If the schedule group does not exist.
+            ScheduleGroupNotFoundError: If the schedule group does not exist.
             UnauthorizedScheduleGroupOperationError: If actor is not the
                 organizer.
             ScheduleAlreadyCancelledError: If any schedule is already
@@ -59,24 +72,24 @@ class CancelScheduleGroupService:
         """
         now = datetime.now(UTC)
 
-        group = await self._schedule_group_repo.get_by_id(schedule_group_id)
+        group = await self._schedule_group_repo.get_by_id(input_dto.schedule_group_id)
         if group is None:
-            raise EntityNotFoundError("ScheduleGroup", str(schedule_group_id.value))
+            raise ScheduleGroupNotFoundError(input_dto.schedule_group_id)
 
-        if actor_id != group.organizer_id:
+        if input_dto.actor_id != group.organizer_id:
             raise UnauthorizedScheduleGroupOperationError(
                 "Only the organizer can cancel this schedule group."
             )
 
         schedules = await self._schedule_repo.get_by_schedule_group_id(
-            schedule_group_id
+            input_dto.schedule_group_id
         )
 
         all_events: list[DomainEvent] = []
 
         # Cancel all schedules; if any raises, the whole operation fails
         for schedule in schedules:
-            schedule.cancel(actor_id=actor_id, now=now)
+            schedule.cancel(actor_id=input_dto.actor_id, now=now)
 
         # Collect events after all cancellations succeed
         for schedule in schedules:
