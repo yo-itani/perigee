@@ -43,6 +43,19 @@ class ScheduleStatus(Enum):
     CANCELLED = "cancelled"
 
 
+class AddedByTag(Enum):
+    """Tag indicating who added an agenda item.
+
+    - TEMPLATE: expanded from a schedule group's agenda template.
+    - ORGANIZER: added directly by the organizer.
+    - COUNTERPART: added directly by the counterpart.
+    """
+
+    TEMPLATE = "template"
+    ORGANIZER = "organizer"
+    COUNTERPART = "counterpart"
+
+
 class ConfirmationRequestType(Enum):
     """Type of confirmation request."""
 

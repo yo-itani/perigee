@@ -21,7 +21,7 @@ from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_group import ScheduleGroup
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
-from contexts.preparation.domain.value_objects import ScheduleGroupId
+from contexts.preparation.domain.value_objects import AddedByTag, ScheduleGroupId
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -68,6 +68,7 @@ async def _setup_group_with_agendas(
                 schedule_id=schedule.id,
                 topic=Topic(t),
                 added_by=organizer,
+                added_by_tag=AddedByTag.TEMPLATE,
                 now=now,
             )
             await agenda_repo.save(agenda)

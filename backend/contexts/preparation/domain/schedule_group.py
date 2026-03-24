@@ -20,6 +20,7 @@ from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
 from contexts.preparation.domain.value_objects import (
+    AddedByTag,
     AgendaId,
     ScheduleGroupId,
     ScheduleId,
@@ -238,6 +239,7 @@ class ScheduleGroup:
                 schedule_id=schedule_id,
                 topic=agenda_template.topic,
                 added_by=actor_id,
+                added_by_tag=AddedByTag.TEMPLATE,
                 now=now,
             )
             new_agendas.append(agenda)

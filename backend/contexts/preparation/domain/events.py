@@ -5,6 +5,7 @@ from datetime import datetime
 
 from contexts.preparation.domain.value_objects import (
     AgendaId,
+    CommentId,
     ScheduleGroupId,
     ScheduleId,
     TemplateId,
@@ -114,6 +115,42 @@ class AgendaRemovedViaGroup(DomainEvent):
     schedule_group_id: ScheduleGroupId
     topic: str
     removed_agenda_ids: list[AgendaId]
+
+
+# ------------------------------------------------------------------
+# Agenda events (individual schedule)
+# ------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AgendaAdded(DomainEvent):
+    """Raised when an agenda topic is added to a schedule."""
+
+    agenda_id: AgendaId
+    schedule_id: ScheduleId
+    added_by: UserId
+
+
+@dataclass(frozen=True)
+class AgendaDeleted(DomainEvent):
+    """Raised when an agenda topic is deleted from a schedule."""
+
+    agenda_id: AgendaId
+    schedule_id: ScheduleId
+    deleted_by: UserId
+
+
+@dataclass(frozen=True)
+class AgendaCommentAdded(DomainEvent):
+    """Raised when a comment is added to an agenda topic.
+
+    This event triggers Slack notification (Preparation context).
+    """
+
+    comment_id: CommentId
+    agenda_id: AgendaId
+    schedule_id: ScheduleId
+    author_id: UserId
 
 
 # ------------------------------------------------------------------
