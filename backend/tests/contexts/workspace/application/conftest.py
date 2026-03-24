@@ -8,6 +8,7 @@ from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace import Workspace
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from foundation.application.unit_of_work import UnitOfWork
+from shared.domain.value_objects import UserId
 
 
 class StubUnitOfWork(UnitOfWork):
@@ -65,6 +66,14 @@ class InMemoryWorkspaceRepository(WorkspaceRepository):
             current_id = workspace.parent_id
 
         return ancestors
+
+    async def get_by_member_user_id(self, user_id: UserId) -> list[Workspace]:
+        """Return all workspaces where the given user is a member."""
+        return [
+            ws
+            for ws in self._store.values()
+            if any(m.user_id == user_id for m in ws.memberships)
+        ]
 
     @property
     def workspaces(self) -> dict[WorkspaceId, Workspace]:
