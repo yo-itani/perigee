@@ -36,8 +36,7 @@ class CreateScheduleService:
     """Application service that creates a single Schedule.
 
     The organizer creates a 1-on-1 with a specific counterpart.
-    The schedule is directly auto-confirmed (no approval flow for
-    organizer-initiated individual schedules).
+    The schedule stays in REQUESTED status (counterpart confirmation needed).
     """
 
     def __init__(
@@ -56,9 +55,7 @@ class CreateScheduleService:
     ) -> CreateScheduleOutput:
         """Create a schedule and return its id.
 
-        The schedule is created in REQUESTED status, then immediately
-        auto-confirmed since individual creation by the organizer does
-        not require counterpart approval.
+        The schedule is created in REQUESTED status.
 
         Args:
             input_dto: Input parameters for creating a schedule.
@@ -81,7 +78,6 @@ class CreateScheduleService:
             title=schedule_title,
             now=now,
         )
-        schedule.auto_confirm(now=now)
 
         events: list[DomainEvent] = list(schedule.collect_events())
 

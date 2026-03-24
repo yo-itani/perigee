@@ -11,7 +11,7 @@ from contexts.preparation.application.create_schedule_service import (
     CreateScheduleOutput,
     CreateScheduleService,
 )
-from contexts.preparation.domain.events import ScheduleConfirmed, ScheduleCreated
+from contexts.preparation.domain.events import ScheduleCreated
 from contexts.preparation.domain.exceptions import InvalidScheduleOperationError
 from contexts.preparation.domain.value_objects import ScheduleStatus
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
@@ -38,12 +38,12 @@ class TestCreateSchedule:
             event_dispatcher=dispatcher,
         )
 
-    async def test_creates_confirmed_schedule(
+    async def test_creates_requested_schedule(
         self,
         service: CreateScheduleService,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Schedule is created and auto-confirmed."""
+        """Schedule is created in REQUESTED status."""
         organizer = UserId.generate()
         counterpart = UserId.generate()
         scheduled_at = datetime.now(UTC) + timedelta(days=1)
@@ -60,17 +60,17 @@ class TestCreateSchedule:
         assert isinstance(output, CreateScheduleOutput)
         schedule = await schedule_repo.get_by_id(output.schedule_id)
         assert schedule is not None
-        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.status == ScheduleStatus.REQUESTED
         assert schedule.organizer_id == organizer
         assert schedule.counterpart_id == counterpart
         assert schedule.title.value == "Weekly 1-on-1"
 
-    async def test_dispatches_created_and_confirmed_events(
+    async def test_dispatches_created_event_only(
         self,
         uow: StubUnitOfWork,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Dispatches ScheduleCreated and ScheduleConfirmed events."""
+        """Dispatches only ScheduleCreated event (no auto-confirm)."""
         dispatched: list[object] = []
 
         async def capture(event: object) -> None:
@@ -78,7 +78,6 @@ class TestCreateSchedule:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(ScheduleCreated, capture)  # type: ignore[arg-type]
-        dispatcher.register(ScheduleConfirmed, capture)  # type: ignore[arg-type]
 
         service = CreateScheduleService(
             uow=uow,
@@ -99,10 +98,8 @@ class TestCreateSchedule:
             )
         )
 
-        assert len(dispatched) == 2
+        assert len(dispatched) == 1
         assert isinstance(dispatched[0], ScheduleCreated)
-        assert isinstance(dispatched[1], ScheduleConfirmed)
-        assert dispatched[1].is_auto is True
 
     async def test_rejects_same_organizer_and_counterpart(
         self,

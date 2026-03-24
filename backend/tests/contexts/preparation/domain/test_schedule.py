@@ -720,6 +720,116 @@ class TestAggregateInvariants:
 
 
 # ===========================================================================
+# Change Scheduled At
+# ===========================================================================
+
+
+class TestScheduleChangeScheduledAt:
+    def test_changes_datetime_and_reverts_to_requested(self) -> None:
+        """Confirmed schedule reverts to REQUESTED after datetime change."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == _FUTURE2
+        assert schedule.updated_at == _LATER
+
+    def test_emits_schedule_rescheduled_event(self) -> None:
+        """Emits ScheduleRescheduled event."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        events = schedule.collect_events()
+        assert len(events) == 1
+        event = events[0]
+        assert isinstance(event, ScheduleRescheduled)
+        assert event.new_proposed_at == _FUTURE2
+        assert event.requested_by == org
+
+    def test_counterpart_can_change(self) -> None:
+        """Counterpart can also change the scheduled datetime."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(actor_id=cp, new_scheduled_at=_FUTURE2, now=_LATER)
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == _FUTURE2
+
+    def test_cancelled_schedule_raises_error(self) -> None:
+        """Cannot change datetime on a cancelled schedule."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_cancelled_schedule(organizer_id=org, counterpart_id=cp)
+
+        with pytest.raises(ScheduleAlreadyCancelledError):
+            schedule.change_scheduled_at(
+                actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+            )
+
+    def test_non_participant_raises_error(self) -> None:
+        """Non-participant cannot change the scheduled datetime."""
+        schedule = _make_confirmed_schedule()
+        other = UserId.generate()
+
+        with pytest.raises(UnauthorizedScheduleOperationError):
+            schedule.change_scheduled_at(
+                actor_id=other, new_scheduled_at=_FUTURE2, now=_LATER
+            )
+
+    def test_confirmed_to_requested_transition(self) -> None:
+        """CONFIRMED -> REQUESTED when datetime is changed."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.CONFIRMED
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+
+    def test_requested_stays_requested(self) -> None:
+        """REQUESTED -> REQUESTED when datetime is changed."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        schedule.collect_events()
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == _FUTURE2
+
+    def test_past_datetime_raises_error(self) -> None:
+        """Cannot change to a past datetime."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        past = datetime(2020, 1, 1, 0, 0)
+
+        with pytest.raises(InvalidScheduleOperationError, match="past"):
+            schedule.change_scheduled_at(
+                actor_id=org, new_scheduled_at=past, now=_LATER
+            )
+
+
+# ===========================================================================
 # Title
 # ===========================================================================
 

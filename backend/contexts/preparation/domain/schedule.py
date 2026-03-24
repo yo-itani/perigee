@@ -379,6 +379,42 @@ class Schedule:
             )
         )
 
+    def change_scheduled_at(
+        self,
+        *,
+        actor_id: UserId,
+        new_scheduled_at: datetime,
+        now: datetime,
+    ) -> None:
+        """Change scheduled datetime directly (no ConfirmationRequest).
+
+        Status reverts to REQUESTED (re-confirmation needed).
+
+        Raises:
+            ScheduleAlreadyCancelledError: If already cancelled.
+            UnauthorizedScheduleOperationError: If actor is not a participant.
+            InvalidScheduleOperationError: If new_scheduled_at is in the past.
+        """
+        self._assert_not_cancelled()
+        self._assert_participant(actor_id)
+
+        if _truncate_to_seconds(new_scheduled_at) < _truncate_to_seconds(now):
+            raise InvalidScheduleOperationError("Cannot reschedule to a past datetime.")
+
+        self._scheduled_at = new_scheduled_at
+        self._status = ScheduleStatus.REQUESTED
+        self._updated_at = now
+        self._events.append(
+            ScheduleRescheduled(
+                schedule_id=self.id,
+                organizer_id=self.organizer_id,
+                counterpart_id=self.counterpart_id,
+                new_proposed_at=new_scheduled_at,
+                requested_by=actor_id,
+                occurred_at=now,
+            )
+        )
+
     def rename(self, *, new_title: ScheduleTitle, now: datetime) -> None:
         """Rename the schedule.
 

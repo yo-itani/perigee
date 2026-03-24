@@ -11,10 +11,7 @@ from contexts.preparation.application.reschedule_service import (
     RescheduleService,
     ScheduleNotFoundError,
 )
-from contexts.preparation.domain.events import (
-    ScheduleConfirmed,
-    ScheduleRescheduled,
-)
+from contexts.preparation.domain.events import ScheduleRescheduled
 from contexts.preparation.domain.exceptions import (
     ScheduleAlreadyCancelledError,
     UnauthorizedScheduleOperationError,
@@ -35,7 +32,7 @@ def _create_confirmed_schedule(
     counterpart: UserId,
     now: datetime,
 ) -> Schedule:
-    """Helper: create and auto-confirm a schedule."""
+    """Helper: create and confirm a schedule via counterpart."""
     schedule = Schedule.create(
         organizer_id=organizer,
         counterpart_id=counterpart,
@@ -44,7 +41,7 @@ def _create_confirmed_schedule(
         title=ScheduleTitle("Test Schedule"),
         now=now,
     )
-    schedule.auto_confirm(now=now)
+    schedule.confirm(actor_id=counterpart, now=now)
     schedule.collect_events()  # Drain factory events
     return schedule
 
@@ -65,12 +62,12 @@ class TestReschedule:
             event_dispatcher=dispatcher,
         )
 
-    async def test_organizer_reschedules(
+    async def test_organizer_reschedules_to_requested(
         self,
         service: RescheduleService,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Organizer can reschedule and the new datetime is applied."""
+        """Organizer can reschedule; status reverts to REQUESTED."""
         organizer = UserId.generate()
         counterpart = UserId.generate()
         now = datetime.now(UTC)
@@ -88,15 +85,15 @@ class TestReschedule:
 
         updated = await schedule_repo.get_by_id(schedule.id)
         assert updated is not None
-        assert updated.status == ScheduleStatus.CONFIRMED
+        assert updated.status == ScheduleStatus.REQUESTED
         assert updated.scheduled_at == new_time
 
-    async def test_counterpart_reschedules(
+    async def test_counterpart_reschedules_to_requested(
         self,
         service: RescheduleService,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Counterpart can also reschedule."""
+        """Counterpart can also reschedule; status reverts to REQUESTED."""
         organizer = UserId.generate()
         counterpart = UserId.generate()
         now = datetime.now(UTC)
@@ -114,14 +111,14 @@ class TestReschedule:
 
         updated = await schedule_repo.get_by_id(schedule.id)
         assert updated is not None
-        assert updated.status == ScheduleStatus.CONFIRMED
+        assert updated.status == ScheduleStatus.REQUESTED
 
-    async def test_dispatches_rescheduled_and_confirmed_events(
+    async def test_dispatches_rescheduled_event_only(
         self,
         uow: StubUnitOfWork,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Dispatches ScheduleRescheduled and ScheduleConfirmed events."""
+        """Dispatches only ScheduleRescheduled event (no auto-confirm)."""
         dispatched: list[object] = []
 
         async def capture(event: object) -> None:
@@ -129,7 +126,6 @@ class TestReschedule:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(ScheduleRescheduled, capture)  # type: ignore[arg-type]
-        dispatcher.register(ScheduleConfirmed, capture)  # type: ignore[arg-type]
 
         service = RescheduleService(
             uow=uow,
@@ -151,10 +147,8 @@ class TestReschedule:
             )
         )
 
-        assert len(dispatched) == 2
+        assert len(dispatched) == 1
         assert isinstance(dispatched[0], ScheduleRescheduled)
-        assert isinstance(dispatched[1], ScheduleConfirmed)
-        assert dispatched[1].is_auto is True
 
     async def test_rejects_non_participant(
         self,

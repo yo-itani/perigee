@@ -33,8 +33,8 @@ class RescheduleInput:
 class RescheduleService:
     """Application service that reschedules a Schedule.
 
-    The datetime change is applied directly via reschedule() + auto_confirm().
-    No counterpart approval is needed for individual schedule operations.
+    The datetime change is applied directly via change_scheduled_at().
+    Status reverts to REQUESTED (re-confirmation needed).
     Both organizer and counterpart can reschedule.
     """
 
@@ -68,12 +68,11 @@ class RescheduleService:
         if schedule is None:
             raise ScheduleNotFoundError(input_dto.schedule_id)
 
-        schedule.reschedule(
+        schedule.change_scheduled_at(
             actor_id=input_dto.actor_id,
-            new_proposed_at=input_dto.new_scheduled_at,
+            new_scheduled_at=input_dto.new_scheduled_at,
             now=now,
         )
-        schedule.auto_confirm(now=now)
 
         events: list[DomainEvent] = list(schedule.collect_events())
 
