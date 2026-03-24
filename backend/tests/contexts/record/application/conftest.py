@@ -45,6 +45,61 @@ class InMemoryRecordRepository(RecordRepository):
             for r in self._records.values()
         )
 
+    async def list_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+        offset: int,
+        limit: int,
+    ) -> list[Record]:
+        visible = self._visible_published_for_pair(
+            actor_id, organizer_id, counterpart_id
+        )
+        visible.sort(key=lambda r: (r.conducted_at, r.created_at), reverse=True)
+        return visible[offset : offset + limit]
+
+    async def count_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> int:
+        return len(
+            self._visible_published_for_pair(actor_id, organizer_id, counterpart_id)
+        )
+
+    async def get_latest_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> Record | None:
+        visible = self._visible_published_for_pair(
+            actor_id, organizer_id, counterpart_id
+        )
+        if not visible:
+            return None
+        visible.sort(key=lambda r: (r.conducted_at, r.created_at), reverse=True)
+        return visible[0]
+
+    def _visible_published_for_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> list[Record]:
+        from contexts.record.domain.value_objects import RecordStatus
+
+        return [
+            r
+            for r in self._records.values()
+            if r.organizer_id == organizer_id
+            and r.counterpart_id == counterpart_id
+            and r.status == RecordStatus.PUBLISHED
+            and r.is_visible_to(actor_id)
+        ]
+
     @property
     def saved_records(self) -> list[Record]:
         return list(self._records.values())
@@ -72,6 +127,11 @@ class InMemoryActionItemRepository(ActionItemRepository):
         ]
         pending.sort(key=lambda item: item.created_at)
         return pending[: max(0, limit)]
+
+    async def list_by_record_id(self, record_id: RecordId) -> list[ActionItem]:
+        items = [item for item in self._items.values() if item.record_id == record_id]
+        items.sort(key=lambda item: item.created_at)
+        return items
 
     @property
     def saved_items(self) -> list[ActionItem]:

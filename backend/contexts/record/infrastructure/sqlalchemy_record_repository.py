@@ -54,9 +54,82 @@ class SqlAlchemyRecordRepository(RecordRepository):
         result = await self._session.execute(stmt)
         return bool(result.scalar())
 
+    async def list_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+        offset: int,
+        limit: int,
+    ) -> list[Record]:
+        stmt = self._visible_published_by_pair_stmt(
+            actor_id, organizer_id, counterpart_id
+        )
+        stmt = (
+            stmt.order_by(
+                RecordTable.conducted_at.desc(),
+                RecordTable.created_at.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.unique().scalars().all()]
+
+    async def count_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> int:
+        from sqlalchemy import func
+
+        base = self._visible_published_by_pair_stmt(
+            actor_id, organizer_id, counterpart_id
+        ).with_only_columns(func.count(RecordTable.id))
+        result = await self._session.execute(base)
+        return int(result.scalar() or 0)
+
+    async def get_latest_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> Record | None:
+        records = await self.list_visible_published_by_pair(
+            actor_id, organizer_id, counterpart_id, offset=0, limit=1
+        )
+        return records[0] if records else None
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _visible_published_by_pair_stmt(
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> select:  # type: ignore[type-arg]
+        """Build base SELECT for published records visible to actor."""
+        actor_str = str(actor_id.value)
+        return (
+            select(RecordTable)
+            .outerjoin(
+                RecordViewerTable,
+                RecordTable.id == RecordViewerTable.record_id,
+            )
+            .where(
+                RecordTable.organizer_id == str(organizer_id.value),
+                RecordTable.counterpart_id == str(counterpart_id.value),
+                RecordTable.status == RecordStatus.PUBLISHED.value,
+                or_(
+                    RecordTable.organizer_id == actor_str,
+                    RecordTable.counterpart_id == actor_str,
+                    RecordViewerTable.user_id == actor_str,
+                ),
+            )
+        )
 
     async def _insert(self, entity: Record) -> None:
         record_row = RecordTable(

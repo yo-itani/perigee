@@ -48,6 +48,15 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
         result = await self._session.execute(stmt)
         return [self._to_entity(row) for row in result.scalars().all()]
 
+    async def list_by_record_id(self, record_id: RecordId) -> list[ActionItem]:
+        stmt = (
+            select(ActionItemTable)
+            .where(ActionItemTable.record_id == str(record_id.value))
+            .order_by(ActionItemTable.created_at.asc())
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------

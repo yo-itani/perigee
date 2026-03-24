@@ -22,3 +22,39 @@ class RecordRepository(BaseRepository[Record, RecordId]):
         A participant is either the organizer or the counterpart of a Record
         where counterpart_id is the counterpart.
         """
+
+    @abstractmethod
+    async def list_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+        offset: int,
+        limit: int,
+    ) -> list[Record]:
+        """Return published Records for a pair, visible to actor.
+
+        Visibility: actor is organizer, counterpart, or in viewers list.
+        Ordered by conducted_at DESC, then created_at DESC.
+        """
+
+    @abstractmethod
+    async def count_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> int:
+        """Count published Records for a pair, visible to actor."""
+
+    @abstractmethod
+    async def get_latest_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> Record | None:
+        """Return the latest published Record for a pair, visible to actor.
+
+        Latest = highest conducted_at (then created_at as tiebreaker).
+        """
