@@ -20,6 +20,13 @@ class WorkspaceNotFoundError(Exception):
         super().__init__(message)
 
 
+class ParentWorkspaceNotFoundError(Exception):
+    """Raised when the specified parent workspace does not exist."""
+
+    def __init__(self, message: str = "Parent workspace not found.") -> None:
+        super().__init__(message)
+
+
 @dataclass(frozen=True)
 class ChangeWorkspaceParentInput:
     """Input DTO for workspace parent change."""
@@ -57,6 +64,7 @@ class ChangeWorkspaceParentService:
 
         Raises:
             WorkspaceNotFoundError: If the workspace does not exist.
+            ParentWorkspaceNotFoundError: If the new parent does not exist.
             CircularHierarchyError: If the change would create a cycle.
         """
         now = datetime.now(UTC)
@@ -65,6 +73,12 @@ class ChangeWorkspaceParentService:
             workspace = await self._workspace_repo.get_by_id(input_dto.workspace_id)
             if workspace is None:
                 raise WorkspaceNotFoundError()
+
+            # Verify that the new parent workspace exists.
+            if input_dto.new_parent_id is not None:
+                parent = await self._workspace_repo.get_by_id(input_dto.new_parent_id)
+                if parent is None:
+                    raise ParentWorkspaceNotFoundError()
 
             # Full ancestor-chain cycle detection:
             # If the new parent is in the ancestor chain of the workspace,

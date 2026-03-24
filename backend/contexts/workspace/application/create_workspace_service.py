@@ -14,6 +14,13 @@ from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
 
 
+class ParentWorkspaceNotFoundError(Exception):
+    """Raised when the specified parent workspace does not exist."""
+
+    def __init__(self, message: str = "Parent workspace not found.") -> None:
+        super().__init__(message)
+
+
 @dataclass(frozen=True)
 class CreateWorkspaceInput:
     """Input DTO for workspace creation."""
@@ -56,16 +63,25 @@ class CreateWorkspaceService:
 
         Returns:
             Output containing the id of the newly created workspace.
+
+        Raises:
+            ParentWorkspaceNotFoundError: If the specified parent does not exist.
         """
         now = datetime.now(UTC)
 
-        workspace = Workspace.create(
-            name=input_dto.name,
-            parent_id=input_dto.parent_id,
-            now=now,
-        )
-
         async with self._uow:
+            # Verify that the parent workspace exists when specified.
+            if input_dto.parent_id is not None:
+                parent = await self._workspace_repo.get_by_id(input_dto.parent_id)
+                if parent is None:
+                    raise ParentWorkspaceNotFoundError()
+
+            workspace = Workspace.create(
+                name=input_dto.name,
+                parent_id=input_dto.parent_id,
+                now=now,
+            )
+
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
             await self._uow.commit()

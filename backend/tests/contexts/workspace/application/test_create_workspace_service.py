@@ -8,8 +8,10 @@ from contexts.workspace.application.create_workspace_service import (
     CreateWorkspaceInput,
     CreateWorkspaceOutput,
     CreateWorkspaceService,
+    ParentWorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import WorkspaceCreated
+from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace_name import WorkspaceName
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from tests.contexts.workspace.application.conftest import (
@@ -119,3 +121,16 @@ class TestCreateWorkspace:
         assert isinstance(event, WorkspaceCreated)
         assert event.name == "Engineering"
         assert event.parent_id is None
+
+    async def test_raises_when_parent_workspace_not_found(
+        self,
+        service: CreateWorkspaceService,
+    ) -> None:
+        """ParentWorkspaceNotFoundError is raised when parent_id does not exist."""
+        with pytest.raises(ParentWorkspaceNotFoundError):
+            await service.execute(
+                CreateWorkspaceInput(
+                    name=WorkspaceName("Backend"),
+                    parent_id=WorkspaceId.generate(),
+                )
+            )

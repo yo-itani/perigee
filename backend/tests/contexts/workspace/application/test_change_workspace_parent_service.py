@@ -7,6 +7,7 @@ import pytest
 from contexts.workspace.application.change_workspace_parent_service import (
     ChangeWorkspaceParentInput,
     ChangeWorkspaceParentService,
+    ParentWorkspaceNotFoundError,
     WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import WorkspaceHierarchyChanged
@@ -255,3 +256,19 @@ class TestChangeWorkspaceParent:
         )
 
         assert len(dispatched_events) == 0
+
+    async def test_raises_when_parent_workspace_not_found(
+        self,
+        service: ChangeWorkspaceParentService,
+        repo: InMemoryWorkspaceRepository,
+    ) -> None:
+        """ParentWorkspaceNotFoundError is raised when new_parent_id does not exist."""
+        workspace = await self._create_workspace(repo, "Engineering")
+
+        with pytest.raises(ParentWorkspaceNotFoundError):
+            await service.execute(
+                ChangeWorkspaceParentInput(
+                    workspace_id=workspace.id,
+                    new_parent_id=WorkspaceId.generate(),
+                )
+            )
