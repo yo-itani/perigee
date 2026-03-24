@@ -107,6 +107,32 @@ class InMemoryRecordRepository(RecordRepository):
             for r in self._records.values()
         )
 
+    async def list_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+        offset: int,
+        limit: int,
+    ) -> list[Record]:
+        return []  # not needed for handler tests
+
+    async def count_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> int:
+        return 0  # not needed for handler tests
+
+    async def get_latest_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> Record | None:
+        return None  # not needed for handler tests
+
     def add(self, record: Record) -> None:
         """Pre-populate a record for testing."""
         self._records[record.id] = record
