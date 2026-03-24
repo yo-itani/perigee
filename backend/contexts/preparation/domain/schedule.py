@@ -178,23 +178,37 @@ class Schedule:
     # ------------------------------------------------------------------
 
     def confirm(self, *, actor_id: UserId, now: datetime) -> None:
-        """Confirm the pending confirmation request.
+        """Confirm the schedule.
 
-        Check order: Cancelled -> Pending existence -> Permission.
+        If a pending confirmation request exists, approve it and adopt its
+        proposed_at. If no pending request exists (e.g. after
+        change_scheduled_at which directly updates scheduled_at and
+        supersedes the old request), simply transition to CONFIRMED with
+        the current scheduled_at.
+
+        Check order: Cancelled -> Permission -> (Pending approval if exists).
 
         Raises:
             ScheduleAlreadyCancelledError: If already cancelled.
-            NoPendingConfirmationRequestError: If no pending request.
+            NoPendingConfirmationRequestError: If status is CONFIRMED
+                and no pending request (nothing to confirm).
             UnauthorizedScheduleOperationError: If actor is the requester
-                or not a participant.
+                of a pending request or not a participant.
         """
         self._assert_not_cancelled()
-        pending = self._get_pending_request()
         self._assert_participant(actor_id)
-        self._assert_not_requester(actor_id, pending)
 
-        pending.approve(resolved_by=actor_id)
-        self._scheduled_at = pending.proposed_at
+        pending = self._find_pending_request()
+
+        if pending is not None:
+            self._assert_not_requester(actor_id, pending)
+            pending.approve(resolved_by=actor_id)
+            self._scheduled_at = pending.proposed_at
+        elif self._status != ScheduleStatus.REQUESTED:
+            # No pending request and not in REQUESTED state means
+            # there is nothing to confirm.
+            raise NoPendingConfirmationRequestError()
+
         self._status = ScheduleStatus.CONFIRMED
         self._updated_at = now
         self._events.append(
@@ -362,9 +376,10 @@ class Schedule:
         if self._status == ScheduleStatus.CONFIRMED:
             return  # idempotent
 
-        pending = self._get_pending_request()
-        pending.approve(resolved_by=None)
-        self._scheduled_at = pending.proposed_at
+        pending = self._find_pending_request()
+        if pending is not None:
+            pending.approve(resolved_by=None)
+            self._scheduled_at = pending.proposed_at
         self._status = ScheduleStatus.CONFIRMED
         self._updated_at = now
         self._events.append(
@@ -403,6 +418,12 @@ class Schedule:
 
         if _truncate_to_seconds(new_scheduled_at) < _truncate_to_seconds(now):
             raise InvalidScheduleOperationError("Cannot reschedule to a past datetime.")
+
+        # Supersede any existing pending request to prevent confirm()
+        # from reverting to the old proposed_at.
+        existing_pending = self._find_pending_request()
+        if existing_pending is not None:
+            existing_pending.supersede()
 
         self._scheduled_at = new_scheduled_at
         self._status = ScheduleStatus.REQUESTED

@@ -768,10 +768,10 @@ class TestScheduleChangeScheduledAt:
 
         assert schedule.status == ScheduleStatus.REQUESTED
         assert schedule.scheduled_at == _FUTURE2
-        # Existing creation request is unchanged
+        # Existing creation request is superseded
         reqs = schedule.confirmation_requests
         assert len(reqs) == 1
-        assert reqs[0].resolution == ConfirmationResolution.PENDING
+        assert reqs[0].resolution == ConfirmationResolution.SUPERSEDED
 
     def test_emits_schedule_rescheduled_event(self) -> None:
         """Emits ScheduleRescheduled event."""
@@ -833,6 +833,88 @@ class TestScheduleChangeScheduledAt:
             schedule.change_scheduled_at(
                 actor_id=org, new_scheduled_at=past, now=_LATER
             )
+
+    def test_change_then_confirm_keeps_new_datetime(self) -> None:
+        """After change_scheduled_at(), confirm() must keep the changed datetime.
+
+        Ensures that confirm() does not revert scheduled_at to an old
+        pending request's proposed_at.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        schedule.collect_events()
+
+        new_time = datetime(2026, 5, 15, 14, 0)
+        t1 = datetime(2026, 3, 20, 12, 0)
+        schedule.change_scheduled_at(actor_id=org, new_scheduled_at=new_time, now=t1)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == new_time
+
+        t2 = datetime(2026, 3, 20, 13, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+
+        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.scheduled_at == new_time  # NOT reverted
+
+    def test_confirmed_change_confirm_full_flow(self) -> None:
+        """CONFIRMED -> change_scheduled_at -> REQUESTED -> confirm -> CONFIRMED.
+
+        End-to-end flow: the schedule transitions correctly through all
+        states and the final scheduled_at reflects the changed value.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        original_at = schedule.scheduled_at
+        schedule.collect_events()
+
+        # Step 1: change datetime (CONFIRMED -> REQUESTED)
+        new_time = datetime(2026, 6, 1, 9, 0)
+        t1 = datetime(2026, 3, 20, 12, 0)
+        schedule.change_scheduled_at(actor_id=org, new_scheduled_at=new_time, now=t1)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == new_time
+        assert schedule.scheduled_at != original_at
+
+        # Step 2: confirm (REQUESTED -> CONFIRMED)
+        t2 = datetime(2026, 3, 20, 13, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.scheduled_at == new_time
+
+        # Verify events
+        events = schedule.collect_events()
+        assert len(events) == 2
+        assert isinstance(events[0], ScheduleRescheduled)
+        assert isinstance(events[1], ScheduleConfirmed)
+        assert events[1].scheduled_at == new_time
+
+    def test_change_scheduled_at_supersedes_existing_pending(self) -> None:
+        """change_scheduled_at() supersedes any existing pending request.
+
+        This prevents confirm() from picking up an old proposed_at.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
+        original_proposed = schedule.confirmation_requests[0].proposed_at
+        schedule.collect_events()
+
+        new_time = datetime(2026, 5, 10, 10, 0)
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=new_time, now=_LATER
+        )
+
+        # Original creation request is superseded
+        reqs = schedule.confirmation_requests
+        assert reqs[0].resolution == ConfirmationResolution.SUPERSEDED
+
+        # confirm() should use current scheduled_at, not old proposed_at
+        t2 = datetime(2026, 3, 20, 12, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+        assert schedule.scheduled_at == new_time
+        assert schedule.scheduled_at != original_proposed
 
 
 # ===========================================================================
