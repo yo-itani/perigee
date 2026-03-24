@@ -9,6 +9,8 @@ from contexts.record.domain.value_objects import ActionItemId, ActionItemTitle, 
 from contexts.record.infrastructure.tables import ActionItemTable
 from shared.domain.value_objects import UserId
 
+_DEFAULT_PENDING_LIMIT = 50
+
 
 class SqlAlchemyActionItemRepository(ActionItemRepository):
     """SQLAlchemy-based implementation of ActionItemRepository."""
@@ -30,6 +32,21 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
             await self._insert(entity)
         else:
             await self._update(entity, existing)
+
+    async def list_pending_by_counterpart(
+        self, counterpart_id: UserId, *, limit: int = _DEFAULT_PENDING_LIMIT
+    ) -> list[ActionItem]:
+        stmt = (
+            select(ActionItemTable)
+            .where(
+                ActionItemTable.counterpart_id == str(counterpart_id.value),
+                ActionItemTable.is_completed.is_(False),
+            )
+            .order_by(ActionItemTable.created_at.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
 
     # ------------------------------------------------------------------
     # Private helpers
