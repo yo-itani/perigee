@@ -4,6 +4,9 @@ Import all table models here so that Alembic's autogenerate can detect them
 via Base.metadata. When adding a new table, add an explicit import below.
 """
 
+from contexts.notification.infrastructure.tables import (
+    NotificationSettingTable,  # noqa: F401
+)
 from contexts.preparation.infrastructure.tables import (
     ConfirmationRequestTable,  # noqa: F401
     ScheduleGroupAgendaTemplateTable,  # noqa: F401
@@ -28,6 +31,7 @@ from shared.infrastructure.tables import UserTable  # noqa: F401
 
 __all__ = [
     "ActionItemTable",
+    "NotificationSettingTable",
     "CommentTable",
     "ConfirmationRequestTable",
     "MembershipTable",
