@@ -68,7 +68,7 @@ class InMemoryWorkspaceRepository(WorkspaceRepository):
         return ancestors
 
     async def get_by_member_user_id(self, user_id: UserId) -> list[Workspace]:
-        """Return workspaces where the given user is a member."""
+        """Return all workspaces where the given user is a member."""
         return [
             ws
             for ws in self._store.values()

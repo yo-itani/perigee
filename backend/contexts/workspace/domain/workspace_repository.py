@@ -12,8 +12,8 @@ class WorkspaceRepository(BaseRepository[Workspace, WorkspaceId]):
     """Repository interface for Workspace aggregates.
 
     Extends the base interface with ``get_ancestors`` for
-    ancestor-chain cycle detection at the application layer, and
-    ``get_by_member_user_id`` for membership lookups.
+    ancestor-chain cycle detection at the application layer,
+    and ``get_by_member_user_id`` for querying by membership.
     """
 
     @abstractmethod
@@ -27,4 +27,7 @@ class WorkspaceRepository(BaseRepository[Workspace, WorkspaceId]):
 
     @abstractmethod
     async def get_by_member_user_id(self, user_id: UserId) -> list[Workspace]:
-        """Return all workspaces where the given user is a member."""
+        """Return all workspaces where the given user is a member.
+
+        Returns an empty list if the user does not belong to any workspace.
+        """
