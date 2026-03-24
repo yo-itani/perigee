@@ -65,6 +65,16 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
 
         return ancestors
 
+    async def get_by_member_user_id(self, user_id: UserId) -> list[Workspace]:
+        stmt = (
+            select(WorkspaceTable)
+            .join(WorkspaceTable.memberships)
+            .where(MembershipTable.user_id == str(user_id.value))
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().unique().all()
+        return [self._to_entity(row) for row in rows]
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
