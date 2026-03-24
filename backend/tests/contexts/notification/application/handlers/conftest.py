@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contexts.notification.domain.notification_message import NotificationMessage
 from contexts.notification.domain.notification_sender import NotificationSender
+from contexts.notification.domain.notification_setting import NotificationSetting
 from contexts.notification.domain.notification_setting_repository import (
     NotificationSettingRepository,
 )
@@ -37,13 +38,26 @@ class InMemoryNotificationSettingRepository(NotificationSettingRepository):
     """In-memory stub for NotificationSettingRepository.
 
     All users are enabled by default unless explicitly disabled.
+    Uses get_by_user_id to back the base class's is_enabled() default impl.
     """
 
     def __init__(self, *, disabled_users: set[UserId] | None = None) -> None:
         self._disabled_users = disabled_users or set()
 
-    async def is_enabled(self, user_id: UserId) -> bool:
-        return user_id not in self._disabled_users
+    async def get_by_user_id(self, user_id: UserId) -> NotificationSetting | None:
+        if user_id in self._disabled_users:
+            setting = NotificationSetting.create_default(user_id)
+            setting.update(
+                reminder_minutes_before=setting.reminder_minutes_before,
+                is_enabled=False,
+                now=setting.created_at,
+            )
+            setting.collect_events()  # discard
+            return setting
+        return None  # default behavior: enabled
+
+    async def save(self, entity: NotificationSetting) -> None:
+        pass  # not needed for handler tests
 
 
 class InMemoryScheduleRepository(ScheduleRepository):
