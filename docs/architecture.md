@@ -175,11 +175,28 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - **Record → Workspace**: 公開画面表示時に、カウンターパートの所属 Workspace を起点に祖先 Workspace の Captain を取得し、デフォルト Viewer として提案する。Viewer の確定は公開実行時にスナップショットとして Record 側に保存される。
 - **Notification → Workspace**: 将来的に Workspace 単位の通知設定に対応する場合に参照する。
 
+## ユースケースの呼び出し方針
+
+- **コンテキスト内で完結するユースケース**: application 層のサービスを直接呼び出す。イベントは使わない
+- **コンテキストを跨ぐユースケース**: ドメインイベント経由で連携する。呼び出し元のコンテキストがイベントを発行し、相手コンテキストのイベントハンドラが処理する
+
 ## コンテキスト間連携
 
 - コンテキスト間はドメインイベントで連携する（例：「記録が公開された」→ notification が Slack通知を送信）
 - 他コンテキストのエンティティを直接importしない。参照が必要な場合はIDで参照する
 - オーガナイザー・カウンターパートの概念は各コンテキストが必要に応じてIDで参照する（専用のidentityコンテキストは設けない）
+
+### EventDispatcher のハンドラ登録
+
+- アプリケーション起動時（DI 設定）に、イベント型とハンドラの対応を `EventDispatcher` に登録する
+- 1つのイベントに複数のハンドラを登録できる（例: `RecordPublished` → Slack 通知送信 + リードモデル更新）
+
+### イベントハンドラのトランザクション境界
+
+- イベントは **commit 後** にディスパッチする（`UnitOfWork + EventDispatcher 統合パターン` 参照）
+- 各イベントハンドラは **独立したトランザクション** で実行する
+- 発行元のトランザクションは既に確定済みのため、ハンドラの失敗が発行元をロールバックすることはない
+- これは **結果整合性（eventual consistency）** の方針であり、ハンドラ失敗時はリトライや補償処理で対応する
 
 ## インフラ層の設計規約
 
@@ -188,6 +205,25 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - テーブル定義は各コンテキスト（または shared）の `infrastructure/tables.py` に配置し、`foundation/db/base.py` の `Base` を継承する
 - 全テーブルに `TimestampMixin` を適用する（`created_at` / `updated_at` を自動付与）
 - 新規テーブル追加時は `foundation/db/models.py` に明示 import を追加する（Alembic 自動検出の漏れ防止）
+
+#### 命名規則
+
+| 対象 | 規則 | 例 |
+|---|---|---|
+| ORM クラス名 | `XxxTable` | `WorkspaceTable`, `MembershipTable` |
+| テーブル名 | スネークケース複数形 | `workspaces`, `confirmation_requests` |
+| FK 制約名 | `fk_{テーブル名}_{カラム名}` | `fk_schedules_organizer_id` |
+| UQ 制約名 | `uq_{テーブル名}_{カラム群}` | `uq_memberships_workspace_user` |
+
+#### カラム規約
+
+- UUID は `CHAR(36)` で文字列格納する
+- 子エンティティのリレーション: `lazy="selectin"`（N+1 防止）+ `cascade="all, delete-orphan"`（子のライフサイクルを親に委譲）
+- `ondelete` の使い分け:
+  - 子→親（ライフサイクル連動）: `CASCADE`
+  - 参照のみ（削除を防止）: `RESTRICT`
+  - 任意参照（参照先が消えても存続）: `SET NULL`
+- 順序を持つリスト（AgendaTemplate 等）は `position INTEGER NOT NULL` で順序を保持する
 
 ### datetime の扱い（インフラ層）
 
@@ -201,6 +237,48 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - リポジトリインターフェースは `domain/` に ABC で定義する
 - 各コンテキストのリポジトリインターフェースは `foundation/domain/base_repository.py` の `BaseRepository[TEntity, TId]` を継承する
 - SQLAlchemy 実装は `infrastructure/` に配置する（依存性逆転）
+
+#### 命名規則
+
+| 対象 | 規則 | 例 |
+|---|---|---|
+| インターフェース | `XxxRepository` | `WorkspaceRepository`, `ScheduleRepository` |
+| SQLAlchemy 実装 | `SqlAlchemyXxxRepository` | `SqlAlchemyWorkspaceRepository` |
+
+#### save メソッドのパターン
+
+リポジトリの `save()` は insert/update を自動判別する。
+
+```python
+async def save(self, entity: Xxx) -> None:
+    existing = await self._session.get(XxxTable, str(entity.id.value))
+    if existing is None:
+        await self._insert(entity)
+    else:
+        await self._update(entity, existing)
+```
+
+- `_insert`: ORM オブジェクト生成 → 子エンティティを append → `session.add` → `flush()`
+- `_update`: 既存 ORM オブジェクトのフィールドを上書き → 子エンティティを reconciliation → `flush()`
+- `commit()` はリポジトリでは呼ばない（UnitOfWork が責務を持つ）
+
+#### 子エンティティの reconciliation パターン
+
+`_update` 時に子エンティティのコレクションを同期する:
+
+1. 既存の子エンティティを `{id: ORM_row}` の辞書で保持
+2. ドメインエンティティのリストを走査し、辞書に存在すれば更新・なければ追加
+3. 辞書に残った未使用の行を削除（orphan 除去）
+
+ID に意味を持たないリスト（AgendaTemplate 等）は reconciliation ではなく全削除→全挿入でもよい。
+
+#### `_to_entity` 変換メソッド
+
+ORM → ドメインモデル変換は `@staticmethod` の `_to_entity` メソッドで行う:
+
+- ORM のスカラー値を値オブジェクト（`XxxId.from_str()`, `XxxName()` 等）に変換する
+- プライベートフィールド（`_name`, `_status` 等）はコンストラクタ引数で直接復元する
+- 子エンティティは ORM リレーションから同様に変換する
 
 ### 競合制御（楽観ロック）
 
