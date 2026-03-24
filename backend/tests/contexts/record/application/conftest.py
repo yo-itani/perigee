@@ -204,6 +204,11 @@ class InMemoryScheduleRepository(ScheduleRepository):
     ) -> list[Schedule]:
         return []  # not needed for record tests
 
+    async def list_confirmed_upcoming(
+        self, now: datetime, lookahead_minutes: int
+    ) -> list[Schedule]:
+        return []  # not needed for record tests
+
     def add(self, schedule: Schedule) -> None:
         """Pre-populate a schedule for testing."""
         self._schedules[schedule.id] = schedule

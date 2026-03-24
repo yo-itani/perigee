@@ -16,6 +16,7 @@ class NotificationType(Enum):
     RECORD_PUBLISHED = "record_published"
     AGENDA_COMMENT_ADDED = "agenda_comment_added"
     RECORD_COMMENT_ADDED = "record_comment_added"
+    REMINDER = "reminder"
 
 
 @dataclass(frozen=True)
@@ -31,3 +32,18 @@ class NotificationSettingId:
     @staticmethod
     def from_str(raw: str) -> NotificationSettingId:
         return NotificationSettingId(value=uuid.UUID(raw))
+
+
+@dataclass(frozen=True)
+class ReminderLogId:
+    """Reminder log identifier (UUID-based value object)."""
+
+    value: uuid.UUID
+
+    @staticmethod
+    def generate() -> ReminderLogId:
+        return ReminderLogId(value=uuid.uuid4())
+
+    @staticmethod
+    def from_str(raw: str) -> ReminderLogId:
+        return ReminderLogId(value=uuid.UUID(raw))

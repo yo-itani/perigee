@@ -96,6 +96,22 @@ class InMemoryScheduleRepository(ScheduleRepository):
     ) -> list[Schedule]:
         return []  # not needed for notification handler tests
 
+    async def list_confirmed_upcoming(
+        self, now: datetime, lookahead_minutes: int
+    ) -> list[Schedule]:
+        from datetime import timedelta
+
+        from contexts.preparation.domain.value_objects import ScheduleStatus
+
+        upper = now + timedelta(minutes=lookahead_minutes)
+        return [
+            s
+            for s in self._schedules.values()
+            if s.status == ScheduleStatus.CONFIRMED
+            and s.scheduled_at > now
+            and s.scheduled_at <= upper
+        ]
+
     def add(self, schedule: Schedule) -> None:
         """Pre-populate a schedule for testing."""
         self._schedules[schedule.id] = schedule

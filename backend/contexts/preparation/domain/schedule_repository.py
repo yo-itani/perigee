@@ -35,3 +35,13 @@ class ScheduleRepository(BaseRepository[Schedule, ScheduleId]):
         Only schedules with ``scheduled_at >= now`` and matching one of the
         given *statuses* are returned, ordered by ``scheduled_at`` ascending.
         """
+
+    @abstractmethod
+    async def list_confirmed_upcoming(
+        self, now: datetime, lookahead_minutes: int
+    ) -> list[Schedule]:
+        """Return CONFIRMED schedules between now and now + lookahead_minutes.
+
+        Only schedules with ``scheduled_at > now`` and
+        ``scheduled_at <= now + lookahead_minutes`` are returned.
+        """

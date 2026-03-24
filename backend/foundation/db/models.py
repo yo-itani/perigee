@@ -6,6 +6,7 @@ via Base.metadata. When adding a new table, add an explicit import below.
 
 from contexts.notification.infrastructure.tables import (
     NotificationSettingTable,  # noqa: F401
+    ReminderLogTable,  # noqa: F401
 )
 from contexts.preparation.infrastructure.tables import (
     ConfirmationRequestTable,  # noqa: F401
@@ -32,6 +33,7 @@ from shared.infrastructure.tables import UserTable  # noqa: F401
 __all__ = [
     "ActionItemTable",
     "NotificationSettingTable",
+    "ReminderLogTable",
     "CommentTable",
     "ConfirmationRequestTable",
     "MembershipTable",

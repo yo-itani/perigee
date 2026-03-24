@@ -9,6 +9,7 @@ dependencies = [
     "asyncmy~=0.2",
     "alembic~=1.18",
     "pydantic-settings~=2.13",
+    "apscheduler~=3.11",
 ]
 
 [dependency-groups]

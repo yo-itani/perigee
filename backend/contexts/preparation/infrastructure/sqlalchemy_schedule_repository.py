@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,6 +69,19 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
             )
             .order_by(ScheduleTable.scheduled_at.asc())
             .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._to_entity(row) for row in rows]
+
+    async def list_confirmed_upcoming(
+        self, now: datetime, lookahead_minutes: int
+    ) -> list[Schedule]:
+        upper = now + timedelta(minutes=lookahead_minutes)
+        stmt = select(ScheduleTable).where(
+            ScheduleTable.status == ScheduleStatus.CONFIRMED.value,
+            ScheduleTable.scheduled_at > now,
+            ScheduleTable.scheduled_at <= upper,
         )
         result = await self._session.execute(stmt)
         rows = result.scalars().all()
