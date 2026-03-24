@@ -212,3 +212,65 @@ class TestPositionOrdering:
         assert loaded is not None
         loaded_topics = [at.topic.value for at in loaded.agenda_templates]
         assert loaded_topics == topics
+
+
+class TestListByOrganizer:
+    """list_by_organizer() query tests."""
+
+    async def test_returns_only_templates_for_given_organizer(
+        self, session: AsyncSession
+    ) -> None:
+        """Filters templates by organizer_id, excluding other users' templates."""
+        repo = SqlAlchemyTemplateRepository(session)
+        org1 = await _create_user(session)
+        org2 = await _create_user(session)
+
+        t1 = _make_template(organizer_id=org1, name="Org1 A")
+        t2 = _make_template(organizer_id=org1, name="Org1 B")
+        t3 = _make_template(organizer_id=org2, name="Org2 A")
+        await repo.save(t1)
+        await repo.save(t2)
+        await repo.save(t3)
+        await session.commit()
+
+        result = await repo.list_by_organizer(org1)
+
+        assert len(result) == 2
+        names = {t.name.value for t in result}
+        assert names == {"Org1 A", "Org1 B"}
+
+    async def test_returns_multiple_templates_with_children(
+        self, session: AsyncSession
+    ) -> None:
+        """Returned templates include counterparts and agenda templates."""
+        repo = SqlAlchemyTemplateRepository(session)
+        org = await _create_user(session)
+        cp = await _create_user(session)
+
+        t1 = _make_template(
+            organizer_id=org,
+            name="With Children",
+            default_counterparts=[cp],
+            agenda_templates=[AgendaTemplate("Topic X")],
+        )
+        await repo.save(t1)
+        await session.commit()
+
+        result = await repo.list_by_organizer(org)
+
+        assert len(result) == 1
+        loaded = result[0]
+        assert loaded.default_counterparts == [cp]
+        assert len(loaded.agenda_templates) == 1
+        assert loaded.agenda_templates[0].topic.value == "Topic X"
+
+    async def test_returns_empty_list_when_no_templates(
+        self, session: AsyncSession
+    ) -> None:
+        """Returns an empty list for an organizer with no templates."""
+        repo = SqlAlchemyTemplateRepository(session)
+        org = await _create_user(session)
+
+        result = await repo.list_by_organizer(org)
+
+        assert result == []

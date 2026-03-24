@@ -49,7 +49,7 @@ class TestListTemplates:
         await template_repo.save(t1)
         await template_repo.save(t2)
 
-        output = await service.execute(ListTemplatesInput(organizer_id=organizer))
+        output = await service.execute(ListTemplatesInput(actor_id=organizer))
 
         assert len(output.templates) == 2
         names = {t.name for t in output.templates}
@@ -75,7 +75,7 @@ class TestListTemplates:
         await template_repo.save(t1)
         await template_repo.save(t2)
 
-        output = await service.execute(ListTemplatesInput(organizer_id=organizer1))
+        output = await service.execute(ListTemplatesInput(actor_id=organizer1))
 
         assert len(output.templates) == 1
         assert output.templates[0].name == "Org1 Template"
@@ -85,9 +85,7 @@ class TestListTemplates:
         service: ListTemplatesService,
     ) -> None:
         """Returns an empty list when the organizer has no templates."""
-        output = await service.execute(
-            ListTemplatesInput(organizer_id=UserId.generate())
-        )
+        output = await service.execute(ListTemplatesInput(actor_id=UserId.generate()))
         assert output.templates == []
 
     async def test_includes_template_details(
@@ -107,7 +105,7 @@ class TestListTemplates:
         )
         await template_repo.save(t)
 
-        output = await service.execute(ListTemplatesInput(organizer_id=organizer))
+        output = await service.execute(ListTemplatesInput(actor_id=organizer))
 
         item = output.templates[0]
         assert item.name == "Detailed"
@@ -116,3 +114,22 @@ class TestListTemplates:
         assert item.template_id == t.id
         assert item.created_at == t.created_at
         assert item.updated_at == t.updated_at
+
+    async def test_actor_cannot_list_other_users_templates(
+        self,
+        service: ListTemplatesService,
+        template_repo: InMemoryTemplateRepository,
+    ) -> None:
+        """An actor cannot retrieve templates owned by another user."""
+        owner = UserId.generate()
+        other = UserId.generate()
+
+        t = Template.create(
+            organizer_id=owner,
+            name=TemplateName("Owner Template"),
+        )
+        await template_repo.save(t)
+
+        output = await service.execute(ListTemplatesInput(actor_id=other))
+
+        assert output.templates == []

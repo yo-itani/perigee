@@ -26,7 +26,7 @@ class TemplateListItem:
 class ListTemplatesInput:
     """Input DTO for ListTemplatesService."""
 
-    organizer_id: UserId
+    actor_id: UserId
 
 
 @dataclass(frozen=True)
@@ -52,15 +52,17 @@ class ListTemplatesService:
         self,
         input_dto: ListTemplatesInput,
     ) -> ListTemplatesOutput:
-        """List all templates for the given organizer.
+        """List all templates owned by the actor.
+
+        The actor can only list their own templates.
 
         Args:
-            input_dto: Input containing the organizer ID.
+            input_dto: Input containing the actor ID.
 
         Returns:
             Output containing the list of templates.
         """
-        templates = await self._template_repo.list_by_organizer(input_dto.organizer_id)
+        templates = await self._template_repo.list_by_organizer(input_dto.actor_id)
 
         items = [
             TemplateListItem(
