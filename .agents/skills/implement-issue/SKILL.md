@@ -74,6 +74,8 @@ git checkout -b feature/$ARGUMENTS-<説明>
 - **型ヒント**: すべての関数の引数・戻り値に型ヒントを付ける
 - **コメント**: 「何をしているか」は書かない。「なぜそうしたか」が伝わりにくい箇所にだけ書く
 - **ドメイン層**: 純粋な Python で書く。FastAPI・SQLAlchemy 等のフレームワーク依存なし
+- **ユースケースの DTO**: `@dataclass(frozen=True)` で Input / Output DTO を定義し、ユースケースクラスと同一ファイルに配置する（`docs/architecture.md` 参照）
+- **例外の配置**: ドメイン例外は `domain/exceptions.py`、アプリケーション例外（リソース未検出等）はユースケースファイルに同居させる
 
 #### TypeScript（フロントエンド）
 - **命名規約**: 変数・関数は `camelCase`、コンポーネント・型は `PascalCase`、定数は `UPPER_SNAKE_CASE`
