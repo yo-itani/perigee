@@ -48,8 +48,8 @@ class PublishRecordUseCase:
 
     Workflow:
     1. Load the record and verify it exists.
-    2. Set viewers (snapshot at publish time).
-    3. Publish (DRAFT -> PUBLISHED one-way transition).
+    2. Publish (DRAFT -> PUBLISHED one-way transition).
+    3. Set viewers (snapshot at publish time).
     4. Save within a transaction.
     5. Dispatch domain events after commit.
     """
@@ -73,12 +73,12 @@ class PublishRecordUseCase:
             if record is None:
                 raise RecordNotFoundError(input_dto.record_id)
 
-            record.set_viewers(
-                viewer_ids=input_dto.viewer_ids,
+            record.publish(
                 actor_id=input_dto.actor_id,
                 now=now,
             )
-            record.publish(
+            record.set_viewers(
+                viewer_ids=input_dto.viewer_ids,
                 actor_id=input_dto.actor_id,
                 now=now,
             )

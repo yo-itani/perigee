@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from contexts.record.domain.exceptions import UnauthorizedOperationError
 from contexts.record.domain.record_repository import RecordRepository
-from contexts.record.domain.value_objects import RecordId
+from contexts.record.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import UserId
 
 
@@ -57,12 +57,17 @@ class GetViewersUseCase:
         if record is None:
             raise RecordNotFoundError(input_dto.record_id)
 
-        if (
-            input_dto.actor_id != record.organizer_id
-            and input_dto.actor_id != record.counterpart_id
-        ):
+        is_organizer = input_dto.actor_id == record.organizer_id
+        is_counterpart = input_dto.actor_id == record.counterpart_id
+
+        if not is_organizer and not is_counterpart:
             raise UnauthorizedOperationError(
                 "Only the organizer or counterpart can view the viewers list."
+            )
+
+        if record.status == RecordStatus.DRAFT and not is_organizer:
+            raise UnauthorizedOperationError(
+                "Only the organizer can view viewers of a draft record."
             )
 
         return GetViewersOutput(viewer_ids=record.viewers)

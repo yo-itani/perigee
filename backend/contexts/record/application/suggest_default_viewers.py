@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from contexts.record.domain.captain_query_service import CaptainQueryService
+from contexts.record.domain.exceptions import UnauthorizedOperationError
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import RecordId
 from shared.domain.value_objects import UserId
@@ -65,6 +66,11 @@ class SuggestDefaultViewersUseCase:
         record = await self._record_repository.get_by_id(input_dto.record_id)
         if record is None:
             raise RecordNotFoundError(input_dto.record_id)
+
+        if input_dto.actor_id != record.organizer_id:
+            raise UnauthorizedOperationError(
+                "Only the organizer can suggest default viewers."
+            )
 
         captain_ids = await self._captain_query_service.get_captains_for_user(
             record.counterpart_id

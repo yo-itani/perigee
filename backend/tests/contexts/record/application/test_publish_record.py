@@ -225,6 +225,29 @@ class TestPublishRecordErrors:
                 )
             )
 
+    async def test_already_published_does_not_accumulate_viewers_changed(
+        self,
+    ) -> None:
+        """When re-publishing fails, no ViewersChanged event should be accumulated."""
+        organizer = UserId.generate()
+        record = _make_draft_record(organizer=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 25, 12, 0))
+        uc, rr, _uow, _ed = _build_use_case()
+        await rr.save(record)
+        record.collect_events()
+
+        with pytest.raises(RecordAlreadyPublishedError):
+            await uc.execute(
+                PublishRecordInput(
+                    record_id=record.id,
+                    actor_id=organizer,
+                    viewer_ids=[UserId.generate()],
+                )
+            )
+
+        # No events should have been accumulated on the record
+        assert record.collect_events() == []
+
     async def test_does_not_commit_on_error(self) -> None:
         uc, _rr, uow, _ed = _build_use_case()
 

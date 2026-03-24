@@ -13,6 +13,7 @@ from contexts.record.application.suggest_default_viewers import (
     SuggestDefaultViewersUseCase,
 )
 from contexts.record.domain.captain_query_service import CaptainQueryService
+from contexts.record.domain.exceptions import UnauthorizedOperationError
 from contexts.record.domain.record import Record
 from contexts.record.domain.value_objects import RecordId
 from shared.domain.value_objects import UserId
@@ -160,6 +161,39 @@ class TestSuggestDefaultViewersErrors:
             await uc.execute(
                 SuggestDefaultViewersInput(
                     record_id=RecordId.generate(),
+                    actor_id=UserId.generate(),
+                )
+            )
+
+    async def test_raises_when_actor_is_not_organizer(self) -> None:
+        """Non-organizer cannot suggest default viewers."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_draft_record(organizer=organizer, counterpart=counterpart)
+        uc, rr, _cqs = _build_use_case()
+        await rr.save(record)
+        record.collect_events()
+
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
+            await uc.execute(
+                SuggestDefaultViewersInput(
+                    record_id=record.id,
+                    actor_id=counterpart,
+                )
+            )
+
+    async def test_raises_when_actor_is_unrelated(self) -> None:
+        """Unrelated user cannot suggest default viewers."""
+        organizer = UserId.generate()
+        record = _make_draft_record(organizer=organizer)
+        uc, rr, _cqs = _build_use_case()
+        await rr.save(record)
+        record.collect_events()
+
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
+            await uc.execute(
+                SuggestDefaultViewersInput(
+                    record_id=record.id,
                     actor_id=UserId.generate(),
                 )
             )

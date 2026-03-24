@@ -38,16 +38,6 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
         else:
             await self._update(entity, existing)
 
-    async def get_by_member_user_id(self, user_id: UserId) -> list[Workspace]:
-        stmt = (
-            select(WorkspaceTable)
-            .join(MembershipTable, WorkspaceTable.id == MembershipTable.workspace_id)
-            .where(MembershipTable.user_id == str(user_id.value))
-        )
-        result = await self._session.execute(stmt)
-        rows = result.scalars().all()
-        return [self._to_entity(row) for row in rows]
-
     async def get_ancestors(self, workspace_id: WorkspaceId) -> list[Workspace]:
         ancestors: list[Workspace] = []
         current_id: str | None = str(workspace_id.value)
