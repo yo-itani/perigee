@@ -1,3 +1,5 @@
+"""NotificationSettingRepository abstract interface."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -20,3 +22,14 @@ class NotificationSettingRepository(ABC):
     @abstractmethod
     async def save(self, entity: NotificationSetting) -> None:
         """Persist the setting (insert or update / upsert)."""
+
+    async def is_enabled(self, user_id: UserId) -> bool:
+        """Return whether notifications are enabled for the given user.
+
+        If no explicit setting exists for the user, this returns
+        ``True`` (notifications enabled by default).
+        """
+        setting = await self.get_by_user_id(user_id)
+        if setting is None:
+            return NotificationSetting.DEFAULT_IS_ENABLED
+        return setting.is_enabled
