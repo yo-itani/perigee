@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from contexts.notification.domain.notification_message import NotificationMessage
 from contexts.notification.domain.notification_sender import NotificationSender
 from contexts.notification.domain.notification_setting import NotificationSetting
@@ -10,7 +12,11 @@ from contexts.notification.domain.notification_setting_repository import (
 )
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
-from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleId
+from contexts.preparation.domain.value_objects import (
+    ScheduleGroupId,
+    ScheduleId,
+    ScheduleStatus,
+)
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import RecordId
@@ -80,6 +86,15 @@ class InMemoryScheduleRepository(ScheduleRepository):
             for s in self._schedules.values()
             if getattr(s, "schedule_group_id", None) == schedule_group_id
         ]
+
+    async def list_upcoming_by_participant(
+        self,
+        user_id: UserId,
+        now: datetime,
+        statuses: list[ScheduleStatus],
+        limit: int,
+    ) -> list[Schedule]:
+        return []  # not needed for notification handler tests
 
     def add(self, schedule: Schedule) -> None:
         """Pre-populate a schedule for testing."""

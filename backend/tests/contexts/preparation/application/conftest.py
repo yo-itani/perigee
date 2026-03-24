@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from types import TracebackType
 
 import pytest
@@ -20,6 +21,7 @@ from contexts.preparation.domain.value_objects import (
     AgendaId,
     ScheduleGroupId,
     ScheduleId,
+    ScheduleStatus,
     TemplateId,
 )
 from foundation.application.unit_of_work import UnitOfWork
@@ -88,6 +90,23 @@ class InMemoryScheduleRepository(ScheduleRepository):
         return [
             s for s in self._store.values() if s.schedule_group_id == schedule_group_id
         ]
+
+    async def list_upcoming_by_participant(
+        self,
+        user_id: UserId,
+        now: datetime,
+        statuses: list[ScheduleStatus],
+        limit: int,
+    ) -> list[Schedule]:
+        matching = [
+            s
+            for s in self._store.values()
+            if (s.organizer_id == user_id or s.counterpart_id == user_id)
+            and s.status in statuses
+            and s.scheduled_at >= now
+        ]
+        matching.sort(key=lambda s: s.scheduled_at)
+        return matching[:limit]
 
     @property
     def schedules(self) -> dict[ScheduleId, Schedule]:

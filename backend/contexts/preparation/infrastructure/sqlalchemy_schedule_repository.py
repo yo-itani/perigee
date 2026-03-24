@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.preparation.domain.confirmation_request import ConfirmationRequest
@@ -43,6 +43,32 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
     ) -> list[Schedule]:
         stmt = select(ScheduleTable).where(
             ScheduleTable.schedule_group_id == str(schedule_group_id.value)
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._to_entity(row) for row in rows]
+
+    async def list_upcoming_by_participant(
+        self,
+        user_id: UserId,
+        now: datetime,
+        statuses: list[ScheduleStatus],
+        limit: int,
+    ) -> list[Schedule]:
+        user_id_str = str(user_id.value)
+        status_values = [s.value for s in statuses]
+        stmt = (
+            select(ScheduleTable)
+            .where(
+                or_(
+                    ScheduleTable.organizer_id == user_id_str,
+                    ScheduleTable.counterpart_id == user_id_str,
+                ),
+                ScheduleTable.status.in_(status_values),
+                ScheduleTable.scheduled_at >= now,
+            )
+            .order_by(ScheduleTable.scheduled_at.asc())
+            .limit(limit)
         )
         result = await self._session.execute(stmt)
         rows = result.scalars().all()
