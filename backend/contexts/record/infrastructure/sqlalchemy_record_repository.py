@@ -67,7 +67,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
         )
         stmt = (
             select(RecordTable)
-            .where(RecordTable.id.in_(id_subq))
+            .where(RecordTable.id.in_(select(id_subq.c.id)))
             .order_by(
                 RecordTable.conducted_at.desc(),
                 RecordTable.created_at.desc(),
@@ -87,9 +87,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
         id_subq = self._visible_record_ids_subquery(
             actor_id, organizer_id, counterpart_id
         )
-        stmt = select(func.count()).select_from(
-            select(RecordTable.id).where(RecordTable.id.in_(id_subq)).subquery()
-        )
+        stmt = select(func.count()).select_from(id_subq)
         result = await self._session.execute(stmt)
         return int(result.scalar() or 0)
 
