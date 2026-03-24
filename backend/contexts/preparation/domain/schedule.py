@@ -386,12 +386,12 @@ class Schedule:
         new_scheduled_at: datetime,
         now: datetime,
     ) -> None:
-        """Change scheduled datetime via ScheduleGroup propagation.
+        """Change scheduled datetime directly (no ConfirmationRequest).
 
-        Supersedes any existing pending request and creates a new
-        ConfirmationRequest with the updated datetime. Status reverts
-        to REQUESTED (re-confirmation needed). The actual scheduled_at
-        is updated when the new request is confirmed.
+        Normal datetime changes are applied immediately without requiring
+        confirmation. ConfirmationRequest is reserved for ad-hoc
+        consultation requests (#79). Status reverts to REQUESTED
+        (re-confirmation needed).
 
         Raises:
             ScheduleAlreadyCancelledError: If already cancelled.
@@ -404,19 +404,7 @@ class Schedule:
         if _truncate_to_seconds(new_scheduled_at) < _truncate_to_seconds(now):
             raise InvalidScheduleOperationError("Cannot reschedule to a past datetime.")
 
-        # Supersede any existing pending request
-        existing_pending = self._find_pending_request()
-        if existing_pending is not None:
-            existing_pending.supersede()
-
-        # Create a new confirmation request with the updated datetime
-        new_request = ConfirmationRequest.create(
-            request_type=ConfirmationRequestType.RESCHEDULE,
-            requested_by=actor_id,
-            proposed_at=new_scheduled_at,
-            now=now,
-        )
-        self._confirmation_requests.append(new_request)
+        self._scheduled_at = new_scheduled_at
         self._status = ScheduleStatus.REQUESTED
         self._updated_at = now
         self._events.append(

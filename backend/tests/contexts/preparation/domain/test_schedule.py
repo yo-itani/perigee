@@ -725,45 +725,53 @@ class TestAggregateInvariants:
 
 
 class TestScheduleChangeScheduledAt:
-    def test_reverts_to_requested_and_creates_confirmation_request(self) -> None:
-        """Confirmed schedule reverts to REQUESTED and creates a new request."""
+    def test_directly_updates_scheduled_at(self) -> None:
+        """Confirmed schedule: scheduled_at is directly updated."""
         org = UserId.generate()
         cp = UserId.generate()
         schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.scheduled_at == _FUTURE2
+        assert schedule.updated_at == _LATER
+        # No new confirmation request is created
+        reqs = schedule.confirmation_requests
+        assert len(reqs) == 1  # only original creation (approved)
+
+    def test_confirmed_to_requested_transition(self) -> None:
+        """CONFIRMED -> REQUESTED when datetime is changed."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.CONFIRMED
 
         schedule.change_scheduled_at(
             actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
         )
 
         assert schedule.status == ScheduleStatus.REQUESTED
-        # scheduled_at is NOT updated until confirmed
-        assert schedule.scheduled_at == _FUTURE
-        assert schedule.updated_at == _LATER
-        # A new RESCHEDULE confirmation request is created
-        reqs = schedule.confirmation_requests
-        assert len(reqs) == 2  # original creation (approved) + new reschedule
-        latest = reqs[-1]
-        assert latest.request_type == ConfirmationRequestType.RESCHEDULE
-        assert latest.resolution == ConfirmationResolution.PENDING
-        assert latest.proposed_at == _FUTURE2
-        assert latest.requested_by == org
 
-    def test_confirm_after_change_adopts_new_datetime(self) -> None:
-        """Confirming after change_scheduled_at uses the new proposed datetime."""
+    def test_requested_stays_requested(self) -> None:
+        """REQUESTED -> REQUESTED: datetime is directly updated, status unchanged."""
         org = UserId.generate()
         cp = UserId.generate()
-        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        schedule.collect_events()
 
         schedule.change_scheduled_at(
             actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
         )
-        schedule.collect_events()
 
-        confirm_time = datetime(2026, 3, 20, 12, 0)
-        schedule.confirm(actor_id=cp, now=confirm_time)
-
-        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.status == ScheduleStatus.REQUESTED
         assert schedule.scheduled_at == _FUTURE2
+        # Existing creation request is unchanged
+        reqs = schedule.confirmation_requests
+        assert len(reqs) == 1
+        assert reqs[0].resolution == ConfirmationResolution.PENDING
 
     def test_emits_schedule_rescheduled_event(self) -> None:
         """Emits ScheduleRescheduled event."""
@@ -791,8 +799,7 @@ class TestScheduleChangeScheduledAt:
         schedule.change_scheduled_at(actor_id=cp, new_scheduled_at=_FUTURE2, now=_LATER)
 
         assert schedule.status == ScheduleStatus.REQUESTED
-        # scheduled_at not updated until confirmed
-        assert schedule.scheduled_at == _FUTURE
+        assert schedule.scheduled_at == _FUTURE2
 
     def test_cancelled_schedule_raises_error(self) -> None:
         """Cannot change datetime on a cancelled schedule."""
@@ -815,40 +822,6 @@ class TestScheduleChangeScheduledAt:
                 actor_id=other, new_scheduled_at=_FUTURE2, now=_LATER
             )
 
-    def test_confirmed_to_requested_transition(self) -> None:
-        """CONFIRMED -> REQUESTED when datetime is changed."""
-        org = UserId.generate()
-        cp = UserId.generate()
-        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
-        assert schedule.status == ScheduleStatus.CONFIRMED
-
-        schedule.change_scheduled_at(
-            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
-        )
-
-        assert schedule.status == ScheduleStatus.REQUESTED
-
-    def test_requested_stays_requested_and_supersedes_pending(self) -> None:
-        """REQUESTED -> REQUESTED: existing pending is superseded, new one created."""
-        org = UserId.generate()
-        cp = UserId.generate()
-        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
-        assert schedule.status == ScheduleStatus.REQUESTED
-        schedule.collect_events()
-
-        schedule.change_scheduled_at(
-            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
-        )
-
-        assert schedule.status == ScheduleStatus.REQUESTED
-        # scheduled_at not updated until confirmed
-        assert schedule.scheduled_at == _FUTURE
-        reqs = schedule.confirmation_requests
-        assert len(reqs) == 2
-        assert reqs[0].resolution == ConfirmationResolution.SUPERSEDED
-        assert reqs[1].resolution == ConfirmationResolution.PENDING
-        assert reqs[1].proposed_at == _FUTURE2
-
     def test_past_datetime_raises_error(self) -> None:
         """Cannot change to a past datetime."""
         org = UserId.generate()
@@ -860,24 +833,6 @@ class TestScheduleChangeScheduledAt:
             schedule.change_scheduled_at(
                 actor_id=org, new_scheduled_at=past, now=_LATER
             )
-
-    def test_reject_after_change_reverts_to_confirmed(self) -> None:
-        """Rejecting after change reverts to CONFIRMED."""
-        org = UserId.generate()
-        cp = UserId.generate()
-        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
-        original_scheduled_at = schedule.scheduled_at
-
-        schedule.change_scheduled_at(
-            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
-        )
-        schedule.collect_events()
-
-        reject_time = datetime(2026, 3, 20, 12, 0)
-        schedule.reject(actor_id=cp, now=reject_time)
-
-        assert schedule.status == ScheduleStatus.CONFIRMED
-        assert schedule.scheduled_at == original_scheduled_at
 
 
 # ===========================================================================

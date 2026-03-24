@@ -19,7 +19,6 @@ from contexts.preparation.domain.exceptions import (
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.value_objects import (
-    ConfirmationResolution,
     ScheduleId,
     ScheduleStatus,
 )
@@ -66,12 +65,12 @@ class TestReschedule:
             event_dispatcher=dispatcher,
         )
 
-    async def test_organizer_reschedules_to_requested(
+    async def test_organizer_reschedules_directly(
         self,
         service: RescheduleService,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Organizer can reschedule; status reverts to REQUESTED."""
+        """Organizer can reschedule; scheduled_at updated directly."""
         organizer = UserId.generate()
         counterpart = UserId.generate()
         now = datetime.now(UTC)
@@ -90,22 +89,15 @@ class TestReschedule:
         updated = await schedule_repo.get_by_id(schedule.id)
         assert updated is not None
         assert updated.status == ScheduleStatus.REQUESTED
-        # scheduled_at is NOT updated until confirmed;
-        # the new time is in the pending confirmation request
-        pending = [
-            r
-            for r in updated.confirmation_requests
-            if r.resolution == ConfirmationResolution.PENDING
-        ]
-        assert len(pending) == 1
-        assert pending[0].proposed_at == new_time
+        # scheduled_at is directly updated (no ConfirmationRequest)
+        assert updated.scheduled_at == new_time
 
-    async def test_counterpart_reschedules_to_requested(
+    async def test_counterpart_reschedules_directly(
         self,
         service: RescheduleService,
         schedule_repo: InMemoryScheduleRepository,
     ) -> None:
-        """Counterpart can also reschedule; status reverts to REQUESTED."""
+        """Counterpart can also reschedule; scheduled_at is directly updated."""
         organizer = UserId.generate()
         counterpart = UserId.generate()
         now = datetime.now(UTC)
@@ -124,6 +116,7 @@ class TestReschedule:
         updated = await schedule_repo.get_by_id(schedule.id)
         assert updated is not None
         assert updated.status == ScheduleStatus.REQUESTED
+        assert updated.scheduled_at == new_time
 
     async def test_dispatches_rescheduled_event_only(
         self,
