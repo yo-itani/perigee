@@ -2,8 +2,9 @@ from datetime import datetime
 
 import pytest
 
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
 from contexts.record.domain.events import (
+    AgendaConfirmed,
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
@@ -11,6 +12,7 @@ from contexts.record.domain.events import (
     ViewersChanged,
 )
 from contexts.record.domain.exceptions import (
+    AgendaAlreadyConfirmedError,
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
@@ -201,6 +203,118 @@ class TestRecordPublish:
         pub_events = [e for e in events if isinstance(e, RecordPublished)]
         assert len(pub_events) == 1
         assert pub_events[0].occurred_at == now
+
+
+class TestRecordConfirmAgenda:
+    def test_organizer_can_confirm_agenda(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        agenda_id = AgendaId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.confirm_agenda(agenda_id=agenda_id, actor_id=organizer, now=now)
+
+        assert agenda_id in record.confirmed_agenda_ids
+        assert record.updated_at == now
+
+    def test_counterpart_can_confirm_agenda(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+        agenda_id = AgendaId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.confirm_agenda(agenda_id=agenda_id, actor_id=counterpart, now=now)
+
+        assert agenda_id in record.confirmed_agenda_ids
+
+    def test_viewer_cannot_confirm_agenda(self) -> None:
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        viewer = UserId.generate()
+        record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
+
+        with pytest.raises(
+            UnauthorizedOperationError, match="organizer or counterpart"
+        ):
+            record.confirm_agenda(
+                agenda_id=AgendaId.generate(),
+                actor_id=viewer,
+                now=datetime(2026, 3, 20, 11, 0),
+            )
+
+    def test_cannot_confirm_same_agenda_twice(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        agenda_id = AgendaId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.confirm_agenda(agenda_id=agenda_id, actor_id=organizer, now=now)
+
+        with pytest.raises(AgendaAlreadyConfirmedError):
+            record.confirm_agenda(
+                agenda_id=agenda_id,
+                actor_id=organizer,
+                now=datetime(2026, 3, 20, 11, 5),
+            )
+
+    def test_cannot_confirm_agenda_when_published(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 10, 45))
+
+        with pytest.raises(RecordAlreadyPublishedError):
+            record.confirm_agenda(
+                agenda_id=AgendaId.generate(),
+                actor_id=organizer,
+                now=datetime(2026, 3, 20, 11, 0),
+            )
+
+    def test_emits_agenda_confirmed_event(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.collect_events()  # clear creation event
+        agenda_id = AgendaId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.confirm_agenda(agenda_id=agenda_id, actor_id=organizer, now=now)
+
+        events = record.collect_events()
+        confirmed_events = [e for e in events if isinstance(e, AgendaConfirmed)]
+        assert len(confirmed_events) == 1
+        assert confirmed_events[0].record_id == record.id
+        assert confirmed_events[0].agenda_id == agenda_id
+        assert confirmed_events[0].confirmed_by == organizer
+        assert confirmed_events[0].occurred_at == now
+
+    def test_confirmed_agenda_ids_returns_copy(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        agenda_id = AgendaId.generate()
+        record.confirm_agenda(
+            agenda_id=agenda_id,
+            actor_id=organizer,
+            now=datetime(2026, 3, 20, 11, 0),
+        )
+
+        returned = record.confirmed_agenda_ids
+        returned.add(AgendaId.generate())
+
+        assert len(record.confirmed_agenda_ids) == 1
+
+    def test_multiple_agendas_can_be_confirmed(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        agenda1 = AgendaId.generate()
+        agenda2 = AgendaId.generate()
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.confirm_agenda(agenda_id=agenda1, actor_id=organizer, now=now)
+        record.confirm_agenda(agenda_id=agenda2, actor_id=organizer, now=now)
+
+        assert agenda1 in record.confirmed_agenda_ids
+        assert agenda2 in record.confirmed_agenda_ids
+        assert len(record.confirmed_agenda_ids) == 2
 
 
 class TestRecordVisibility:
