@@ -105,6 +105,20 @@ class InMemoryRecordRepository(RecordRepository):
             and r.is_visible_to(actor_id)
         ]
 
+    async def list_drafts_by_organizer(
+        self,
+        organizer_id: UserId,
+    ) -> list[Record]:
+        from contexts.record.domain.value_objects import RecordStatus
+
+        drafts = [
+            r
+            for r in self._records.values()
+            if r.organizer_id == organizer_id and r.status == RecordStatus.DRAFT
+        ]
+        drafts.sort(key=lambda r: r.created_at, reverse=True)
+        return drafts
+
     @property
     def saved_records(self) -> list[Record]:
         return list(self._records.values())

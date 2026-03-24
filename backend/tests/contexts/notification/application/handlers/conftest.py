@@ -148,6 +148,12 @@ class InMemoryRecordRepository(RecordRepository):
     ) -> Record | None:
         return None  # not needed for handler tests
 
+    async def list_drafts_by_organizer(
+        self,
+        organizer_id: UserId,
+    ) -> list[Record]:
+        return []  # not needed for handler tests
+
     def add(self, record: Record) -> None:
         """Pre-populate a record for testing."""
         self._records[record.id] = record

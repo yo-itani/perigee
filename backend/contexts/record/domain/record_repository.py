@@ -58,3 +58,13 @@ class RecordRepository(BaseRepository[Record, RecordId]):
 
         Latest = highest conducted_at (then created_at as tiebreaker).
         """
+
+    @abstractmethod
+    async def list_drafts_by_organizer(
+        self,
+        organizer_id: UserId,
+    ) -> list[Record]:
+        """Return all DRAFT Records where organizer_id is the organizer.
+
+        Ordered by created_at DESC (most recently created first).
+        """
