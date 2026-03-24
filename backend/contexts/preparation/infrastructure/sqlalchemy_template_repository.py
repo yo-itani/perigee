@@ -33,6 +33,14 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
             return None
         return self._to_entity(row)
 
+    async def list_by_organizer(self, organizer_id: UserId) -> list[Template]:
+        stmt = select(TemplateTable).where(
+            TemplateTable.organizer_id == str(organizer_id.value)
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._to_entity(row) for row in rows]
+
     async def save(self, entity: Template) -> None:
         existing = await self._session.get(TemplateTable, str(entity.id.value))
         if existing is None:
