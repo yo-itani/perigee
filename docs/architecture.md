@@ -198,6 +198,49 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 - 発行元のトランザクションは既に確定済みのため、ハンドラの失敗が発行元をロールバックすることはない
 - これは **結果整合性（eventual consistency）** の方針であり、ハンドラ失敗時はリトライや補償処理で対応する
 
+## アプリケーション層の設計規約
+
+### ユースケースの Input / Output DTO
+
+- ユースケースの入出力には `@dataclass(frozen=True)` の DTO を使用する
+- DTO はユースケースクラスと同一ファイルに定義する（別ファイルに分離しない）
+- 命名規則: `<ユースケース名>Input` / `<ユースケース名>Output`
+- presentation 層（FastAPI の Pydantic スキーマ）とは分離し、ルーターで変換する
+
+```python
+@dataclass(frozen=True)
+class CreateRecordFromScheduleInput:
+    schedule_id: ScheduleId
+    actor_id: UserId
+    conducted_at: datetime
+
+@dataclass(frozen=True)
+class CreateRecordFromScheduleOutput:
+    record_id: RecordId
+
+class CreateRecordFromScheduleUseCase:
+    async def execute(self, input_dto: CreateRecordFromScheduleInput) -> CreateRecordFromScheduleOutput:
+        ...
+```
+
+### アプリケーション例外
+
+ユースケース固有のエラー（リソース未検出、操作前提の不成立など）はアプリケーション例外として、ユースケースクラスと同一ファイルに定義する。
+
+- **ドメイン例外**（ビジネスルール違反）→ `domain/exceptions.py` に配置（既存ルール通り）
+- **アプリケーション例外**（ユースケース固有のエラー）→ ユースケースファイルに同居
+
+```python
+# ユースケースファイル内に定義
+class ScheduleNotFoundError(Exception):
+    """指定されたスケジュールが存在しない"""
+    ...
+
+class ScheduleCancelledError(Exception):
+    """キャンセル済みスケジュールからの記録作成は不可"""
+    ...
+```
+
 ## インフラ層の設計規約
 
 ### ORM テーブル定義
