@@ -18,5 +18,5 @@ class NotificationSettingRepository(ABC):
         """Return the setting for the given user, or None if not found."""
 
     @abstractmethod
-    async def save(self, setting: NotificationSetting) -> None:
+    async def save(self, entity: NotificationSetting) -> None:
         """Persist the setting (insert or update / upsert)."""

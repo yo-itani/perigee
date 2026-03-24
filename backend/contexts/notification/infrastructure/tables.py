@@ -1,7 +1,4 @@
-from datetime import datetime
-
-from sqlalchemy import CHAR, VARCHAR, Boolean, Integer
-from sqlalchemy.dialects.mysql import DATETIME
+from sqlalchemy import CHAR, Boolean, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
 from foundation.db.base import Base, TimestampMixin

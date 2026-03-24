@@ -23,8 +23,8 @@ class InMemoryNotificationSettingRepository(NotificationSettingRepository):
     async def get_by_user_id(self, user_id: UserId) -> NotificationSetting | None:
         return self._settings.get(user_id)
 
-    async def save(self, setting: NotificationSetting) -> None:
-        self._settings[setting.user_id] = setting
+    async def save(self, entity: NotificationSetting) -> None:
+        self._settings[entity.user_id] = entity
 
     @property
     def saved_settings(self) -> list[NotificationSetting]:
