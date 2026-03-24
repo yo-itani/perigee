@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from types import TracebackType
 
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
-from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleId
+from contexts.preparation.domain.value_objects import (
+    ScheduleGroupId,
+    ScheduleId,
+    ScheduleStatus,
+)
 from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.comment import Comment
@@ -175,6 +180,15 @@ class InMemoryScheduleRepository(ScheduleRepository):
             for s in self._schedules.values()
             if getattr(s, "schedule_group_id", None) == schedule_group_id
         ]
+
+    async def list_upcoming_by_participant(
+        self,
+        user_id: UserId,
+        now: datetime,
+        statuses: list[ScheduleStatus],
+        limit: int,
+    ) -> list[Schedule]:
+        return []  # not needed for record tests
 
     def add(self, schedule: Schedule) -> None:
         """Pre-populate a schedule for testing."""
