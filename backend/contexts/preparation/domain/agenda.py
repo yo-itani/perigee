@@ -6,7 +6,12 @@ from datetime import UTC, datetime
 from contexts.preparation.domain.comment import Comment
 from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.topic import Topic
-from contexts.preparation.domain.value_objects import AgendaId, CommentId, ScheduleId
+from contexts.preparation.domain.value_objects import (
+    AddedByTag,
+    AgendaId,
+    CommentId,
+    ScheduleId,
+)
 from shared.domain.value_objects import UserId
 
 
@@ -28,6 +33,7 @@ class Agenda:
     _schedule_id: ScheduleId
     _topic: Topic
     _added_by: UserId
+    _added_by_tag: AddedByTag
     _comments: list[Comment]
     _created_at: datetime
 
@@ -48,6 +54,10 @@ class Agenda:
         return self._added_by
 
     @property
+    def added_by_tag(self) -> AddedByTag:
+        return self._added_by_tag
+
+    @property
     def comments(self) -> list[Comment]:
         return list(self._comments)
 
@@ -61,6 +71,7 @@ class Agenda:
         schedule_id: ScheduleId,
         topic: Topic,
         added_by: UserId,
+        added_by_tag: AddedByTag,
         now: datetime | None = None,
     ) -> Agenda:
         """Factory method to create a new agenda item."""
@@ -70,6 +81,7 @@ class Agenda:
             _schedule_id=schedule_id,
             _topic=topic,
             _added_by=added_by,
+            _added_by_tag=added_by_tag,
             _comments=[],
             _created_at=ts,
         )

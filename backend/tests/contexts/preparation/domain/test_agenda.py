@@ -3,7 +3,7 @@ from datetime import datetime
 from contexts.preparation.domain.agenda import Agenda
 from contexts.preparation.domain.comment_body import CommentBody
 from contexts.preparation.domain.topic import Topic
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import AddedByTag, ScheduleId
 from shared.domain.value_objects import UserId
 
 _NOW = datetime(2026, 3, 20, 10, 0)
@@ -16,12 +16,14 @@ def _make_agenda(
     schedule_id: ScheduleId | None = None,
     topic: Topic = _DEFAULT_TOPIC,
     added_by: UserId | None = None,
+    added_by_tag: AddedByTag = AddedByTag.ORGANIZER,
     now: datetime = _NOW,
 ) -> Agenda:
     return Agenda.create(
         schedule_id=schedule_id or ScheduleId.generate(),
         topic=topic,
         added_by=added_by or UserId.generate(),
+        added_by_tag=added_by_tag,
         now=now,
     )
 

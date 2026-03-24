@@ -15,7 +15,11 @@ from contexts.preparation.domain.schedule_group_repository import (
 )
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.schedule_title import ScheduleTitle
-from contexts.preparation.domain.value_objects import ScheduleGroupId, TemplateId
+from contexts.preparation.domain.value_objects import (
+    AddedByTag,
+    ScheduleGroupId,
+    TemplateId,
+)
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
@@ -125,6 +129,7 @@ class CreateScheduleGroupService:
                     schedule_id=schedule.id,
                     topic=tmpl.topic,
                     added_by=input_dto.organizer_id,
+                    added_by_tag=AddedByTag.TEMPLATE,
                     now=now,
                 )
                 all_agendas.append(agenda)
