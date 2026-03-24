@@ -57,13 +57,6 @@ class InvalidMemoError(Exception):
         super().__init__(message)
 
 
-class InvalidRetrospectiveBodyError(Exception):
-    """Raised when a retrospective body fails validation."""
-
-    def __init__(self, message: str = "Invalid retrospective body.") -> None:
-        super().__init__(message)
-
-
 class RecordNotPublishedError(Exception):
     """Raised when an operation requires a published record but it is not."""
 

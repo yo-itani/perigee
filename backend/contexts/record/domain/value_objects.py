@@ -86,21 +86,6 @@ class CommentId:
         return CommentId(value=uuid.UUID(raw))
 
 
-@dataclass(frozen=True)
-class RetrospectiveId:
-    """Retrospective identifier (UUID-based value object)."""
-
-    value: uuid.UUID
-
-    @staticmethod
-    def generate() -> RetrospectiveId:
-        return RetrospectiveId(value=uuid.uuid4())
-
-    @staticmethod
-    def from_str(raw: str) -> RetrospectiveId:
-        return RetrospectiveId(value=uuid.UUID(raw))
-
-
 class RecordStatus(Enum):
     """Record status: Draft -> Published (one-way transition)."""
 

@@ -5,7 +5,6 @@ from contexts.record.domain.value_objects import (
     CommentId,
     RecordId,
     RecordStatus,
-    RetrospectiveId,
 )
 
 
@@ -81,30 +80,6 @@ class TestCommentId:
         comment_id = CommentId.generate()
         try:
             comment_id.value = uuid.uuid4()  # type: ignore[misc]
-            raise AssertionError("Expected FrozenInstanceError")  # noqa: TRY301
-        except AttributeError:
-            pass
-
-
-class TestRetrospectiveId:
-    def test_generate_creates_unique_ids(self) -> None:
-        id1 = RetrospectiveId.generate()
-        id2 = RetrospectiveId.generate()
-        assert id1 != id2
-
-    def test_from_str_roundtrip(self) -> None:
-        raw = "880e8400-e29b-41d4-a716-446655440000"
-        retrospective_id = RetrospectiveId.from_str(raw)
-        assert str(retrospective_id.value) == raw
-
-    def test_equality_same_uuid(self) -> None:
-        raw = uuid.UUID("880e8400-e29b-41d4-a716-446655440000")
-        assert RetrospectiveId(value=raw) == RetrospectiveId(value=raw)
-
-    def test_frozen(self) -> None:
-        retrospective_id = RetrospectiveId.generate()
-        try:
-            retrospective_id.value = uuid.uuid4()  # type: ignore[misc]
             raise AssertionError("Expected FrozenInstanceError")  # noqa: TRY301
         except AttributeError:
             pass

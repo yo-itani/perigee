@@ -13,13 +13,10 @@ from contexts.record.domain.comment import Comment
 from contexts.record.domain.comment_repository import CommentRepository
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
-from contexts.record.domain.retrospective import Retrospective
-from contexts.record.domain.retrospective_repository import RetrospectiveRepository
 from contexts.record.domain.value_objects import (
     ActionItemId,
     CommentId,
     RecordId,
-    RetrospectiveId,
 )
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
@@ -75,23 +72,6 @@ class InMemoryCommentRepository(CommentRepository):
     @property
     def saved_comments(self) -> list[Comment]:
         return list(self._comments.values())
-
-
-class InMemoryRetrospectiveRepository(RetrospectiveRepository):
-    """In-memory stub for RetrospectiveRepository."""
-
-    def __init__(self) -> None:
-        self._retrospectives: dict[RetrospectiveId, Retrospective] = {}
-
-    async def get_by_id(self, entity_id: RetrospectiveId) -> Retrospective | None:
-        return self._retrospectives.get(entity_id)
-
-    async def save(self, entity: Retrospective) -> None:
-        self._retrospectives[entity.id] = entity
-
-    @property
-    def saved_retrospectives(self) -> list[Retrospective]:
-        return list(self._retrospectives.values())
 
 
 class InMemoryScheduleRepository(ScheduleRepository):
