@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
-from contexts.record.domain.value_objects import ActionItemId, CommentId, RecordId
+from contexts.record.domain.value_objects import (
+    ActionItemId,
+    CommentId,
+    RecordId,
+)
 from shared.domain.events import DomainEvent
 from shared.domain.value_objects import UserId
 
@@ -63,8 +67,8 @@ class ViewersChanged(DomainEvent):
 
 
 @dataclass(frozen=True)
-class CommentAdded(DomainEvent):
-    """Raised when a comment is added to a record."""
+class RecordCommentAdded(DomainEvent):
+    """Raised when a comment is added to a published record."""
 
     comment_id: CommentId
     record_id: RecordId

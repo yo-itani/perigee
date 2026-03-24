@@ -9,9 +9,15 @@ from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleId
 from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.action_item_repository import ActionItemRepository
+from contexts.record.domain.comment import Comment
+from contexts.record.domain.comment_repository import CommentRepository
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
-from contexts.record.domain.value_objects import ActionItemId, RecordId
+from contexts.record.domain.value_objects import (
+    ActionItemId,
+    CommentId,
+    RecordId,
+)
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
@@ -49,6 +55,23 @@ class InMemoryActionItemRepository(ActionItemRepository):
     @property
     def saved_items(self) -> list[ActionItem]:
         return list(self._items.values())
+
+
+class InMemoryCommentRepository(CommentRepository):
+    """In-memory stub for CommentRepository."""
+
+    def __init__(self) -> None:
+        self._comments: dict[CommentId, Comment] = {}
+
+    async def get_by_id(self, entity_id: CommentId) -> Comment | None:
+        return self._comments.get(entity_id)
+
+    async def save(self, entity: Comment) -> None:
+        self._comments[entity.id] = entity
+
+    @property
+    def saved_comments(self) -> list[Comment]:
+        return list(self._comments.values())
 
 
 class InMemoryScheduleRepository(ScheduleRepository):
