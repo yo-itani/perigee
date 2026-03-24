@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
@@ -38,6 +38,21 @@ class SqlAlchemyRecordRepository(RecordRepository):
             await self._insert(entity)
         else:
             await self._update(entity, existing)
+
+    async def exists_by_participant(
+        self, user_id: UserId, counterpart_id: UserId
+    ) -> bool:
+        stmt = select(
+            exists().where(
+                RecordTable.counterpart_id == str(counterpart_id.value),
+                or_(
+                    RecordTable.organizer_id == str(user_id.value),
+                    RecordTable.counterpart_id == str(user_id.value),
+                ),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return bool(result.scalar())
 
     # ------------------------------------------------------------------
     # Private helpers

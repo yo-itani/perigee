@@ -21,6 +21,7 @@ from contexts.record.domain.value_objects import (
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
+from shared.domain.value_objects import UserId
 
 
 class InMemoryRecordRepository(RecordRepository):
@@ -34,6 +35,15 @@ class InMemoryRecordRepository(RecordRepository):
 
     async def save(self, entity: Record) -> None:
         self._records[entity.id] = entity
+
+    async def exists_by_participant(
+        self, user_id: UserId, counterpart_id: UserId
+    ) -> bool:
+        return any(
+            r.counterpart_id == counterpart_id
+            and (r.organizer_id == user_id or r.counterpart_id == user_id)
+            for r in self._records.values()
+        )
 
     @property
     def saved_records(self) -> list[Record]:
@@ -51,6 +61,17 @@ class InMemoryActionItemRepository(ActionItemRepository):
 
     async def save(self, entity: ActionItem) -> None:
         self._items[entity.id] = entity
+
+    async def list_pending_by_counterpart(
+        self, counterpart_id: UserId, *, limit: int = 50
+    ) -> list[ActionItem]:
+        pending = [
+            item
+            for item in self._items.values()
+            if item.counterpart_id == counterpart_id and not item.is_completed
+        ]
+        pending.sort(key=lambda item: item.created_at)
+        return pending[: max(0, limit)]
 
     @property
     def saved_items(self) -> list[ActionItem]:
