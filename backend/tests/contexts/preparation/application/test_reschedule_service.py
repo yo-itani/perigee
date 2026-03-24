@@ -18,7 +18,11 @@ from contexts.preparation.domain.exceptions import (
 )
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_title import ScheduleTitle
-from contexts.preparation.domain.value_objects import ScheduleId, ScheduleStatus
+from contexts.preparation.domain.value_objects import (
+    ConfirmationResolution,
+    ScheduleId,
+    ScheduleStatus,
+)
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -86,7 +90,15 @@ class TestReschedule:
         updated = await schedule_repo.get_by_id(schedule.id)
         assert updated is not None
         assert updated.status == ScheduleStatus.REQUESTED
-        assert updated.scheduled_at == new_time
+        # scheduled_at is NOT updated until confirmed;
+        # the new time is in the pending confirmation request
+        pending = [
+            r
+            for r in updated.confirmation_requests
+            if r.resolution == ConfirmationResolution.PENDING
+        ]
+        assert len(pending) == 1
+        assert pending[0].proposed_at == new_time
 
     async def test_counterpart_reschedules_to_requested(
         self,
