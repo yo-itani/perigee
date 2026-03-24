@@ -102,6 +102,21 @@ class SqlAlchemyRecordRepository(RecordRepository):
         )
         return records[0] if records else None
 
+    async def list_drafts_by_organizer(
+        self,
+        organizer_id: UserId,
+    ) -> list[Record]:
+        stmt = (
+            select(RecordTable)
+            .where(
+                RecordTable.organizer_id == str(organizer_id.value),
+                RecordTable.status == RecordStatus.DRAFT.value,
+            )
+            .order_by(RecordTable.created_at.desc())
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
