@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from contexts.record.domain.comment_body import CommentBody
-from contexts.record.domain.events import CommentAdded
+from contexts.record.domain.events import RecordCommentAdded
 from contexts.record.domain.value_objects import CommentId, RecordId
 from shared.domain.value_objects import UserId
 
-type _CommentEvent = CommentAdded
+type _CommentEvent = RecordCommentAdded
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Comment:
             created_at=ts,
         )
         comment._events.append(
-            CommentAdded(
+            RecordCommentAdded(
                 occurred_at=ts,
                 comment_id=comment_id,
                 record_id=record_id,

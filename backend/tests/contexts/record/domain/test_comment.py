@@ -2,7 +2,7 @@ from datetime import datetime
 
 from contexts.record.domain.comment import Comment
 from contexts.record.domain.comment_body import CommentBody
-from contexts.record.domain.events import CommentAdded
+from contexts.record.domain.events import RecordCommentAdded
 from contexts.record.domain.value_objects import RecordId
 from shared.domain.value_objects import UserId
 
@@ -54,7 +54,7 @@ class TestCommentCreate:
 
         assert len(events) == 1
         event = events[0]
-        assert isinstance(event, CommentAdded)
+        assert isinstance(event, RecordCommentAdded)
         assert event.comment_id == comment.id
         assert event.record_id == comment.record_id
         assert event.author_id == comment.author_id
