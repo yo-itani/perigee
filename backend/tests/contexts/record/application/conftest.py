@@ -6,7 +6,7 @@ from types import TracebackType
 
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleId
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import RecordId
@@ -43,6 +43,14 @@ class InMemoryScheduleRepository(ScheduleRepository):
 
     async def save(self, entity: Schedule) -> None:
         self._schedules[entity.id] = entity
+
+    async def get_by_schedule_group_id(
+        self, schedule_group_id: ScheduleGroupId
+    ) -> list[Schedule]:
+        return [
+            s for s in self._schedules.values()
+            if getattr(s, "schedule_group_id", None) == schedule_group_id
+        ]
 
     def add(self, schedule: Schedule) -> None:
         """Pre-populate a schedule for testing."""
