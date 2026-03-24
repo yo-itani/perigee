@@ -720,6 +720,204 @@ class TestAggregateInvariants:
 
 
 # ===========================================================================
+# Change Scheduled At
+# ===========================================================================
+
+
+class TestScheduleChangeScheduledAt:
+    def test_directly_updates_scheduled_at(self) -> None:
+        """Confirmed schedule: scheduled_at is directly updated."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.scheduled_at == _FUTURE2
+        assert schedule.updated_at == _LATER
+        # No new confirmation request is created
+        reqs = schedule.confirmation_requests
+        assert len(reqs) == 1  # only original creation (approved)
+
+    def test_confirmed_to_requested_transition(self) -> None:
+        """CONFIRMED -> REQUESTED when datetime is changed."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.CONFIRMED
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+
+    def test_requested_stays_requested(self) -> None:
+        """REQUESTED -> REQUESTED: datetime is directly updated, status unchanged."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        schedule.collect_events()
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == _FUTURE2
+        # Existing creation request is superseded
+        reqs = schedule.confirmation_requests
+        assert len(reqs) == 1
+        assert reqs[0].resolution == ConfirmationResolution.SUPERSEDED
+
+    def test_emits_schedule_rescheduled_event(self) -> None:
+        """Emits ScheduleRescheduled event."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+        )
+
+        events = schedule.collect_events()
+        assert len(events) == 1
+        event = events[0]
+        assert isinstance(event, ScheduleRescheduled)
+        assert event.new_proposed_at == _FUTURE2
+        assert event.requested_by == org
+
+    def test_counterpart_can_change(self) -> None:
+        """Counterpart can also change the scheduled datetime."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+
+        schedule.change_scheduled_at(actor_id=cp, new_scheduled_at=_FUTURE2, now=_LATER)
+
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == _FUTURE2
+
+    def test_cancelled_schedule_raises_error(self) -> None:
+        """Cannot change datetime on a cancelled schedule."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_cancelled_schedule(organizer_id=org, counterpart_id=cp)
+
+        with pytest.raises(ScheduleAlreadyCancelledError):
+            schedule.change_scheduled_at(
+                actor_id=org, new_scheduled_at=_FUTURE2, now=_LATER
+            )
+
+    def test_non_participant_raises_error(self) -> None:
+        """Non-participant cannot change the scheduled datetime."""
+        schedule = _make_confirmed_schedule()
+        other = UserId.generate()
+
+        with pytest.raises(UnauthorizedScheduleOperationError):
+            schedule.change_scheduled_at(
+                actor_id=other, new_scheduled_at=_FUTURE2, now=_LATER
+            )
+
+    def test_past_datetime_raises_error(self) -> None:
+        """Cannot change to a past datetime."""
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        past = datetime(2020, 1, 1, 0, 0)
+
+        with pytest.raises(InvalidScheduleOperationError, match="past"):
+            schedule.change_scheduled_at(
+                actor_id=org, new_scheduled_at=past, now=_LATER
+            )
+
+    def test_change_then_confirm_keeps_new_datetime(self) -> None:
+        """After change_scheduled_at(), confirm() must keep the changed datetime.
+
+        Ensures that confirm() does not revert scheduled_at to an old
+        pending request's proposed_at.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        schedule.collect_events()
+
+        new_time = datetime(2026, 5, 15, 14, 0)
+        t1 = datetime(2026, 3, 20, 12, 0)
+        schedule.change_scheduled_at(actor_id=org, new_scheduled_at=new_time, now=t1)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == new_time
+
+        t2 = datetime(2026, 3, 20, 13, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+
+        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.scheduled_at == new_time  # NOT reverted
+
+    def test_confirmed_change_confirm_full_flow(self) -> None:
+        """CONFIRMED -> change_scheduled_at -> REQUESTED -> confirm -> CONFIRMED.
+
+        End-to-end flow: the schedule transitions correctly through all
+        states and the final scheduled_at reflects the changed value.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_confirmed_schedule(organizer_id=org, counterpart_id=cp)
+        original_at = schedule.scheduled_at
+        schedule.collect_events()
+
+        # Step 1: change datetime (CONFIRMED -> REQUESTED)
+        new_time = datetime(2026, 6, 1, 9, 0)
+        t1 = datetime(2026, 3, 20, 12, 0)
+        schedule.change_scheduled_at(actor_id=org, new_scheduled_at=new_time, now=t1)
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.scheduled_at == new_time
+        assert schedule.scheduled_at != original_at
+
+        # Step 2: confirm (REQUESTED -> CONFIRMED)
+        t2 = datetime(2026, 3, 20, 13, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+        assert schedule.status == ScheduleStatus.CONFIRMED
+        assert schedule.scheduled_at == new_time
+
+        # Verify events
+        events = schedule.collect_events()
+        assert len(events) == 2
+        assert isinstance(events[0], ScheduleRescheduled)
+        assert isinstance(events[1], ScheduleConfirmed)
+        assert events[1].scheduled_at == new_time
+
+    def test_change_scheduled_at_supersedes_existing_pending(self) -> None:
+        """change_scheduled_at() supersedes any existing pending request.
+
+        This prevents confirm() from picking up an old proposed_at.
+        """
+        org = UserId.generate()
+        cp = UserId.generate()
+        schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
+        original_proposed = schedule.confirmation_requests[0].proposed_at
+        schedule.collect_events()
+
+        new_time = datetime(2026, 5, 10, 10, 0)
+        schedule.change_scheduled_at(
+            actor_id=org, new_scheduled_at=new_time, now=_LATER
+        )
+
+        # Original creation request is superseded
+        reqs = schedule.confirmation_requests
+        assert reqs[0].resolution == ConfirmationResolution.SUPERSEDED
+
+        # confirm() should use current scheduled_at, not old proposed_at
+        t2 = datetime(2026, 3, 20, 12, 0)
+        schedule.confirm(actor_id=cp, now=t2)
+        assert schedule.scheduled_at == new_time
+        assert schedule.scheduled_at != original_proposed
+
+
+# ===========================================================================
 # Title
 # ===========================================================================
 
