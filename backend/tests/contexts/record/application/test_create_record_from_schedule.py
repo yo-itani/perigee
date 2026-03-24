@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -193,6 +193,33 @@ class TestCreateRecordFromSchedule:
         assert len(record_created_events) == 1
         assert record_created_events[0].record_id == output.record_id
         assert record_created_events[0].schedule_id == schedule.id
+
+    async def test_created_at_uses_current_time_not_conducted_at(self) -> None:
+        """created_at should reflect current time, not the conducted_at value."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        schedule = _make_confirmed_schedule(
+            organizer_id=organizer, counterpart_id=counterpart
+        )
+        uc, rr, sr, _uow, _ed = _build_use_case()
+        sr.add(schedule)
+        past_conducted_at = datetime(2025, 6, 1, 10, 0)
+        before = datetime.now(UTC)
+
+        await uc.execute(
+            CreateRecordFromScheduleInput(
+                schedule_id=schedule.id,
+                actor_id=organizer,
+                conducted_at=past_conducted_at,
+            )
+        )
+
+        after = datetime.now(UTC)
+        record = rr.saved_records[0]
+        assert record.conducted_at == past_conducted_at
+        # created_at should be around "now", not the past conducted_at
+        tolerance = timedelta(seconds=1)
+        assert before - tolerance <= record.created_at <= after + tolerance
 
     async def test_auto_confirms_requested_schedule(self) -> None:
         organizer = UserId.generate()

@@ -9,8 +9,9 @@ After a successful commit the RecordCreated domain event is dispatched.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
+from contexts.record.domain.exceptions import UnauthorizedOperationError
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import RecordId
@@ -24,6 +25,7 @@ from shared.domain.value_objects import UserId
 class CreatePostHocRecordInput:
     """Input DTO for CreatePostHocRecordUseCase."""
 
+    actor_id: UserId
     organizer_id: UserId
     counterpart_id: UserId
     conducted_at: datetime
@@ -67,8 +69,13 @@ class CreatePostHocRecordUseCase:
     async def execute(
         self, input_dto: CreatePostHocRecordInput
     ) -> CreatePostHocRecordOutput:
+        if input_dto.actor_id != input_dto.organizer_id:
+            raise UnauthorizedOperationError("Only the organizer can create a record.")
+
         if input_dto.organizer_id == input_dto.counterpart_id:
             raise SameUserError()
+
+        now = datetime.now(UTC)
 
         async with self._unit_of_work:
             record = Record.create(
@@ -76,7 +83,7 @@ class CreatePostHocRecordUseCase:
                 counterpart_id=input_dto.counterpart_id,
                 conducted_at=input_dto.conducted_at,
                 schedule_id=None,
-                now=input_dto.conducted_at,
+                now=now,
             )
 
             await self._record_repository.save(record)

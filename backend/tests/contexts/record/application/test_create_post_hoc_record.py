@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -12,6 +12,7 @@ from contexts.record.application.create_post_hoc_record import (
     SameUserError,
 )
 from contexts.record.domain.events import RecordCreated
+from contexts.record.domain.exceptions import UnauthorizedOperationError
 from contexts.record.domain.value_objects import RecordStatus
 from shared.domain.value_objects import UserId
 from tests.contexts.record.application.conftest import (
@@ -54,6 +55,7 @@ class TestCreatePostHocRecord:
 
         output = await uc.execute(
             CreatePostHocRecordInput(
+                actor_id=organizer,
                 organizer_id=organizer,
                 counterpart_id=counterpart,
                 conducted_at=conducted_at,
@@ -71,11 +73,13 @@ class TestCreatePostHocRecord:
         assert record.conducted_at == conducted_at
 
     async def test_commits_transaction(self) -> None:
+        organizer = UserId.generate()
         uc, _rr, uow, _ed = _build_use_case()
 
         await uc.execute(
             CreatePostHocRecordInput(
-                organizer_id=UserId.generate(),
+                actor_id=organizer,
+                organizer_id=organizer,
                 counterpart_id=UserId.generate(),
                 conducted_at=datetime(2026, 3, 25, 10, 30),
             )
@@ -90,6 +94,7 @@ class TestCreatePostHocRecord:
 
         output = await uc.execute(
             CreatePostHocRecordInput(
+                actor_id=organizer,
                 organizer_id=organizer,
                 counterpart_id=counterpart,
                 conducted_at=datetime(2026, 3, 25, 10, 30),
@@ -107,12 +112,14 @@ class TestCreatePostHocRecord:
         assert event.schedule_id is None
 
     async def test_conducted_at_is_preserved(self) -> None:
+        organizer = UserId.generate()
         conducted_at = datetime(2026, 1, 15, 14, 0)
         uc, rr, _uow, _ed = _build_use_case()
 
         await uc.execute(
             CreatePostHocRecordInput(
-                organizer_id=UserId.generate(),
+                actor_id=organizer,
+                organizer_id=organizer,
                 counterpart_id=UserId.generate(),
                 conducted_at=conducted_at,
             )
@@ -121,9 +128,64 @@ class TestCreatePostHocRecord:
         record = rr.saved_records[0]
         assert record.conducted_at == conducted_at
 
+    async def test_created_at_uses_current_time_not_conducted_at(self) -> None:
+        """created_at should reflect current time, not the conducted_at value."""
+        organizer = UserId.generate()
+        past_conducted_at = datetime(2025, 6, 1, 10, 0)
+        before = datetime.now(UTC)
+        uc, rr, _uow, _ed = _build_use_case()
+
+        await uc.execute(
+            CreatePostHocRecordInput(
+                actor_id=organizer,
+                organizer_id=organizer,
+                counterpart_id=UserId.generate(),
+                conducted_at=past_conducted_at,
+            )
+        )
+
+        after = datetime.now(UTC)
+        record = rr.saved_records[0]
+        assert record.conducted_at == past_conducted_at
+        # created_at should be around "now", not the past conducted_at
+        tolerance = timedelta(seconds=1)
+        assert before - tolerance <= record.created_at <= after + tolerance
+
 
 class TestCreatePostHocRecordErrors:
     """Tests for error conditions."""
+
+    async def test_raises_when_actor_is_not_organizer(self) -> None:
+        organizer = UserId.generate()
+        other_user = UserId.generate()
+        uc, _rr, _uow, _ed = _build_use_case()
+
+        with pytest.raises(UnauthorizedOperationError, match="Only the organizer"):
+            await uc.execute(
+                CreatePostHocRecordInput(
+                    actor_id=other_user,
+                    organizer_id=organizer,
+                    counterpart_id=UserId.generate(),
+                    conducted_at=datetime(2026, 3, 25, 10, 30),
+                )
+            )
+
+    async def test_does_not_commit_when_actor_is_not_organizer(self) -> None:
+        organizer = UserId.generate()
+        other_user = UserId.generate()
+        uc, _rr, uow, _ed = _build_use_case()
+
+        with pytest.raises(UnauthorizedOperationError):
+            await uc.execute(
+                CreatePostHocRecordInput(
+                    actor_id=other_user,
+                    organizer_id=organizer,
+                    counterpart_id=UserId.generate(),
+                    conducted_at=datetime(2026, 3, 25, 10, 30),
+                )
+            )
+
+        assert uow.committed is False
 
     async def test_raises_when_organizer_equals_counterpart(self) -> None:
         same_user = UserId.generate()
@@ -132,6 +194,7 @@ class TestCreatePostHocRecordErrors:
         with pytest.raises(SameUserError):
             await uc.execute(
                 CreatePostHocRecordInput(
+                    actor_id=same_user,
                     organizer_id=same_user,
                     counterpart_id=same_user,
                     conducted_at=datetime(2026, 3, 25, 10, 30),
@@ -145,6 +208,7 @@ class TestCreatePostHocRecordErrors:
         with pytest.raises(SameUserError):
             await uc.execute(
                 CreatePostHocRecordInput(
+                    actor_id=same_user,
                     organizer_id=same_user,
                     counterpart_id=same_user,
                     conducted_at=datetime(2026, 3, 25, 10, 30),
@@ -160,6 +224,7 @@ class TestCreatePostHocRecordErrors:
         with pytest.raises(SameUserError):
             await uc.execute(
                 CreatePostHocRecordInput(
+                    actor_id=same_user,
                     organizer_id=same_user,
                     counterpart_id=same_user,
                     conducted_at=datetime(2026, 3, 25, 10, 30),

@@ -11,7 +11,7 @@ After a successful commit the RecordCreated domain event is dispatched.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.value_objects import ScheduleId, ScheduleStatus
@@ -98,9 +98,11 @@ class CreateRecordFromScheduleUseCase:
                     "Only the organizer can create a record."
                 )
 
+            now = datetime.now(UTC)
+
             # Auto-confirm if still requested
             if schedule.status == ScheduleStatus.REQUESTED:
-                schedule.auto_confirm(now=input_dto.conducted_at)
+                schedule.auto_confirm(now=now)
                 await self._schedule_repository.save(schedule)
 
             record = Record.create(
@@ -108,7 +110,7 @@ class CreateRecordFromScheduleUseCase:
                 counterpart_id=schedule.counterpart_id,
                 conducted_at=input_dto.conducted_at,
                 schedule_id=input_dto.schedule_id,
-                now=input_dto.conducted_at,
+                now=now,
             )
 
             await self._record_repository.save(record)
