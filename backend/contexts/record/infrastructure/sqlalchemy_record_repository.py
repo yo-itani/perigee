@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import exists, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
@@ -54,9 +54,88 @@ class SqlAlchemyRecordRepository(RecordRepository):
         result = await self._session.execute(stmt)
         return bool(result.scalar())
 
+    async def list_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+        offset: int,
+        limit: int,
+    ) -> list[Record]:
+        id_subq = self._visible_record_ids_subquery(
+            actor_id, organizer_id, counterpart_id
+        )
+        stmt = (
+            select(RecordTable)
+            .where(RecordTable.id.in_(select(id_subq.c.id)))
+            .order_by(
+                RecordTable.conducted_at.desc(),
+                RecordTable.created_at.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
+
+    async def count_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> int:
+        id_subq = self._visible_record_ids_subquery(
+            actor_id, organizer_id, counterpart_id
+        )
+        stmt = select(func.count()).select_from(id_subq)
+        result = await self._session.execute(stmt)
+        return int(result.scalar() or 0)
+
+    async def get_latest_visible_published_by_pair(
+        self,
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ) -> Record | None:
+        records = await self.list_visible_published_by_pair(
+            actor_id, organizer_id, counterpart_id, offset=0, limit=1
+        )
+        return records[0] if records else None
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _visible_record_ids_subquery(
+        actor_id: UserId,
+        organizer_id: UserId,
+        counterpart_id: UserId,
+    ):  # type: ignore[no-untyped-def]
+        """Build a subquery returning record IDs visible to actor.
+
+        Uses EXISTS subquery for viewer check instead of JOIN to avoid
+        row duplication that breaks offset/limit and count.
+        """
+        actor_str = str(actor_id.value)
+        viewer_exists = exists().where(
+            RecordViewerTable.record_id == RecordTable.id,
+            RecordViewerTable.user_id == actor_str,
+        )
+        return (
+            select(RecordTable.id)
+            .where(
+                RecordTable.organizer_id == str(organizer_id.value),
+                RecordTable.counterpart_id == str(counterpart_id.value),
+                RecordTable.status == RecordStatus.PUBLISHED.value,
+                or_(
+                    RecordTable.organizer_id == actor_str,
+                    RecordTable.counterpart_id == actor_str,
+                    viewer_exists,
+                ),
+            )
+            .subquery()
+        )
 
     async def _insert(self, entity: Record) -> None:
         record_row = RecordTable(
