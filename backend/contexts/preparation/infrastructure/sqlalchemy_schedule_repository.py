@@ -38,6 +38,16 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
             return None
         return self._to_entity(row)
 
+    async def get_by_schedule_group_id(
+        self, schedule_group_id: ScheduleGroupId
+    ) -> list[Schedule]:
+        stmt = select(ScheduleTable).where(
+            ScheduleTable.schedule_group_id == str(schedule_group_id.value)
+        )
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._to_entity(row) for row in rows]
+
     async def save(self, entity: Schedule) -> None:
         existing = await self._session.get(ScheduleTable, str(entity.id.value))
         if existing is None:
