@@ -71,7 +71,7 @@ class InMemoryActionItemRepository(ActionItemRepository):
             if item.counterpart_id == counterpart_id and not item.is_completed
         ]
         pending.sort(key=lambda item: item.created_at)
-        return pending[:limit]
+        return pending[: max(0, limit)]
 
     @property
     def saved_items(self) -> list[ActionItem]:

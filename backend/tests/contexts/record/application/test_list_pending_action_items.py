@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 import pytest
 
 from contexts.record.application.list_pending_action_items import (
+    MAX_LIMIT,
+    InvalidLimitError,
     ListPendingActionItemsInput,
     ListPendingActionItemsOutput,
     ListPendingActionItemsService,
@@ -413,3 +415,91 @@ class TestListPendingActionItemsAuthorization:
                     counterpart_id=counterpart_b,
                 )
             )
+
+
+class TestListPendingActionItemsLimitValidation:
+    """Tests for limit parameter validation."""
+
+    async def test_limit_zero_raises(self) -> None:
+        """limit=0 is rejected before any repository call."""
+        svc, _rr, _air = _build_service()
+
+        with pytest.raises(InvalidLimitError):
+            await svc.execute(
+                ListPendingActionItemsInput(
+                    actor_id=UserId.generate(),
+                    counterpart_id=UserId.generate(),
+                    limit=0,
+                )
+            )
+
+    async def test_limit_negative_raises(self) -> None:
+        """limit=-1 is rejected."""
+        svc, _rr, _air = _build_service()
+
+        with pytest.raises(InvalidLimitError):
+            await svc.execute(
+                ListPendingActionItemsInput(
+                    actor_id=UserId.generate(),
+                    counterpart_id=UserId.generate(),
+                    limit=-1,
+                )
+            )
+
+    async def test_limit_exceeds_max_raises(self) -> None:
+        """limit above MAX_LIMIT is rejected."""
+        svc, _rr, _air = _build_service()
+
+        with pytest.raises(InvalidLimitError):
+            await svc.execute(
+                ListPendingActionItemsInput(
+                    actor_id=UserId.generate(),
+                    counterpart_id=UserId.generate(),
+                    limit=MAX_LIMIT + 1,
+                )
+            )
+
+    async def test_limit_at_max_is_accepted(self) -> None:
+        """limit=MAX_LIMIT is valid (boundary)."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer=organizer, counterpart=counterpart)
+
+        svc, rr, _air = _build_service()
+        await rr.save(record)
+
+        output = await svc.execute(
+            ListPendingActionItemsInput(
+                actor_id=organizer,
+                counterpart_id=counterpart,
+                limit=MAX_LIMIT,
+            )
+        )
+
+        assert output.items == []
+
+    async def test_limit_one_is_accepted(self) -> None:
+        """limit=1 is the minimum valid value."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        record = _make_record(organizer=organizer, counterpart=counterpart)
+        item = _make_action_item(
+            counterpart=counterpart,
+            record_id=record.id,
+            organizer=organizer,
+            title="Single item",
+        )
+
+        svc, rr, air = _build_service()
+        await rr.save(record)
+        await air.save(item)
+
+        output = await svc.execute(
+            ListPendingActionItemsInput(
+                actor_id=organizer,
+                counterpart_id=counterpart,
+                limit=1,
+            )
+        )
+
+        assert len(output.items) == 1

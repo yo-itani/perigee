@@ -47,6 +47,16 @@ class ListPendingActionItemsOutput:
     items: list[PendingActionItemDTO]
 
 
+MAX_LIMIT = 200
+
+
+class InvalidLimitError(Exception):
+    """limit must be between 1 and MAX_LIMIT (inclusive)."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(f"limit must be between 1 and {MAX_LIMIT}, got {limit}")
+
+
 class ListPendingActionItemsService:
     """Query pending (not completed) action items for a counterpart.
 
@@ -72,6 +82,10 @@ class ListPendingActionItemsService:
     async def execute(
         self, input_dto: ListPendingActionItemsInput
     ) -> ListPendingActionItemsOutput:
+        # 0. Validate limit
+        if not (1 <= input_dto.limit <= MAX_LIMIT):
+            raise InvalidLimitError(input_dto.limit)
+
         # 1. Authorization: actor must be involved in records with this counterpart
         has_access = await self._record_repository.exists_by_participant(
             user_id=input_dto.actor_id,
