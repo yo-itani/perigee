@@ -33,6 +33,11 @@ class RecordTable(Base, TimestampMixin):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    confirmed_agendas: Mapped[list["RecordConfirmedAgendaTable"]] = relationship(
+        back_populates="record",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
 
 class RecordViewerTable(Base, TimestampMixin):
@@ -60,6 +65,33 @@ class RecordViewerTable(Base, TimestampMixin):
     )
 
     record: Mapped["RecordTable"] = relationship(back_populates="viewers")
+
+
+class RecordConfirmedAgendaTable(Base, TimestampMixin):
+    """ORM model for the record_confirmed_agendas table."""
+
+    __tablename__ = "record_confirmed_agendas"
+    __table_args__ = (
+        UniqueConstraint(
+            "record_id",
+            "agenda_id",
+            name="uq_record_confirmed_agendas_record_id_agenda_id",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True)
+    record_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "records.id",
+            ondelete="CASCADE",
+            name="fk_record_confirmed_agendas_record_id",
+        ),
+        nullable=False,
+    )
+    agenda_id: Mapped[str] = mapped_column(CHAR(36), nullable=False)
+
+    record: Mapped["RecordTable"] = relationship(back_populates="confirmed_agendas")
 
 
 class CommentTable(Base, TimestampMixin):

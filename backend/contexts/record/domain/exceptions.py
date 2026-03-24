@@ -43,6 +43,13 @@ class CommentAlreadyExistsError(Exception):
         super().__init__(message)
 
 
+class AgendaAlreadyConfirmedError(Exception):
+    """Raised when attempting to confirm an already-confirmed agenda item."""
+
+    def __init__(self, message: str = "Agenda is already confirmed.") -> None:
+        super().__init__(message)
+
+
 class InvalidMemoError(Exception):
     """Raised when a memo fails validation."""
 

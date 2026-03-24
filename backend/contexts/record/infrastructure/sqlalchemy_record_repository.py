@@ -5,12 +5,16 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
 from contexts.record.domain.memo import Memo
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import RecordId, RecordStatus
-from contexts.record.infrastructure.tables import RecordTable, RecordViewerTable
+from contexts.record.infrastructure.tables import (
+    RecordConfirmedAgendaTable,
+    RecordTable,
+    RecordViewerTable,
+)
 from shared.domain.value_objects import UserId
 
 
@@ -60,6 +64,15 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 updated_at=entity.updated_at,
             )
             record_row.viewers.append(viewer_row)
+        for agenda_id in entity.confirmed_agenda_ids:
+            agenda_row = RecordConfirmedAgendaTable(
+                id=str(uuid.uuid4()),
+                record_id=str(entity.id.value),
+                agenda_id=str(agenda_id.value),
+                created_at=entity.created_at,
+                updated_at=entity.updated_at,
+            )
+            record_row.confirmed_agendas.append(agenda_row)
         self._session.add(record_row)
         await self._session.flush()
 
@@ -87,11 +100,28 @@ class SqlAlchemyRecordRepository(RecordRepository):
             )
             existing.viewers.append(new_viewer)
 
+        # Replace confirmed agendas: delete all, then re-insert
+        existing.confirmed_agendas.clear()
+        await self._session.flush()
+
+        for agenda_id in entity.confirmed_agenda_ids:
+            new_agenda = RecordConfirmedAgendaTable(
+                id=str(uuid.uuid4()),
+                record_id=str(entity.id.value),
+                agenda_id=str(agenda_id.value),
+                created_at=entity.updated_at,
+                updated_at=entity.updated_at,
+            )
+            existing.confirmed_agendas.append(new_agenda)
+
         await self._session.flush()
 
     @staticmethod
     def _to_entity(row: RecordTable) -> Record:
         viewers = [UserId.from_str(v.user_id) for v in row.viewers]
+        confirmed_agenda_ids = {
+            AgendaId.from_str(a.agenda_id) for a in row.confirmed_agendas
+        }
         return Record(
             id=RecordId.from_str(row.id),
             organizer_id=UserId.from_str(row.organizer_id),
@@ -102,6 +132,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
             _memo=Memo(row.memo),
             _status=RecordStatus(row.status),
             _viewers=viewers,
+            _confirmed_agenda_ids=confirmed_agenda_ids,
             conducted_at=row.conducted_at,
             created_at=row.created_at,
             _updated_at=row.updated_at,

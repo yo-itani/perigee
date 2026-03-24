@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from contexts.preparation.domain.value_objects import ScheduleId
+from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
 from contexts.record.domain.events import (
+    AgendaConfirmed,
     MemoUpdated,
     RecordCreated,
     RecordDraftSaved,
@@ -12,6 +13,7 @@ from contexts.record.domain.events import (
     ViewersChanged,
 )
 from contexts.record.domain.exceptions import (
+    AgendaAlreadyConfirmedError,
     RecordAlreadyPublishedError,
     UnauthorizedOperationError,
 )
@@ -20,7 +22,12 @@ from contexts.record.domain.value_objects import RecordId, RecordStatus
 from shared.domain.value_objects import UserId
 
 type _RecordEvent = (
-    RecordCreated | MemoUpdated | RecordDraftSaved | RecordPublished | ViewersChanged
+    RecordCreated
+    | MemoUpdated
+    | AgendaConfirmed
+    | RecordDraftSaved
+    | RecordPublished
+    | ViewersChanged
 )
 
 
@@ -42,6 +49,7 @@ class Record:
     _memo: Memo
     _status: RecordStatus
     _viewers: list[UserId]
+    _confirmed_agenda_ids: set[AgendaId]
     conducted_at: datetime
     created_at: datetime
     _updated_at: datetime
@@ -58,6 +66,10 @@ class Record:
     @property
     def viewers(self) -> list[UserId]:
         return list(self._viewers)
+
+    @property
+    def confirmed_agenda_ids(self) -> set[AgendaId]:
+        return set(self._confirmed_agenda_ids)
 
     @property
     def updated_at(self) -> datetime:
@@ -83,6 +95,7 @@ class Record:
             _memo=Memo(""),
             _status=RecordStatus.DRAFT,
             _viewers=[],
+            _confirmed_agenda_ids=set(),
             conducted_at=conducted_at,
             created_at=ts,
             _updated_at=ts,
@@ -110,6 +123,27 @@ class Record:
                 occurred_at=now,
                 record_id=self.id,
                 organizer_id=self.organizer_id,
+            )
+        )
+
+    def confirm_agenda(
+        self, *, agenda_id: AgendaId, actor_id: UserId, now: datetime
+    ) -> None:
+        """Confirm (check) an agenda item. Organizer or counterpart may confirm."""
+        self._assert_participant(actor_id)
+        self._assert_draft()
+        if agenda_id in self._confirmed_agenda_ids:
+            raise AgendaAlreadyConfirmedError(
+                f"Agenda {agenda_id.value} is already confirmed."
+            )
+        self._confirmed_agenda_ids.add(agenda_id)
+        self._updated_at = now
+        self._events.append(
+            AgendaConfirmed(
+                occurred_at=now,
+                record_id=self.id,
+                agenda_id=agenda_id,
+                confirmed_by=actor_id,
             )
         )
 
@@ -193,6 +227,12 @@ class Record:
     def _assert_organizer(self, actor_id: UserId) -> None:
         if actor_id != self.organizer_id:
             raise UnauthorizedOperationError("Only the organizer can edit the record.")
+
+    def _assert_participant(self, actor_id: UserId) -> None:
+        if actor_id != self.organizer_id and actor_id != self.counterpart_id:
+            raise UnauthorizedOperationError(
+                "Only the organizer or counterpart can perform this operation."
+            )
 
     def _assert_draft(self) -> None:
         if self._status != RecordStatus.DRAFT:

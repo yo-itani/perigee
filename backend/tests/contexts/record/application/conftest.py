@@ -7,9 +7,11 @@ from types import TracebackType
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.domain.value_objects import ScheduleGroupId, ScheduleId
+from contexts.record.domain.action_item import ActionItem
+from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
-from contexts.record.domain.value_objects import RecordId
+from contexts.record.domain.value_objects import ActionItemId, RecordId
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
@@ -32,6 +34,23 @@ class InMemoryRecordRepository(RecordRepository):
         return list(self._records.values())
 
 
+class InMemoryActionItemRepository(ActionItemRepository):
+    """In-memory stub for ActionItemRepository."""
+
+    def __init__(self) -> None:
+        self._items: dict[ActionItemId, ActionItem] = {}
+
+    async def get_by_id(self, entity_id: ActionItemId) -> ActionItem | None:
+        return self._items.get(entity_id)
+
+    async def save(self, entity: ActionItem) -> None:
+        self._items[entity.id] = entity
+
+    @property
+    def saved_items(self) -> list[ActionItem]:
+        return list(self._items.values())
+
+
 class InMemoryScheduleRepository(ScheduleRepository):
     """In-memory stub for ScheduleRepository."""
 
@@ -48,7 +67,8 @@ class InMemoryScheduleRepository(ScheduleRepository):
         self, schedule_group_id: ScheduleGroupId
     ) -> list[Schedule]:
         return [
-            s for s in self._schedules.values()
+            s
+            for s in self._schedules.values()
             if getattr(s, "schedule_group_id", None) == schedule_group_id
         ]
 
