@@ -31,13 +31,6 @@ class MembershipNotFoundError(Exception):
         super().__init__(message)
 
 
-class WorkspaceNotFoundError(Exception):
-    """Raised when a workspace is not found."""
-
-    def __init__(self, message: str = "Workspace not found.") -> None:
-        super().__init__(message)
-
-
 class InvalidWorkspaceNameError(Exception):
     """Raised when a workspace name fails validation."""
 

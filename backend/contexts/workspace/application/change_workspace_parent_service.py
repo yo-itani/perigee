@@ -2,17 +2,30 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.workspace.domain.exceptions import (
-    CircularHierarchyError,
-    WorkspaceNotFoundError,
-)
+from contexts.workspace.domain.exceptions import CircularHierarchyError
 from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
+
+
+class WorkspaceNotFoundError(Exception):
+    """Raised when a workspace is not found."""
+
+    def __init__(self, message: str = "Workspace not found.") -> None:
+        super().__init__(message)
+
+
+@dataclass(frozen=True)
+class ChangeWorkspaceParentInput:
+    """Input DTO for workspace parent change."""
+
+    workspace_id: WorkspaceId
+    new_parent_id: WorkspaceId | None
 
 
 class ChangeWorkspaceParentService:
@@ -35,15 +48,12 @@ class ChangeWorkspaceParentService:
 
     async def execute(
         self,
-        *,
-        workspace_id: WorkspaceId,
-        new_parent_id: WorkspaceId | None,
+        input_dto: ChangeWorkspaceParentInput,
     ) -> None:
         """Change the workspace's parent.
 
         Args:
-            workspace_id: The workspace whose parent will change.
-            new_parent_id: The new parent workspace ID (None for root).
+            input_dto: The input containing workspace id and new parent id.
 
         Raises:
             WorkspaceNotFoundError: If the workspace does not exist.
@@ -52,21 +62,23 @@ class ChangeWorkspaceParentService:
         now = datetime.now(UTC)
 
         async with self._uow:
-            workspace = await self._workspace_repo.get_by_id(workspace_id)
+            workspace = await self._workspace_repo.get_by_id(input_dto.workspace_id)
             if workspace is None:
                 raise WorkspaceNotFoundError()
 
             # Full ancestor-chain cycle detection:
             # If the new parent is in the ancestor chain of the workspace,
             # moving under it would create a cycle.
-            if new_parent_id is not None:
-                ancestors = await self._workspace_repo.get_ancestors(new_parent_id)
+            if input_dto.new_parent_id is not None:
+                ancestors = await self._workspace_repo.get_ancestors(
+                    input_dto.new_parent_id
+                )
                 ancestor_ids = {a.id for a in ancestors}
-                ancestor_ids.add(new_parent_id)
-                if workspace_id in ancestor_ids:
+                ancestor_ids.add(input_dto.new_parent_id)
+                if input_dto.workspace_id in ancestor_ids:
                     raise CircularHierarchyError()
 
-            workspace.change_parent(new_parent_id=new_parent_id, now=now)
+            workspace.change_parent(new_parent_id=input_dto.new_parent_id, now=now)
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
             await self._uow.commit()

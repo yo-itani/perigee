@@ -2,15 +2,30 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.workspace.domain.exceptions import WorkspaceNotFoundError
 from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace_name import WorkspaceName
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
+
+
+class WorkspaceNotFoundError(Exception):
+    """Raised when a workspace is not found."""
+
+    def __init__(self, message: str = "Workspace not found.") -> None:
+        super().__init__(message)
+
+
+@dataclass(frozen=True)
+class RenameWorkspaceInput:
+    """Input DTO for workspace rename."""
+
+    workspace_id: WorkspaceId
+    new_name: WorkspaceName
 
 
 class RenameWorkspaceService:
@@ -28,15 +43,12 @@ class RenameWorkspaceService:
 
     async def execute(
         self,
-        *,
-        workspace_id: WorkspaceId,
-        new_name: WorkspaceName,
+        input_dto: RenameWorkspaceInput,
     ) -> None:
         """Rename the workspace.
 
         Args:
-            workspace_id: The workspace to rename.
-            new_name: The new name for the workspace.
+            input_dto: The input containing workspace id and new name.
 
         Raises:
             WorkspaceNotFoundError: If the workspace does not exist.
@@ -44,11 +56,11 @@ class RenameWorkspaceService:
         now = datetime.now(UTC)
 
         async with self._uow:
-            workspace = await self._workspace_repo.get_by_id(workspace_id)
+            workspace = await self._workspace_repo.get_by_id(input_dto.workspace_id)
             if workspace is None:
                 raise WorkspaceNotFoundError()
 
-            workspace.rename(new_name=new_name, now=now)
+            workspace.rename(new_name=input_dto.new_name, now=now)
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
             await self._uow.commit()

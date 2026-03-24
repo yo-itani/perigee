@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from contexts.workspace.domain.value_objects import WorkspaceId
@@ -11,6 +12,21 @@ from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.events import DomainEvent
+
+
+@dataclass(frozen=True)
+class CreateWorkspaceInput:
+    """Input DTO for workspace creation."""
+
+    name: WorkspaceName
+    parent_id: WorkspaceId | None = None
+
+
+@dataclass(frozen=True)
+class CreateWorkspaceOutput:
+    """Output DTO for workspace creation."""
+
+    workspace_id: WorkspaceId
 
 
 class CreateWorkspaceService:
@@ -31,24 +47,21 @@ class CreateWorkspaceService:
 
     async def execute(
         self,
-        *,
-        name: WorkspaceName,
-        parent_id: WorkspaceId | None = None,
-    ) -> WorkspaceId:
+        input_dto: CreateWorkspaceInput,
+    ) -> CreateWorkspaceOutput:
         """Create a workspace and return its id.
 
         Args:
-            name: The workspace name (validated value object).
-            parent_id: Optional parent workspace ID (None for root).
+            input_dto: The input containing workspace name and optional parent.
 
         Returns:
-            The id of the newly created workspace.
+            Output containing the id of the newly created workspace.
         """
         now = datetime.now(UTC)
 
         workspace = Workspace.create(
-            name=name,
-            parent_id=parent_id,
+            name=input_dto.name,
+            parent_id=input_dto.parent_id,
             now=now,
         )
 
@@ -59,4 +72,4 @@ class CreateWorkspaceService:
 
         await self._event_dispatcher.dispatch(events)
 
-        return workspace.id
+        return CreateWorkspaceOutput(workspace_id=workspace.id)

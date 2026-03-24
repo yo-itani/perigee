@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 
 from contexts.workspace.application.create_workspace_service import (
+    CreateWorkspaceInput,
+    CreateWorkspaceOutput,
     CreateWorkspaceService,
 )
 from contexts.workspace.domain.events import WorkspaceCreated
@@ -52,9 +54,10 @@ class TestCreateWorkspace:
         """Root workspace (no parent) is persisted correctly."""
         name = WorkspaceName("Engineering")
 
-        workspace_id = await service.execute(name=name)
+        output = await service.execute(CreateWorkspaceInput(name=name))
 
-        workspace = await repo.get_by_id(workspace_id)
+        assert isinstance(output, CreateWorkspaceOutput)
+        workspace = await repo.get_by_id(output.workspace_id)
         assert workspace is not None
         assert workspace.name == name
         assert workspace.parent_id is None
@@ -65,16 +68,20 @@ class TestCreateWorkspace:
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Child workspace is linked to the specified parent."""
-        parent_id = await service.execute(name=WorkspaceName("Engineering"))
-
-        child_id = await service.execute(
-            name=WorkspaceName("Backend"),
-            parent_id=parent_id,
+        parent_output = await service.execute(
+            CreateWorkspaceInput(name=WorkspaceName("Engineering"))
         )
 
-        child = await repo.get_by_id(child_id)
+        child_output = await service.execute(
+            CreateWorkspaceInput(
+                name=WorkspaceName("Backend"),
+                parent_id=parent_output.workspace_id,
+            )
+        )
+
+        child = await repo.get_by_id(child_output.workspace_id)
         assert child is not None
-        assert child.parent_id == parent_id
+        assert child.parent_id == parent_output.workspace_id
 
     async def test_commits_via_uow(
         self,
@@ -82,7 +89,7 @@ class TestCreateWorkspace:
         uow: StubUnitOfWork,
     ) -> None:
         """UoW commit is called after save."""
-        await service.execute(name=WorkspaceName("Engineering"))
+        await service.execute(CreateWorkspaceInput(name=WorkspaceName("Engineering")))
 
         assert uow.committed is True
 
@@ -105,7 +112,7 @@ class TestCreateWorkspace:
             event_dispatcher=dispatcher,
         )
 
-        await service.execute(name=WorkspaceName("Engineering"))
+        await service.execute(CreateWorkspaceInput(name=WorkspaceName("Engineering")))
 
         assert len(dispatched_events) == 1
         event = dispatched_events[0]

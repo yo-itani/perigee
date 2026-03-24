@@ -5,10 +5,11 @@ from __future__ import annotations
 import pytest
 
 from contexts.workspace.application.rename_workspace_service import (
+    RenameWorkspaceInput,
     RenameWorkspaceService,
+    WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import WorkspaceRenamed
-from contexts.workspace.domain.exceptions import WorkspaceNotFoundError
 from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace import Workspace
 from contexts.workspace.domain.workspace_name import WorkspaceName
@@ -68,8 +69,10 @@ class TestRenameWorkspace:
         new_name = WorkspaceName("Platform")
 
         await service.execute(
-            workspace_id=existing_workspace.id,
-            new_name=new_name,
+            RenameWorkspaceInput(
+                workspace_id=existing_workspace.id,
+                new_name=new_name,
+            )
         )
 
         updated = await repo.get_by_id(existing_workspace.id)
@@ -84,8 +87,10 @@ class TestRenameWorkspace:
     ) -> None:
         """UoW commit is called after rename."""
         await service.execute(
-            workspace_id=existing_workspace.id,
-            new_name=WorkspaceName("Platform"),
+            RenameWorkspaceInput(
+                workspace_id=existing_workspace.id,
+                new_name=WorkspaceName("Platform"),
+            )
         )
 
         assert uow.committed is True
@@ -111,8 +116,10 @@ class TestRenameWorkspace:
         )
 
         await service.execute(
-            workspace_id=existing_workspace.id,
-            new_name=WorkspaceName("Platform"),
+            RenameWorkspaceInput(
+                workspace_id=existing_workspace.id,
+                new_name=WorkspaceName("Platform"),
+            )
         )
 
         assert len(dispatched_events) == 1
@@ -142,8 +149,10 @@ class TestRenameWorkspace:
         )
 
         await service.execute(
-            workspace_id=existing_workspace.id,
-            new_name=WorkspaceName("Engineering"),
+            RenameWorkspaceInput(
+                workspace_id=existing_workspace.id,
+                new_name=WorkspaceName("Engineering"),
+            )
         )
 
         assert len(dispatched_events) == 0
@@ -155,6 +164,8 @@ class TestRenameWorkspace:
         """WorkspaceNotFoundError is raised for a non-existent workspace."""
         with pytest.raises(WorkspaceNotFoundError):
             await service.execute(
-                workspace_id=WorkspaceId.generate(),
-                new_name=WorkspaceName("Platform"),
+                RenameWorkspaceInput(
+                    workspace_id=WorkspaceId.generate(),
+                    new_name=WorkspaceName("Platform"),
+                )
             )

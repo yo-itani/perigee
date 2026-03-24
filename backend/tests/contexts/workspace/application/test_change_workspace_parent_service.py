@@ -5,13 +5,12 @@ from __future__ import annotations
 import pytest
 
 from contexts.workspace.application.change_workspace_parent_service import (
+    ChangeWorkspaceParentInput,
     ChangeWorkspaceParentService,
-)
-from contexts.workspace.domain.events import WorkspaceHierarchyChanged
-from contexts.workspace.domain.exceptions import (
-    CircularHierarchyError,
     WorkspaceNotFoundError,
 )
+from contexts.workspace.domain.events import WorkspaceHierarchyChanged
+from contexts.workspace.domain.exceptions import CircularHierarchyError
 from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace import Workspace
 from contexts.workspace.domain.workspace_name import WorkspaceName
@@ -75,8 +74,10 @@ class TestChangeWorkspaceParent:
         child = await self._create_workspace(repo, "Backend")
 
         await service.execute(
-            workspace_id=child.id,
-            new_parent_id=parent.id,
+            ChangeWorkspaceParentInput(
+                workspace_id=child.id,
+                new_parent_id=parent.id,
+            )
         )
 
         updated = await repo.get_by_id(child.id)
@@ -93,8 +94,10 @@ class TestChangeWorkspaceParent:
         child = await self._create_workspace(repo, "Backend", parent_id=parent.id)
 
         await service.execute(
-            workspace_id=child.id,
-            new_parent_id=None,
+            ChangeWorkspaceParentInput(
+                workspace_id=child.id,
+                new_parent_id=None,
+            )
         )
 
         updated = await repo.get_by_id(child.id)
@@ -112,8 +115,10 @@ class TestChangeWorkspaceParent:
         child = await self._create_workspace(repo, "Backend")
 
         await service.execute(
-            workspace_id=child.id,
-            new_parent_id=parent.id,
+            ChangeWorkspaceParentInput(
+                workspace_id=child.id,
+                new_parent_id=parent.id,
+            )
         )
 
         assert uow.committed is True
@@ -141,8 +146,10 @@ class TestChangeWorkspaceParent:
         child = await self._create_workspace(repo, "Backend")
 
         await service.execute(
-            workspace_id=child.id,
-            new_parent_id=parent.id,
+            ChangeWorkspaceParentInput(
+                workspace_id=child.id,
+                new_parent_id=parent.id,
+            )
         )
 
         assert len(dispatched_events) == 1
@@ -159,8 +166,10 @@ class TestChangeWorkspaceParent:
         """WorkspaceNotFoundError is raised for a non-existent workspace."""
         with pytest.raises(WorkspaceNotFoundError):
             await service.execute(
-                workspace_id=WorkspaceId.generate(),
-                new_parent_id=None,
+                ChangeWorkspaceParentInput(
+                    workspace_id=WorkspaceId.generate(),
+                    new_parent_id=None,
+                )
             )
 
     async def test_rejects_self_referencing_parent(
@@ -173,8 +182,10 @@ class TestChangeWorkspaceParent:
 
         with pytest.raises(CircularHierarchyError):
             await service.execute(
-                workspace_id=workspace.id,
-                new_parent_id=workspace.id,
+                ChangeWorkspaceParentInput(
+                    workspace_id=workspace.id,
+                    new_parent_id=workspace.id,
+                )
             )
 
     async def test_rejects_direct_cycle(
@@ -188,8 +199,10 @@ class TestChangeWorkspaceParent:
 
         with pytest.raises(CircularHierarchyError):
             await service.execute(
-                workspace_id=parent.id,
-                new_parent_id=child.id,
+                ChangeWorkspaceParentInput(
+                    workspace_id=parent.id,
+                    new_parent_id=child.id,
+                )
             )
 
     async def test_rejects_indirect_cycle(
@@ -206,8 +219,10 @@ class TestChangeWorkspaceParent:
 
         with pytest.raises(CircularHierarchyError):
             await service.execute(
-                workspace_id=grandparent.id,
-                new_parent_id=child.id,
+                ChangeWorkspaceParentInput(
+                    workspace_id=grandparent.id,
+                    new_parent_id=child.id,
+                )
             )
 
     async def test_no_event_when_parent_unchanged(
@@ -233,8 +248,10 @@ class TestChangeWorkspaceParent:
         child = await self._create_workspace(repo, "Backend", parent_id=parent.id)
 
         await service.execute(
-            workspace_id=child.id,
-            new_parent_id=parent.id,
+            ChangeWorkspaceParentInput(
+                workspace_id=child.id,
+                new_parent_id=parent.id,
+            )
         )
 
         assert len(dispatched_events) == 0
