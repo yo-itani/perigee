@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 from shared.domain.events import DomainEvent
 
@@ -13,5 +14,5 @@ class EventDispatcher(ABC):
     """
 
     @abstractmethod
-    async def dispatch(self, events: list[DomainEvent]) -> None:
+    async def dispatch(self, events: Sequence[DomainEvent]) -> None:
         """Dispatch the given events to all registered handlers."""

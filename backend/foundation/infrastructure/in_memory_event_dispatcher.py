@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
 from foundation.domain.event_dispatcher import EventDispatcher
@@ -38,7 +38,7 @@ class InMemoryEventDispatcher(EventDispatcher):
         """Register a handler for the given event type."""
         self._handlers[event_type].append(handler)
 
-    async def dispatch(self, events: list[DomainEvent]) -> None:
+    async def dispatch(self, events: Sequence[DomainEvent]) -> None:
         """Dispatch each event to all registered handlers for its type."""
         for event in events:
             handlers = self._handlers.get(type(event), [])
