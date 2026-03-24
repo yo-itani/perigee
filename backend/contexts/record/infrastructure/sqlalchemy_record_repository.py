@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import exists, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.preparation.domain.value_objects import AgendaId, ScheduleId
@@ -62,11 +62,13 @@ class SqlAlchemyRecordRepository(RecordRepository):
         offset: int,
         limit: int,
     ) -> list[Record]:
-        stmt = self._visible_published_by_pair_stmt(
+        id_subq = self._visible_record_ids_subquery(
             actor_id, organizer_id, counterpart_id
         )
         stmt = (
-            stmt.order_by(
+            select(RecordTable)
+            .where(RecordTable.id.in_(id_subq))
+            .order_by(
                 RecordTable.conducted_at.desc(),
                 RecordTable.created_at.desc(),
             )
@@ -74,7 +76,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
             .limit(limit)
         )
         result = await self._session.execute(stmt)
-        return [self._to_entity(row) for row in result.unique().scalars().all()]
+        return [self._to_entity(row) for row in result.scalars().all()]
 
     async def count_visible_published_by_pair(
         self,
@@ -82,12 +84,13 @@ class SqlAlchemyRecordRepository(RecordRepository):
         organizer_id: UserId,
         counterpart_id: UserId,
     ) -> int:
-        from sqlalchemy import func
-
-        base = self._visible_published_by_pair_stmt(
+        id_subq = self._visible_record_ids_subquery(
             actor_id, organizer_id, counterpart_id
-        ).with_only_columns(func.count(RecordTable.id))
-        result = await self._session.execute(base)
+        )
+        stmt = select(func.count()).select_from(
+            select(RecordTable.id).where(RecordTable.id.in_(id_subq)).subquery()
+        )
+        result = await self._session.execute(stmt)
         return int(result.scalar() or 0)
 
     async def get_latest_visible_published_by_pair(
@@ -106,19 +109,23 @@ class SqlAlchemyRecordRepository(RecordRepository):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _visible_published_by_pair_stmt(
+    def _visible_record_ids_subquery(
         actor_id: UserId,
         organizer_id: UserId,
         counterpart_id: UserId,
-    ) -> select:  # type: ignore[type-arg]
-        """Build base SELECT for published records visible to actor."""
+    ):  # type: ignore[no-untyped-def]
+        """Build a subquery returning record IDs visible to actor.
+
+        Uses EXISTS subquery for viewer check instead of JOIN to avoid
+        row duplication that breaks offset/limit and count.
+        """
         actor_str = str(actor_id.value)
+        viewer_exists = exists().where(
+            RecordViewerTable.record_id == RecordTable.id,
+            RecordViewerTable.user_id == actor_str,
+        )
         return (
-            select(RecordTable)
-            .outerjoin(
-                RecordViewerTable,
-                RecordTable.id == RecordViewerTable.record_id,
-            )
+            select(RecordTable.id)
             .where(
                 RecordTable.organizer_id == str(organizer_id.value),
                 RecordTable.counterpart_id == str(counterpart_id.value),
@@ -126,9 +133,10 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 or_(
                     RecordTable.organizer_id == actor_str,
                     RecordTable.counterpart_id == actor_str,
-                    RecordViewerTable.user_id == actor_str,
+                    viewer_exists,
                 ),
             )
+            .subquery()
         )
 
     async def _insert(self, entity: Record) -> None:
