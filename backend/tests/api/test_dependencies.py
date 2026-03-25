@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from api.dependencies import get_event_dispatcher, get_unit_of_work
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
@@ -11,8 +13,13 @@ from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDi
 from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
 
 
+@pytest.mark.integration
 class TestGetUnitOfWork:
-    """Tests for the get_unit_of_work provider."""
+    """Tests for the get_unit_of_work provider.
+
+    Marked as integration because get_unit_of_work() imports
+    async_session_factory which requires the DB driver (asyncmy).
+    """
 
     def test_returns_sqlalchemy_unit_of_work(self) -> None:
         """get_unit_of_work returns a SqlAlchemyUnitOfWork instance."""

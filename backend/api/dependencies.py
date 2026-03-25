@@ -5,13 +5,14 @@ from __future__ import annotations
 from fastapi import Request
 
 from foundation.application.unit_of_work import UnitOfWork
-from foundation.db.session import async_session_factory
 from foundation.domain.event_dispatcher import EventDispatcher
-from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
 
 
 def get_unit_of_work() -> UnitOfWork:
     """Provide a new UnitOfWork backed by SQLAlchemy."""
+    from foundation.db.session import async_session_factory
+    from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
+
     return SqlAlchemyUnitOfWork(async_session_factory)
 
 

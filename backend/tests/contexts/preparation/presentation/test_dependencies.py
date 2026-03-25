@@ -2,6 +2,8 @@
 
 These tests verify the FastAPI Depends chain resolves correctly
 by mounting a small test router and exercising the dependency injection.
+
+Marked as integration because the Depends chain creates real DB sessions.
 """
 
 from __future__ import annotations
@@ -10,6 +12,8 @@ from typing import Annotated
 
 import pytest
 from fastapi import Depends, FastAPI
+
+pytestmark = pytest.mark.integration
 from httpx import ASGITransport, AsyncClient
 
 from api.event_setup import create_event_dispatcher
