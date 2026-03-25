@@ -86,6 +86,15 @@ class ActionItemAdded(DomainEvent):
 
 
 @dataclass(frozen=True)
+class ActionItemDeleted(DomainEvent):
+    """Raised when an action item is deleted by the organizer."""
+
+    action_item_id: ActionItemId
+    record_id: RecordId
+    deleted_by: UserId
+
+
+@dataclass(frozen=True)
 class ActionItemCompleted(DomainEvent):
     """Raised when an action item is completed by the counterpart."""
 

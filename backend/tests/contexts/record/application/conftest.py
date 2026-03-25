@@ -152,6 +152,9 @@ class InMemoryActionItemRepository(ActionItemRepository):
         items.sort(key=lambda item: item.created_at)
         return items
 
+    async def delete(self, action_item_id: ActionItemId) -> None:
+        self._items.pop(action_item_id, None)
+
     @property
     def saved_items(self) -> list[ActionItem]:
         return list(self._items.values())
