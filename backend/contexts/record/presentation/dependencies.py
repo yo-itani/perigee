@@ -41,14 +41,14 @@ def get_captain_query_service(
 ) -> CaptainQueryService:
     """Provide a CaptainQueryService backed by the Workspace context."""
     from contexts.record.infrastructure.workspace_captain_query_service import (
-        WorkspaceCaptainQueryServiceAdapter,
+        WorkspaceCaptainQueryService,
     )
     from contexts.workspace.infrastructure.sqlalchemy_workspace_repository import (
         SqlAlchemyWorkspaceRepository,
     )
 
     workspace_repo = SqlAlchemyWorkspaceRepository(session)
-    return WorkspaceCaptainQueryServiceAdapter(workspace_repo=workspace_repo)
+    return WorkspaceCaptainQueryService(workspace_repo=workspace_repo)
 
 
 def get_create_post_hoc_record_use_case(

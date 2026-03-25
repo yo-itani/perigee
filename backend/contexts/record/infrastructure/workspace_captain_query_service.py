@@ -1,9 +1,9 @@
-"""Adapter implementing the Record context's CaptainQueryService interface.
+"""Infrastructure implementation of the Record context's CaptainQueryService.
 
 Delegates to the Workspace context's CaptainQueryService (application layer)
-to look up Captain user IDs for default viewer suggestion. This adapter
-bridges the cross-context boundary while keeping the Record domain layer
-free of Workspace dependencies.
+to look up Captain user IDs for default viewer suggestion. Bridges the
+cross-context boundary while keeping the Record domain layer free of
+Workspace dependencies.
 """
 
 from __future__ import annotations
@@ -19,12 +19,12 @@ from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from shared.domain.value_objects import UserId
 
 
-class WorkspaceCaptainQueryServiceAdapter(CaptainQueryService):
-    """Adapter that delegates to Workspace context's CaptainQueryService.
+class WorkspaceCaptainQueryService(CaptainQueryService):
+    """Delegates to Workspace context's CaptainQueryService.
 
     The Record domain defines what it needs (CaptainQueryService ABC);
-    this infrastructure adapter satisfies that contract by calling into
-    the Workspace application layer.
+    this infrastructure implementation satisfies that contract by calling
+    into the Workspace application layer.
     """
 
     def __init__(self, *, workspace_repo: WorkspaceRepository) -> None:
