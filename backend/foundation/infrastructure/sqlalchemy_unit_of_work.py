@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import TracebackType
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from foundation.application.unit_of_work import UnitOfWork
 
@@ -10,43 +10,39 @@ from foundation.application.unit_of_work import UnitOfWork
 class SqlAlchemyUnitOfWork(UnitOfWork):
     """Unit of Work implementation backed by a SQLAlchemy ``AsyncSession``.
 
+    Receives an ``AsyncSession`` directly (typically injected via FastAPI
+    ``Depends``), so that repositories and the UoW share the same session.
+
     Usage::
 
-        uow = SqlAlchemyUnitOfWork(session_factory)
+        uow = SqlAlchemyUnitOfWork(session)
         async with uow:
-            # use uow.session to interact with repositories
+            # repositories use the same session
             await uow.commit()
 
-    On context-manager exit, any uncommitted changes are rolled back
-    automatically if an exception propagates.
+    The UoW relies on SQLAlchemy's *autobegin* behaviour -- ``__aenter__``
+    does **not** call ``begin()`` explicitly.  On context-manager exit, any
+    uncommitted changes are rolled back automatically if an exception
+    propagates.
     """
 
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
-        self._session_factory = session_factory
-        self._session: AsyncSession | None = None
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
 
     @property
     def session(self) -> AsyncSession:
-        """Return the active session.
-
-        Raises ``RuntimeError`` if accessed outside the context manager.
-        """
-        if self._session is None:
-            raise RuntimeError(
-                "SqlAlchemyUnitOfWork must be used as an async context manager."
-            )
+        """Return the underlying session."""
         return self._session
 
     async def commit(self) -> None:
         """Commit the current database transaction."""
-        await self.session.commit()
+        await self._session.commit()
 
     async def rollback(self) -> None:
         """Roll back the current database transaction."""
-        await self.session.rollback()
+        await self._session.rollback()
 
     async def __aenter__(self) -> SqlAlchemyUnitOfWork:
-        self._session = self._session_factory()
         return self
 
     async def __aexit__(
@@ -57,11 +53,3 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
     ) -> None:
         if exc_type is not None:
             await self.rollback()
-        elif self._session is not None and self._session.in_transaction():
-            # Explicitly roll back uncommitted changes on normal exit so the
-            # transaction boundary is visible in the code rather than relying
-            # on SQLAlchemy's implicit rollback-on-close behaviour.
-            await self.rollback()
-        if self._session is not None:
-            await self._session.close()
-            self._session = None
