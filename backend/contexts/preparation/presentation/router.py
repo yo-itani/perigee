@@ -105,7 +105,7 @@ async def create_schedule_group(
             for cs in body.counterpart_schedules
         ],
         agenda_topics=body.agenda_topics,
-        template_id=body.template_id,
+        template_id=str(body.template_id) if body.template_id else None,
     )
     output = await service.execute(input_dto)
     return CreateScheduleGroupResponse(

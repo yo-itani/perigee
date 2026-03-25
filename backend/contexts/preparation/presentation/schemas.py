@@ -23,7 +23,7 @@ class CreateScheduleGroupRequest(BaseModel):
     title: str
     counterpart_schedules: list[CounterpartScheduleSchema]
     agenda_topics: list[str] | None = None
-    template_id: str | None = None
+    template_id: UUID | None = None
 
 
 class CreateScheduleGroupResponse(BaseModel):
