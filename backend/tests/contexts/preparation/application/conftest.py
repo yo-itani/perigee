@@ -108,6 +108,11 @@ class InMemoryScheduleRepository(ScheduleRepository):
         matching.sort(key=lambda s: s.scheduled_at)
         return matching[:limit]
 
+    async def list_confirmed_upcoming(
+        self, now: datetime, lookahead_minutes: int
+    ) -> list[Schedule]:
+        return []  # not needed for preparation tests
+
     @property
     def schedules(self) -> dict[ScheduleId, Schedule]:
         return dict(self._store)
