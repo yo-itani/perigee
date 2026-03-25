@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
+from unittest.mock import AsyncMock, MagicMock
 
 from api.dependencies import get_event_dispatcher, get_unit_of_work
 from foundation.application.unit_of_work import UnitOfWork
@@ -13,23 +11,27 @@ from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDi
 from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
 
 
-@pytest.mark.integration
 class TestGetUnitOfWork:
-    """Tests for the get_unit_of_work provider.
-
-    Marked as integration because get_unit_of_work() imports
-    async_session_factory which requires the DB driver (asyncmy).
-    """
+    """Tests for the get_unit_of_work provider."""
 
     def test_returns_sqlalchemy_unit_of_work(self) -> None:
         """get_unit_of_work returns a SqlAlchemyUnitOfWork instance."""
-        uow = get_unit_of_work()
+        mock_session = AsyncMock()
+        uow = get_unit_of_work(mock_session)
         assert isinstance(uow, SqlAlchemyUnitOfWork)
 
     def test_returns_unit_of_work_protocol(self) -> None:
         """The returned object satisfies the UnitOfWork abstract interface."""
-        uow = get_unit_of_work()
+        mock_session = AsyncMock()
+        uow = get_unit_of_work(mock_session)
         assert isinstance(uow, UnitOfWork)
+
+    def test_uow_uses_provided_session(self) -> None:
+        """The UoW should use the session that was passed in."""
+        mock_session = AsyncMock()
+        uow = get_unit_of_work(mock_session)
+        assert isinstance(uow, SqlAlchemyUnitOfWork)
+        assert uow.session is mock_session
 
 
 class TestGetEventDispatcher:
