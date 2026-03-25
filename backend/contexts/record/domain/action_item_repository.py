@@ -28,3 +28,7 @@ class ActionItemRepository(BaseRepository[ActionItem, ActionItemId]):
 
         Results are ordered by created_at ascending (oldest first).
         """
+
+    @abstractmethod
+    async def delete(self, action_item_id: ActionItemId) -> None:
+        """Delete an action item by its identifier."""

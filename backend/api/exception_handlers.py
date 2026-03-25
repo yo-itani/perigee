@@ -133,6 +133,9 @@ from contexts.record.application.create_record_from_schedule import (
 from contexts.record.application.create_record_from_schedule import (
     ScheduleNotFoundError as CreateRecordScheduleNotFoundError,
 )
+from contexts.record.application.get_record_detail import (
+    RecordNotFoundError as GetRecordDetailRecordNotFoundError,
+)
 from contexts.record.application.get_viewers import (
     RecordNotFoundError as GetViewersRecordNotFoundError,
 )
@@ -141,6 +144,9 @@ from contexts.record.application.list_oneonone_history import (
 )
 from contexts.record.application.list_pending_action_items import (
     InvalidLimitError,
+)
+from contexts.record.application.list_record_comments import (
+    RecordNotFoundError as ListRecordCommentsRecordNotFoundError,
 )
 from contexts.record.application.publish_record import (
     RecordNotFoundError as PublishRecordNotFoundError,
@@ -252,7 +258,9 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     AddActionItemRecordNotFoundError: 404,
     AddCommentRecordNotFoundError: 404,
     ConfirmAgendaRecordNotFoundError: 404,
+    GetRecordDetailRecordNotFoundError: 404,
     GetViewersRecordNotFoundError: 404,
+    ListRecordCommentsRecordNotFoundError: 404,
     PublishRecordNotFoundError: 404,
     SaveDraftRecordNotFoundError: 404,
     SetViewersRecordNotFoundError: 404,

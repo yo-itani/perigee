@@ -57,6 +57,12 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
         result = await self._session.execute(stmt)
         return [self._to_entity(row) for row in result.scalars().all()]
 
+    async def delete(self, action_item_id: ActionItemId) -> None:
+        row = await self._session.get(ActionItemTable, str(action_item_id.value))
+        if row is not None:
+            await self._session.delete(row)
+            await self._session.flush()
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
