@@ -6,9 +6,15 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
+# --- Notification context: application exceptions ---
+from contexts.notification.application.mark_notification_as_read import (
+    NotificationNotFoundError,
+)
+
 # --- Notification context: domain exceptions ---
 from contexts.notification.domain.exceptions import (
     InvalidReminderMinutesError,
+    NotificationAlreadyReadError,
 )
 from contexts.notification.domain.exceptions import (
     UnauthorizedOperationError as NotificationUnauthorizedOperationError,
@@ -269,6 +275,8 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     CreateRecordScheduleNotFoundError: 404,
     # Record -- ActionItem
     ActionItemNotFoundError: 404,
+    # Notification
+    NotificationNotFoundError: 404,
     # Workspace
     AddMemberWorkspaceNotFoundError: 404,
     ChangeMemberRoleWorkspaceNotFoundError: 404,
@@ -291,6 +299,7 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     NoPendingConfirmationRequestError: 409,
     ScheduleCancelledError: 409,
     SameUserError: 409,
+    NotificationAlreadyReadError: 409,
     # -------------------------------------------------------
     # 422 Unprocessable Entity -- validation / business rule
     # -------------------------------------------------------

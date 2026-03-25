@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CHAR, Boolean, Integer, UniqueConstraint
+from sqlalchemy import CHAR, Boolean, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -43,3 +43,18 @@ class ReminderLogTable(Base, TimestampMixin):
     scheduled_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     sent_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
     reminder_minutes_before: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class NotificationRecordTable(Base, TimestampMixin):
+    """ORM model for the notification_records table."""
+
+    __tablename__ = "notification_records"
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True)
+    recipient_id: Mapped[str] = mapped_column(CHAR(36), nullable=False, index=True)
+    notification_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    link: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    read_at: Mapped[datetime | None] = mapped_column(DATETIME(fsp=6), nullable=True)
