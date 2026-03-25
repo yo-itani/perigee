@@ -18,9 +18,17 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 | 管理主体 | Notification コンテキスト | Record コンテキスト |
 | 判定基準 | 通知を既読にしたか | Record を閲覧したか |
 | 未読に戻るトリガー | 新しい通知が発行される | Record に新しいコメント等が追加される |
-| ユースケース | 「未読通知バッジ」 | 「未読記録一覧」（ダッシュボード） |
+| ユースケース | 「未読通知バッジ」「ダッシュボード未読一覧」 | Record 詳細画面の閲覧追跡 |
 
-両者は独立した仕組みだが、ユーザー体験上は連動する場面がある。例えば `RecordPublished` の通知が送信されると未読通知が増え、同時にその Record はユーザーにとって「未読記録」でもある。通知を既読にしても Record 本文を開くまでは「未読記録」のままであり、逆に Record を直接開いても対応する通知は自動既読にはならない。この分離は意図的であり、通知と Record 閲覧はそれぞれ独立した行為として扱う。
+### ダッシュボードでの使い分け
+
+ダッシュボードの「未読の記録・コメント」セクションは **`GET /notifications?unread=true`（#148）を参照元とする**。Record 側の `ReadStatus` はダッシュボード一覧には使用しない。
+
+`ReadStatus` の役割は Record 詳細画面での閲覧追跡に限定する:
+- ユーザーが Record 詳細画面を開いた → `POST /records/{id}/viewed` で既読マーク
+- Record 詳細画面上で「未読のコンテンツがある」かどうかの判定に使用
+
+両者は独立した仕組みである。通知を既読にしても Record 本文を開くまでは ReadStatus 上は「未閲覧」のままであり、逆に Record を直接開いても対応する通知は自動既読にはならない。この分離は意図的であり、通知と Record 閲覧はそれぞれ独立した行為として扱う。
 
 ---
 
@@ -168,6 +176,34 @@ Viewer が削除された場合、該当ユーザーの `record_read_statuses` �
 - 公開時に `latest_activity_at = published_at` で初期化
 - コメント追加時に `latest_activity_at = comment.created_at` で更新
 
+### 既存データのバックフィル方針
+
+マイグレーションで `latest_activity_at` カラムを追加する際、既存の公開済み Record に対して以下のルールでバックフィルする:
+
+```sql
+-- Step 1: 公開済み Record に published_at をベースに設定
+UPDATE records
+SET latest_activity_at = published_at
+WHERE status = 'published' AND latest_activity_at IS NULL;
+
+-- Step 2: コメントがある Record は最新コメントの created_at で上書き
+UPDATE records r
+SET latest_activity_at = (
+    SELECT MAX(rc.created_at)
+    FROM record_comments rc
+    WHERE rc.record_id = r.id
+)
+WHERE r.status = 'published'
+  AND EXISTS (
+    SELECT 1 FROM record_comments rc
+    WHERE rc.record_id = r.id AND rc.created_at > r.latest_activity_at
+  );
+```
+
+- 未公開（下書き）の Record は `latest_activity_at = NULL` のまま（公開時に設定される）
+- バックフィルはマイグレーションファイル内の `data_migrations` ステップとして実行する
+- バックフィル完了後も `latest_activity_at` は NULL 許容のまま（新規作成→公開前の Record のため）
+
 ### インデックス戦略
 
 ```sql
@@ -181,31 +217,25 @@ CREATE INDEX idx_record_read_statuses_user_id ON record_read_statuses (user_id);
 ### 主要クエリパターン
 
 ```sql
--- 未読記録一覧（ダッシュボード）
-SELECT r.*
+-- 特定 Record の未読判定（Record 詳細画面用）
+SELECT
+  CASE
+    WHEN rs.id IS NULL THEN TRUE
+    WHEN rs.last_viewed_at < r.latest_activity_at THEN TRUE
+    ELSE FALSE
+  END AS is_unread
 FROM records r
 LEFT JOIN record_read_statuses rs
   ON rs.record_id = r.id AND rs.user_id = :user_id
-WHERE r.status = 'published'
-  AND (
-    r.organizer_id = :user_id
-    OR r.counterpart_id = :user_id
-    OR EXISTS (
-      SELECT 1 FROM record_viewers rv
-      WHERE rv.record_id = r.id AND rv.user_id = :user_id
-    )
-  )
-  AND (
-    rs.id IS NULL  -- 一度も閲覧していない
-    OR rs.last_viewed_at < r.latest_activity_at  -- 閲覧後にコンテンツが更新された
-  )
-ORDER BY r.latest_activity_at DESC;
+WHERE r.id = :record_id;
 
 -- 閲覧時の ReadStatus 更新（UPSERT）
 INSERT INTO record_read_statuses (id, record_id, user_id, last_viewed_at, created_at, updated_at)
 VALUES (:id, :record_id, :user_id, :now, :now, :now)
 ON DUPLICATE KEY UPDATE last_viewed_at = :now, updated_at = :now;
 ```
+
+> **Note**: ダッシュボードの「未読の記録・コメント」一覧は `GET /notifications?unread=true`（#148）を使用する。Record 側での未読一覧クエリは不要。
 
 ### パフォーマンス考慮
 
@@ -333,17 +363,6 @@ MarkRecordAsViewed
 
 **推奨**: `POST /records/{id}/viewed` を明示的に呼び出す方式。GET リクエストに副作用（既読マーク）を持たせるのは RESTful でなく、キャッシュやプリフェッチで意図しない既読が発生するリスクがある。
 
-### 未読記録一覧の取得
-
-```
-ListUnreadRecords
-  Input: user_id
-  Output: 未読の Record 一覧（latest_activity_at の降順）
-  処理:
-    1. user_id が閲覧権限を持つ公開済み Record のうち、
-       ReadStatus が存在しない OR last_viewed_at < latest_activity_at のものを取得
-```
-
 ### コメント追加時の自動既読（投稿者本人）
 
 ```
@@ -360,7 +379,8 @@ AddComment ユースケース内:
 | メソッド | パス | 説明 |
 |---|---|---|
 | `POST` | `/records/{record_id}/viewed` | Record を閲覧済みにする |
-| `GET` | `/records/unread` | 未読記録一覧を取得（ダッシュボード用） |
+
+> ダッシュボードの未読一覧は `GET /notifications?unread=true`（#148）を使用するため、`GET /records/unread` は設けない。
 
 ---
 
@@ -389,7 +409,7 @@ ViewerRemoved
 ユーザーが Record 詳細画面を開く
   → POST /records/{record_id}/viewed
   → ReadStatus.last_viewed_at = now
-  → 「未読記録」から消える
+  → 当該 Record が閲覧済みになる
 ```
 
 ---
@@ -398,9 +418,8 @@ ViewerRemoved
 
 本設計に基づき、以下の実装 Issue を作成する:
 
-1. **Record エンティティに `latest_activity_at` を追加** — ドメインモデル変更 + マイグレーション
+1. **Record エンティティに `latest_activity_at` を追加** — ドメインモデル変更 + マイグレーション（既存データのバックフィル含む）
 2. **ReadStatus ドメインモデル・リポジトリ実装** — エンティティ、テーブル、リポジトリ
 3. **既読マークユースケース + API** — `MarkRecordAsViewed` + `POST /records/{id}/viewed`
-4. **未読記録一覧ユースケース + API** — `ListUnreadRecords` + `GET /records/unread`
-5. **コメント追加時の `latest_activity_at` 更新 + 投稿者自動既読** — 既存の `AddComment` ユースケースに追加
-6. **Viewer 追加/削除時の ReadStatus 管理** — Viewer 操作に連動した ReadStatus の作成・削除
+4. **コメント追加時の `latest_activity_at` 更新 + 投稿者自動既読** — 既存の `AddComment` ユースケースに追加
+5. **Viewer 追加/削除時の ReadStatus 管理** — Viewer 操作に連動した ReadStatus の作成・削除
