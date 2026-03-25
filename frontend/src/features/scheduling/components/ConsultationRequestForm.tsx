@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ConsultationRequestFormProps {
-  onSubmit: (data: ConsultationRequestFormData) => void;
+  onSubmit: (data: ConsultationRequestFormData) => void | Promise<void>;
   isSubmitting: boolean;
   submitError: Error | null;
 }
@@ -34,15 +34,19 @@ export function ConsultationRequestForm({
   const [title, setTitle] = useState("");
   const [agendaText, setAgendaText] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      organizerId,
-      scheduledAt,
-      durationMinutes,
-      title,
-      agendaText,
-    });
+    try {
+      await onSubmit({
+        organizerId,
+        scheduledAt,
+        durationMinutes,
+        title,
+        agendaText,
+      });
+    } catch {
+      // エラーは親の submitError 経由で表示される
+    }
   };
 
   const isValid =

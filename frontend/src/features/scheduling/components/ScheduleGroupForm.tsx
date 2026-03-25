@@ -9,7 +9,7 @@ import {
 import { AgendaTemplateEditor } from "./AgendaTemplateEditor";
 
 interface ScheduleGroupFormProps {
-  onSubmit: (data: ScheduleGroupFormData) => void;
+  onSubmit: (data: ScheduleGroupFormData) => void | Promise<void>;
   isSubmitting: boolean;
   submitError: Error | null;
 }
@@ -23,7 +23,10 @@ export interface ScheduleGroupFormData {
 function getDefaultDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + 7);
-  return d.toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function ScheduleGroupForm({
@@ -73,13 +76,17 @@ export function ScheduleGroupForm({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      title,
-      counterpartSchedules: counterparts,
-      agendaTopics,
-    });
+    try {
+      await onSubmit({
+        title,
+        counterpartSchedules: counterparts,
+        agendaTopics,
+      });
+    } catch {
+      // エラーは親の submitError 経由で表示される
+    }
   };
 
   const isValid = title.trim() !== "" && counterparts.length > 0;
