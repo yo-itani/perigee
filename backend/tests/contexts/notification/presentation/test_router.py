@@ -180,6 +180,18 @@ class TestUpdateNotificationSetting:
 
         assert response.status_code == 401
 
+    async def test_returns_401_with_invalid_user_id(self, app) -> None:
+        """PUT with non-UUID X-User-Id returns 401."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.put(
+                "/notification-settings",
+                headers={"X-User-Id": "not-a-uuid"},
+                json={"reminder_minutes_before": 30, "is_enabled": True},
+            )
+
+        assert response.status_code == 401
+
     async def test_boundary_min_reminder_accepted(self, app, user_id: str) -> None:
         """reminder_minutes_before = 5 (minimum) is accepted."""
         transport = ASGITransport(app=app)
