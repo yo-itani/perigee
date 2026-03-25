@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import AwareDatetime, BaseModel
 
 # ---------------------------------------------------------------------------
 # ScheduleGroup -- POST /schedule-groups
@@ -14,7 +14,7 @@ class CounterpartScheduleSchema(BaseModel):
     """Per-counterpart scheduling parameters."""
 
     counterpart_id: UUID
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime
 
 
 class CreateScheduleGroupRequest(BaseModel):
@@ -79,7 +79,7 @@ class CreateScheduleRequest(BaseModel):
     """Request body for POST /schedules."""
 
     counterpart_id: UUID
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime
     title: str
 
 
@@ -98,7 +98,7 @@ class SendConsultationRequestRequest(BaseModel):
     """Request body for POST /schedules/consultation-request."""
 
     organizer_id: UUID
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime
     title: str
     agenda_topics: list[str]
 

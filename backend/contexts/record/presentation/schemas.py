@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import AwareDatetime, BaseModel
 
 # ---------------------------------------------------------------------------
 # Post-hoc record -- POST /records/post-hoc
@@ -14,7 +14,7 @@ class CreatePostHocRecordRequest(BaseModel):
     """Request body for POST /records/post-hoc."""
 
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
 
 
 class CreatePostHocRecordResponse(BaseModel):
