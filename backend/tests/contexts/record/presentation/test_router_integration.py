@@ -81,3 +81,228 @@ class TestCreatePostHocRecord:
         assert "record_id" in data
         # Verify it is a valid UUID
         uuid.UUID(data["record_id"])
+
+
+# -----------------------------------------------------------------------
+# GET /records/{id}/suggested-viewers
+# -----------------------------------------------------------------------
+
+
+class TestSuggestedViewersAuth:
+    """GET /records/{id}/suggested-viewers -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without X-User-Id header returns 401."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/records/{record_id}/suggested-viewers",
+            )
+
+        assert response.status_code == 401
+
+
+class TestSuggestedViewers:
+    """GET /records/{id}/suggested-viewers -- authenticated access."""
+
+    async def test_returns_404_for_nonexistent_record(self, app, user_id: str) -> None:
+        """Requesting suggested viewers for a nonexistent record returns 404."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/records/{record_id}/suggested-viewers",
+                headers={"X-User-Id": user_id},
+            )
+
+        assert response.status_code == 404
+
+    async def test_returns_suggestions_for_existing_record(
+        self, app, user_id: str
+    ) -> None:
+        """Organizer can get suggested viewers for an existing record."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # First create a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Then get suggested viewers
+            response = await client.get(
+                f"/records/{record_id}/suggested-viewers",
+                headers={"X-User-Id": user_id},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "suggested_viewer_ids" in data
+        assert isinstance(data["suggested_viewer_ids"], list)
+
+
+# -----------------------------------------------------------------------
+# PUT /records/{id}/viewers
+# -----------------------------------------------------------------------
+
+
+class TestSetViewersAuth:
+    """PUT /records/{id}/viewers -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without X-User-Id header returns 401."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.put(
+                f"/records/{record_id}/viewers",
+                json={"viewer_ids": []},
+            )
+
+        assert response.status_code == 401
+
+
+class TestSetViewersIntegration:
+    """PUT /records/{id}/viewers -- authenticated access."""
+
+    async def test_returns_404_for_nonexistent_record(self, app, user_id: str) -> None:
+        """Setting viewers for a nonexistent record returns 404."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.put(
+                f"/records/{record_id}/viewers",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": [str(uuid.uuid4())]},
+            )
+
+        assert response.status_code == 404
+
+    async def test_sets_viewers_for_existing_record(self, app, user_id: str) -> None:
+        """Organizer can set viewers for an existing record."""
+        viewer_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # First create a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Then set viewers
+            response = await client.put(
+                f"/records/{record_id}/viewers",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": [viewer_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["record_id"] == record_id
+
+
+# -----------------------------------------------------------------------
+# POST /records/{id}/publish
+# -----------------------------------------------------------------------
+
+
+class TestPublishRecordAuth:
+    """POST /records/{id}/publish -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without X-User-Id header returns 401."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/publish",
+                json={"viewer_ids": []},
+            )
+
+        assert response.status_code == 401
+
+
+class TestPublishRecordIntegration:
+    """POST /records/{id}/publish -- authenticated access."""
+
+    async def test_returns_404_for_nonexistent_record(self, app, user_id: str) -> None:
+        """Publishing a nonexistent record returns 404."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/publish",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": []},
+            )
+
+        assert response.status_code == 404
+
+    async def test_publishes_existing_draft_record(self, app, user_id: str) -> None:
+        """Organizer can publish an existing draft record."""
+        viewer_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # First create a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Then publish
+            response = await client.post(
+                f"/records/{record_id}/publish",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": [viewer_id]},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["record_id"] == record_id
+
+    async def test_re_publish_returns_409(self, app, user_id: str) -> None:
+        """Re-publishing an already published record returns 409."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Publish first time
+            await client.post(
+                f"/records/{record_id}/publish",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": []},
+            )
+
+            # Publish again
+            response = await client.post(
+                f"/records/{record_id}/publish",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": []},
+            )
+
+        assert response.status_code == 409

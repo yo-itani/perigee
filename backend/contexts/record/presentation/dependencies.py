@@ -21,7 +21,17 @@ from contexts.record.application.list_oneonone_history import (
 from contexts.record.application.list_record_comments import (
     ListRecordCommentsUseCase,
 )
+from contexts.record.application.publish_record import (
+    PublishRecordUseCase,
+)
+from contexts.record.application.set_viewers import (
+    SetViewersUseCase,
+)
+from contexts.record.application.suggest_default_viewers import (
+    SuggestDefaultViewersUseCase,
+)
 from contexts.record.domain.action_item_repository import ActionItemRepository
+from contexts.record.domain.captain_query_service import CaptainQueryService
 from contexts.record.domain.comment_repository import CommentRepository
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.infrastructure.sqlalchemy_action_item_repository import (
@@ -56,6 +66,21 @@ def get_action_item_repository(
 ) -> ActionItemRepository:
     """Provide an ActionItemRepository backed by the current DB session."""
     return SqlAlchemyActionItemRepository(session)
+
+
+def get_captain_query_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CaptainQueryService:
+    """Provide a CaptainQueryService backed by the Workspace context."""
+    from contexts.record.infrastructure.workspace_captain_query_service import (
+        WorkspaceCaptainQueryService,
+    )
+    from contexts.workspace.infrastructure.sqlalchemy_workspace_repository import (
+        SqlAlchemyWorkspaceRepository,
+    )
+
+    workspace_repo = SqlAlchemyWorkspaceRepository(session)
+    return WorkspaceCaptainQueryService(workspace_repo=workspace_repo)
 
 
 def get_create_post_hoc_record_use_case(
@@ -140,4 +165,43 @@ def get_list_oneonone_history_service(
     """Provide a ListOneOnOneHistoryService with all dependencies injected."""
     return ListOneOnOneHistoryService(
         record_repository=record_repo,
+    )
+
+
+def get_suggest_default_viewers_use_case(
+    record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+    captain_query_service: Annotated[
+        CaptainQueryService, Depends(get_captain_query_service)
+    ],
+) -> SuggestDefaultViewersUseCase:
+    """Provide a SuggestDefaultViewersUseCase with all dependencies injected."""
+    return SuggestDefaultViewersUseCase(
+        record_repository=record_repo,
+        captain_query_service=captain_query_service,
+    )
+
+
+def get_set_viewers_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
+    record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+    event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
+) -> SetViewersUseCase:
+    """Provide a SetViewersUseCase with all dependencies injected."""
+    return SetViewersUseCase(
+        record_repository=record_repo,
+        unit_of_work=uow,
+        event_dispatcher=event_dispatcher,
+    )
+
+
+def get_publish_record_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
+    record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+    event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
+) -> PublishRecordUseCase:
+    """Provide a PublishRecordUseCase with all dependencies injected."""
+    return PublishRecordUseCase(
+        record_repository=record_repo,
+        unit_of_work=uow,
+        event_dispatcher=event_dispatcher,
     )
