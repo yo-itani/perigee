@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
 from foundation.scheduler.lifespan import create_reminder_scheduler
@@ -10,6 +11,8 @@ from foundation.scheduler.lifespan import create_reminder_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    app.state.event_dispatcher = create_event_dispatcher()
+
     scheduler = create_reminder_scheduler()
     if scheduler is not None:
         scheduler.start()
