@@ -15,7 +15,7 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 | 項目 | #148 通知の既読管理 | #111 Record の未読管理 |
 |---|---|---|
 | 対象 | 個々の通知メッセージ | Record（1on1記録）そのもの |
-| 管理主体 | Notification コンテキスト | 本設計で決定 |
+| 管理主体 | Notification コンテキスト | Record コンテキスト |
 | 判定基準 | 通知を既読にしたか | Record を閲覧したか |
 | 未読に戻るトリガー | 新しい通知が発行される | Record に新しいコメント等が追加される |
 | ユースケース | 「未読通知バッジ」 | 「未読記録一覧」（ダッシュボード） |
@@ -24,125 +24,122 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 
 ---
 
-## 2. 管理方式の比較
+## 2. 決定事項
 
-### 案A: 最終閲覧日時方式
+### 管理方式: 案A（最終閲覧日時方式）
 
-ユーザー x Record ごとに `last_viewed_at` を記録し、Record の更新日時（`updated_at` や `published_at`、最新コメントの `created_at`）と比較して未読判定する。
+ユーザー × Record ごとに `last_viewed_at` を記録し、Record の `latest_activity_at` と比較して未読判定する。
+
+### コンテキスト配置: Record コンテキスト内
+
+`ReadStatus` を Record コンテキスト内のエンティティとして配置する。将来 `read_model` モジュールへ切り出せる構造にする（リポジトリインターフェースで分離）。
+
+---
+
+## 3. 管理方式の比較（検討経緯）
+
+### 案A: 最終閲覧日時方式（採用）
+
+ユーザー × Record ごとに `last_viewed_at` を記録し、Record の `latest_activity_at` と比較して未読判定する。
 
 **メリット:**
-- 「未読に戻す」ロジックが暗黙的に解決される。Record に新しいコメントが追加されると `last_viewed_at` < コメント `created_at` となり自動的に未読になる
+- 「未読に戻す」ロジックが暗黙的に解決される。Record に新しいコメントが追加されると `last_viewed_at` < `latest_activity_at` となり自動的に未読になる
 - 既読→未読の状態遷移を明示的に管理する必要がない
 - 「何がいつ更新されたか」をタイムスタンプ比較で柔軟に判定できる
 
 **デメリット:**
 - 未読判定のクエリが複雑になる（Record の最新更新日時を算出する必要がある）
-- 「最新更新日時」の定義が曖昧になりやすい（メモ更新？コメント追加？Viewer 変更？）
-- パフォーマンス面で、Record ごとに最新コメント日時を集計する JOIN が必要
+- 「最新更新日時」の定義が曖昧になりやすい → `latest_activity_at` として明確に定義して解消
 
-### 案B: 既読フラグ方式
+### 案B: 既読フラグ方式（不採用）
 
-ユーザー x Record ごとに `is_read: bool` を保持する。
+ユーザー × Record ごとに `is_read: bool` を保持する。
 
-**メリット:**
-- 実装がシンプル。未読一覧の取得は `WHERE is_read = FALSE` のみ
-- クエリが高速（単純なフラグ検索）
-- 判定ロジックが明確
-
-**デメリット:**
+**不採用理由:**
 - 「未読に戻す」を明示的に実装する必要がある（コメント追加時に `is_read = FALSE` に戻す処理）
 - 未読に戻す条件のルール定義と、それを発火させるイベントハンドラが必要
-- フラグの更新漏れが起きると不整合になる
+- #148 の Notification 側も `is_read` フラグ方式のため、概念が混同しやすい
 
-### 案C: 既読イベント方式
+### 案C: 既読イベント方式（不採用）
 
 `RecordViewed` イベントを発行し、未読一覧はイベント有無で判定する。
 
-**メリット:**
-- 閲覧履歴が残る（監査ログ的な用途にも対応可能）
-- イベントソーシング的なアプローチで拡張性が高い
-
-**デメリット:**
+**不採用理由:**
 - データ量が膨大になる（閲覧するたびにイベントが増加）
-- 未読判定クエリが複雑（最新の RecordViewed イベントと Record 更新日時の比較）
-- 過剰設計。本システムの規模感に対して不釣り合い
+- 未読判定クエリが複雑
+- 本システムの規模感に対して過剰設計
 
 ---
 
-## 3. 推奨案: 案A（最終閲覧日時方式）
+## 4. 未読判定ルール
 
-### 選定理由
+### 判定式
 
-1. **未読に戻す条件の自然な表現**: 案B の既読フラグ方式では「コメント追加時に `is_read = FALSE` に戻す」処理を明示的に実装する必要があり、条件の追加・変更のたびにイベントハンドラの修正が必要になる。案A では Record 側の更新日時が閲覧日時を超えれば自動的に未読となるため、未読に戻す条件の拡張が容易である
+```
+判定キー: user_id × record_id
+保持項目: last_viewed_at
+未読判定: last_viewed_at < latest_activity_at
+```
 
-2. **#148 との役割分離の明確化**: #148 の Notification 側が `is_read` フラグ方式を採用するため、Record 側も同じ `is_read` フラグ方式にすると概念が混同しやすい。最終閲覧日時方式にすることで、通知の既読管理（フラグ）と Record の未読管理（タイムスタンプ比較）が設計レベルで区別される
+### `latest_activity_at` の定義
 
-3. **コメント追加以外の「更新」への対応力**: 将来的に Record に新しい種類の更新（例: メモの追記、Viewer 変更通知）が加わった場合も、更新日時の比較だけで未読判定が成立する。フラグ方式ではその都度「未読に戻す」ハンドラを追加しなければならない
+Record の以下のタイムスタンプの最大値:
 
-4. **案C は過剰**: 本システムの規模感（1on1管理ツール）では閲覧イベントの蓄積は不要。データ量とクエリ複雑性のコストに見合わない
+| イベント | タイムスタンプ |
+|---|---|
+| 記録公開（`RecordPublished`） | `published_at` |
+| コメント追加（`RecordCommentAdded`） | コメントの `created_at` |
 
-### 「最新更新日時」の定義
-
-案A のデメリットである「最新更新日時の定義の曖昧さ」を解消するため、Record 側に `content_updated_at` を導入する。
-
-**`content_updated_at` が更新されるタイミング:**
-- Record が公開された時（`RecordPublished` → `published_at` を `content_updated_at` に設定）
-- Record にコメントが追加された時（`RecordCommentAdded` → コメントの `created_at` を `content_updated_at` に設定）
-
-**`content_updated_at` が更新されないタイミング:**
+**`latest_activity_at` が更新されないケース:**
 - Viewer の追加・削除（閲覧権限の変更は「コンテンツの更新」ではない）
 - 下書き中のメモ更新（下書きは公開前であり、未読管理の対象外）
 
-未読判定式:
+---
 
-```
-未読 = (read_status が存在しない) OR (read_status.last_viewed_at < record.content_updated_at)
-```
+## 5. 未読に「戻す」条件の定義
+
+| イベント | 未読に戻るか | 対象ユーザー | 備考 |
+|---|---|---|---|
+| Record が公開された | はい | カウンターパート + Viewer | 初回公開で未読状態になる |
+| コメントが追加された | はい | 閲覧可能ユーザー全員（**投稿者本人を除く**） | 投稿者本人は自動既読扱い |
+| Viewer が追加された | 条件付き | 追加された Viewer のみ | 追加時点以降のイベントのみ未読対象（過去分は遡及しない） |
+| Viewer が削除された | — | — | 削除された Viewer の `read_status` レコードを削除する |
+
+### コメント投稿者の自動既読
+
+コメント追加時に `latest_activity_at` が更新されるが、投稿者本人については `last_viewed_at` も同時刻に更新する。これにより投稿者本人は自分のコメントで未読にならない。
+
+### Viewer 追加時の挙動
+
+Viewer 追加時に `ReadStatus` を作成し、`last_viewed_at` を追加時点のタイムスタンプに設定する。これにより:
+- 追加時点より前の `latest_activity_at` は `last_viewed_at` 以下となり、既読扱いになる
+- 追加時点より後のイベント（新しいコメント等）で `latest_activity_at` が更新されると未読になる
+
+### Viewer 削除時の挙動
+
+Viewer が削除された場合、該当ユーザーの `record_read_statuses` レコードを削除する。閲覧権限がなくなった時点で既読状態を保持する意味がない。
 
 ---
 
-## 4. 未読に「戻す」条件の定義
+## 6. コンテキスト配置の決定
 
-| イベント | 未読に戻るか | 理由 |
-|---|---|---|
-| Record が公開された | 対象: カウンターパート + Viewer。初回公開で未読状態になる（`content_updated_at` = `published_at`） | コンテンツが初めて閲覧可能になる |
-| コメントが追加された | 対象: コメント投稿者以外の閲覧可能ユーザー全員（`content_updated_at` がコメント日時で更新される） | 新しいコンテンツが追加された |
-| Viewer が追加された | 新しい Viewer は未読（`read_status` が存在しないため自動的に未読）。既存ユーザーの未読状態は変わらない | 権限変更はコンテンツ更新ではない |
-| Viewer が削除された | 削除された Viewer の `read_status` は残存するが、`is_visible_to` が `false` になるため未読一覧に表示されない | 閲覧権限がなくなった時点で未読管理の対象外 |
-
-### コメント追加時の `content_updated_at` 更新
-
-コメント追加時に Record の `content_updated_at` を更新する必要がある。これは以下の方法で実現する:
-
-- `RecordCommentAdded` イベントのハンドラとして、Record の `content_updated_at` を更新するサービスを用意する
-- あるいは、Record エンティティに `notify_comment_added(now: datetime)` のようなメソッドを追加し、コメント追加ユースケース内で呼び出す
-
-後者のアプローチを推奨する。コメント追加は Record コンテキスト内の操作であり、コンテキスト内で完結するユースケースはイベントではなく直接呼び出しで連携する方針（`docs/architecture.md`）に合致する。
-
----
-
-## 5. コンテキスト配置
-
-### 選択肢
-
-| 選択肢 | 説明 |
-|---|---|
-| A: Record コンテキスト内に配置 | `ReadStatus` を Record コンテキストのエンティティとして追加 |
-| B: 独立した Read Model（read_model モジュール）に配置 | `docs/architecture.md` の `# read_model/ は実装時に追加予定` に対応 |
-
-### 決定: Record コンテキスト内に配置
+### Record コンテキスト内に配置
 
 理由:
 
-1. **ReadStatus は Record の閲覧に密結合**: 未読判定に必要な `content_updated_at` は Record エンティティの属性であり、`is_visible_to()` も Record のドメインロジックである。別コンテキストに配置すると Record の内部状態に依存するクエリが発生し、コンテキスト間の結合度が上がる
+1. **ReadStatus は Record の閲覧に密結合**: 未読判定に必要な `latest_activity_at` は Record エンティティの属性であり、`is_visible_to()` も Record のドメインロジックである。別コンテキストに配置すると Record の内部状態に依存するクエリが発生し、コンテキスト間の結合度が上がる
 
 2. **リードモデルとの区別**: `architecture.md` の `read_model/` は「全フェーズの結果を蓄積」する参照系リードモデルを想定している（例: 1on1履歴一覧、前回サマリー）。ReadStatus は特定の Record に対するユーザーの閲覧状態であり、複数コンテキストのデータを集約するリードモデルとは性質が異なる
 
-3. **Record コンテキストの既存パターンとの整合**: Record コンテキストには既に `RecordViewerTable`（ユーザー x Record の関連）が存在する。`ReadStatusTable` も同様の構造であり、同一コンテキスト内で自然に共存できる
+3. **Record コンテキストの既存パターンとの整合**: Record コンテキストには既に `RecordViewerTable`（ユーザー × Record の関連）が存在する。`ReadStatusTable` も同様の構造であり、同一コンテキスト内で自然に共存できる
+
+### 将来の `read_model` 切り出し
+
+リポジトリインターフェース（`ReadStatusRepository`）を介してアクセスするため、将来的にデータの配置先を変更する場合もインフラ層の差し替えのみで対応できる。
 
 ---
 
-## 6. データモデル
+## 7. データモデル
 
 ### テーブル設計
 
@@ -158,7 +155,7 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 | `updated_at` | DATETIME(6) | NOT NULL | レコード更新日時 |
 
 **制約:**
-- `UNIQUE(record_id, user_id)` — ユーザー x Record の組み合わせは一意
+- `UNIQUE(record_id, user_id)` — ユーザー × Record の組み合わせは一意
 - `FK record_id → records.id ON DELETE CASCADE` — Record 削除時に連動削除
 - `FK user_id → users.id ON DELETE CASCADE` — ユーザー削除時に連動削除
 
@@ -166,10 +163,10 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 
 | カラム | 型 | 制約 | 説明 |
 |---|---|---|---|
-| `content_updated_at` | DATETIME(6) | NOT NULL | コンテンツ最終更新日時（公開日時 or 最新コメント日時） |
+| `latest_activity_at` | DATETIME(6) | NULL | コンテンツ最終更新日時。公開前は NULL |
 
-- 公開時に `content_updated_at = published_at` で初期化
-- コメント追加時に `content_updated_at = comment.created_at` で更新
+- 公開時に `latest_activity_at = published_at` で初期化
+- コメント追加時に `latest_activity_at = comment.created_at` で更新
 
 ### インデックス戦略
 
@@ -177,33 +174,32 @@ Issue #148 では、**Notification コンテキストの通知レコードに `i
 -- 未読一覧取得の主要クエリ用
 CREATE INDEX idx_record_read_statuses_user_id ON record_read_statuses (user_id);
 
--- ユーザー x Record の一意制約（UNIQUE制約がインデックスを兼ねる）
--- uq_record_read_statuses_record_id_user_id
-
--- Record 単位の閲覧状態取得用（UNIQUE制約でカバー）
+-- ユーザー × Record の一意制約（UNIQUE 制約がインデックスを兼ねる）
 -- record_id での検索は UNIQUE 制約のインデックスで対応
 ```
 
-主要クエリパターン:
+### 主要クエリパターン
 
 ```sql
 -- 未読記録一覧（ダッシュボード）
 SELECT r.*
 FROM records r
-JOIN record_viewers rv ON rv.record_id = r.id  -- Viewer として閲覧権限あり
 LEFT JOIN record_read_statuses rs
   ON rs.record_id = r.id AND rs.user_id = :user_id
 WHERE r.status = 'published'
   AND (
     r.organizer_id = :user_id
     OR r.counterpart_id = :user_id
-    OR rv.user_id = :user_id
+    OR EXISTS (
+      SELECT 1 FROM record_viewers rv
+      WHERE rv.record_id = r.id AND rv.user_id = :user_id
+    )
   )
   AND (
     rs.id IS NULL  -- 一度も閲覧していない
-    OR rs.last_viewed_at < r.content_updated_at  -- 閲覧後にコンテンツが更新された
+    OR rs.last_viewed_at < r.latest_activity_at  -- 閲覧後にコンテンツが更新された
   )
-ORDER BY r.content_updated_at DESC;
+ORDER BY r.latest_activity_at DESC;
 
 -- 閲覧時の ReadStatus 更新（UPSERT）
 INSERT INTO record_read_statuses (id, record_id, user_id, last_viewed_at, created_at, updated_at)
@@ -213,13 +209,13 @@ ON DUPLICATE KEY UPDATE last_viewed_at = :now, updated_at = :now;
 
 ### パフォーマンス考慮
 
-- **データ量見積もり**: ユーザー数 x 閲覧済み Record 数。初期想定では数千〜数万行程度（1on1管理ツールの規模）
+- **データ量見積もり**: ユーザー数 × 閲覧済み Record 数。初期想定では数千〜数万行程度（1on1管理ツールの規模）
 - **未閲覧の Record は行が存在しない**: `LEFT JOIN` + `IS NULL` で未読判定するため、閲覧していない Record のぶんの行は不要。データ量はユーザーが実際に閲覧した Record 数に比例する
 - **UPSERT パターン**: `ON DUPLICATE KEY UPDATE` で挿入と更新を一文で処理。閲覧のたびに `last_viewed_at` を更新するだけなので書き込み負荷は低い
 
 ---
 
-## 7. ドメインモデル設計
+## 8. ドメインモデル設計
 
 ### ReadStatus エンティティ
 
@@ -263,22 +259,21 @@ class ReadStatus:
 ### Record エンティティへの追加
 
 ```python
-# Record に content_updated_at を追加
 class Record:
     # 既存フィールド...
-    _content_updated_at: datetime | None  # 公開前は None
+    _latest_activity_at: datetime | None  # 公開前は None
 
     @property
-    def content_updated_at(self) -> datetime | None:
-        return self._content_updated_at
+    def latest_activity_at(self) -> datetime | None:
+        return self._latest_activity_at
 
     def publish(self, *, actor_id: UserId, now: datetime) -> None:
         # 既存の処理...
-        self._content_updated_at = now  # 追加
+        self._latest_activity_at = now  # 追加
 
     def notify_comment_added(self, now: datetime) -> None:
         """コメント追加時にコンテンツ更新日時を更新する。"""
-        self._content_updated_at = now
+        self._latest_activity_at = now
         self._updated_at = now
 ```
 
@@ -295,12 +290,18 @@ class ReadStatusRepository(ABC):
     @abstractmethod
     async def save(self, read_status: ReadStatus) -> None:
         ...
+
+    @abstractmethod
+    async def delete_by_record_and_user(
+        self, record_id: RecordId, user_id: UserId
+    ) -> None:
+        """Viewer 削除時に既読状態を削除する。"""
+        ...
 ```
 
 ### 値オブジェクト
 
 ```python
-# domain/value_objects.py に追加
 @dataclass(frozen=True)
 class ReadStatusId:
     value: uuid.UUID
@@ -316,7 +317,7 @@ class ReadStatusId:
 
 ---
 
-## 8. ユースケース
+## 9. ユースケース
 
 ### Record 閲覧時の既読マーク
 
@@ -330,8 +331,6 @@ MarkRecordAsViewed
     4. 保存
 ```
 
-このユースケースはフロントエンドが Record 詳細画面を表示する際に呼び出す。`GET /records/{id}` のレスポンスを返すと同時にバックグラウンドで既読マークを行う、または `POST /records/{id}/viewed` を別途呼び出す設計が考えられる。
-
 **推奨**: `POST /records/{id}/viewed` を明示的に呼び出す方式。GET リクエストに副作用（既読マーク）を持たせるのは RESTful でなく、キャッシュやプリフェッチで意図しない既読が発生するリスクがある。
 
 ### 未読記録一覧の取得
@@ -339,15 +338,24 @@ MarkRecordAsViewed
 ```
 ListUnreadRecords
   Input: user_id
-  Output: 未読の Record 一覧（content_updated_at の降順）
+  Output: 未読の Record 一覧（latest_activity_at の降順）
   処理:
     1. user_id が閲覧権限を持つ公開済み Record のうち、
-       ReadStatus が存在しない OR last_viewed_at < content_updated_at のものを取得
+       ReadStatus が存在しない OR last_viewed_at < latest_activity_at のものを取得
+```
+
+### コメント追加時の自動既読（投稿者本人）
+
+```
+AddComment ユースケース内:
+  1. コメントを追加
+  2. Record.notify_comment_added(now) で latest_activity_at を更新
+  3. 投稿者本人の ReadStatus.last_viewed_at を now に更新（自動既読）
 ```
 
 ---
 
-## 9. API エンドポイント
+## 10. API エンドポイント
 
 | メソッド | パス | 説明 |
 |---|---|---|
@@ -356,19 +364,27 @@ ListUnreadRecords
 
 ---
 
-## 10. イベントフローまとめ
+## 11. イベントフローまとめ
 
 ```
 RecordPublished
-  → Record.content_updated_at = published_at（Record コンテキスト内）
+  → Record.latest_activity_at = published_at（Record コンテキスト内）
   → Notification 送信（Notification コンテキスト — 既存の RecordPublishedHandler）
   → カウンターパート・Viewer にとって「未読記録」になる
 
 RecordCommentAdded
   → Record.notify_comment_added(now)（Record コンテキスト内、ユースケースで直接呼び出し）
-  → Record.content_updated_at = comment.created_at
-  → コメント投稿者以外にとって「未読記録」に戻る
+  → Record.latest_activity_at = comment.created_at
+  → 投稿者本人の ReadStatus.last_viewed_at = comment.created_at（自動既読）
+  → 投稿者以外の閲覧可能ユーザーにとって「未読記録」に戻る
   → Notification 送信（Notification コンテキスト — 既存の RecordCommentAddedHandler）
+
+ViewerAdded
+  → ReadStatus を作成（last_viewed_at = 追加時点のタイムスタンプ）
+  → 追加時点より前のイベントは既読扱い
+
+ViewerRemoved
+  → 該当ユーザーの ReadStatus を削除
 
 ユーザーが Record 詳細画面を開く
   → POST /records/{record_id}/viewed
@@ -378,12 +394,13 @@ RecordCommentAdded
 
 ---
 
-## 11. 実装 Issue（後続）
+## 12. 実装 Issue（後続）
 
 本設計に基づき、以下の実装 Issue を作成する:
 
-1. **Record エンティティに `content_updated_at` を追加** — ドメインモデル変更 + マイグレーション
+1. **Record エンティティに `latest_activity_at` を追加** — ドメインモデル変更 + マイグレーション
 2. **ReadStatus ドメインモデル・リポジトリ実装** — エンティティ、テーブル、リポジトリ
-3. **既読マークユースケース** — `MarkRecordAsViewed` ユースケース + `POST /records/{id}/viewed` API
-4. **未読記録一覧ユースケース** — `ListUnreadRecords` ユースケース + `GET /records/unread` API
-5. **コメント追加時の `content_updated_at` 更新** — 既存の `AddComment` ユースケースに `notify_comment_added()` 呼び出しを追加
+3. **既読マークユースケース + API** — `MarkRecordAsViewed` + `POST /records/{id}/viewed`
+4. **未読記録一覧ユースケース + API** — `ListUnreadRecords` + `GET /records/unread`
+5. **コメント追加時の `latest_activity_at` 更新 + 投稿者自動既読** — 既存の `AddComment` ユースケースに追加
+6. **Viewer 追加/削除時の ReadStatus 管理** — Viewer 操作に連動した ReadStatus の作成・削除
