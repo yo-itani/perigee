@@ -9,6 +9,8 @@ from contexts.notification.infrastructure.tables import (
     ReminderLogTable,  # noqa: F401
 )
 from contexts.preparation.infrastructure.tables import (
+    AgendaCommentTable,  # noqa: F401
+    AgendaTable,  # noqa: F401
     ConfirmationRequestTable,  # noqa: F401
     ScheduleGroupAgendaTemplateTable,  # noqa: F401
     ScheduleGroupTable,  # noqa: F401
@@ -32,6 +34,8 @@ from shared.infrastructure.tables import UserTable  # noqa: F401
 
 __all__ = [
     "ActionItemTable",
+    "AgendaCommentTable",
+    "AgendaTable",
     "NotificationSettingTable",
     "ReminderLogTable",
     "CommentTable",

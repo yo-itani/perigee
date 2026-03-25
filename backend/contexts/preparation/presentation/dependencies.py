@@ -11,7 +11,11 @@ from api.dependencies import get_event_dispatcher, get_session, get_unit_of_work
 from contexts.preparation.application.create_schedule_service import (
     CreateScheduleService,
 )
+from contexts.preparation.domain.agenda_repository import AgendaRepository
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
+from contexts.preparation.infrastructure.sqlalchemy_agenda_repository import (
+    SqlAlchemyAgendaRepository,
+)
 from contexts.preparation.infrastructure.sqlalchemy_schedule_repository import (
     SqlAlchemyScheduleRepository,
 )
@@ -24,6 +28,13 @@ def get_schedule_repository(
 ) -> ScheduleRepository:
     """Provide a ScheduleRepository backed by the current DB session."""
     return SqlAlchemyScheduleRepository(session)
+
+
+def get_agenda_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> AgendaRepository:
+    """Provide an AgendaRepository backed by the current DB session."""
+    return SqlAlchemyAgendaRepository(session)
 
 
 def get_create_schedule_service(
