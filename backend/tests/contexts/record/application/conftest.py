@@ -169,6 +169,11 @@ class InMemoryCommentRepository(CommentRepository):
     async def save(self, entity: Comment) -> None:
         self._comments[entity.id] = entity
 
+    async def list_by_record_id(self, record_id: RecordId) -> list[Comment]:
+        comments = [c for c in self._comments.values() if c.record_id == record_id]
+        comments.sort(key=lambda c: c.created_at)
+        return comments
+
     @property
     def saved_comments(self) -> list[Comment]:
         return list(self._comments.values())

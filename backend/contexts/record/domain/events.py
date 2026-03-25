@@ -91,3 +91,12 @@ class ActionItemCompleted(DomainEvent):
 
     action_item_id: ActionItemId
     counterpart_id: UserId
+
+
+@dataclass(frozen=True)
+class ActionItemDeleted(DomainEvent):
+    """Raised when an action item is deleted by the organizer."""
+
+    action_item_id: ActionItemId
+    record_id: RecordId
+    deleted_by: UserId
