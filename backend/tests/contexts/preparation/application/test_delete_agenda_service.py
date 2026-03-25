@@ -17,7 +17,7 @@ from contexts.preparation.domain.events import AgendaDeleted
 from contexts.preparation.domain.schedule import Schedule
 from contexts.preparation.domain.schedule_title import ScheduleTitle
 from contexts.preparation.domain.topic import Topic
-from contexts.preparation.domain.value_objects import AddedByTag, AgendaId
+from contexts.preparation.domain.value_objects import AddedByTag, AgendaId, ScheduleId
 from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
 from shared.domain.value_objects import UserId
 from tests.contexts.preparation.application.conftest import (
@@ -95,7 +95,9 @@ class TestDeleteAgenda:
         await agenda_repo.save(agenda)
 
         await service.execute(
-            DeleteAgendaInput(agenda_id=agenda.id, actor_id=organizer)
+            DeleteAgendaInput(
+                schedule_id=schedule.id, agenda_id=agenda.id, actor_id=organizer
+            )
         )
 
         assert await agenda_repo.get_by_id(agenda.id) is None
@@ -116,7 +118,9 @@ class TestDeleteAgenda:
         await agenda_repo.save(agenda)
 
         await service.execute(
-            DeleteAgendaInput(agenda_id=agenda.id, actor_id=counterpart)
+            DeleteAgendaInput(
+                schedule_id=schedule.id, agenda_id=agenda.id, actor_id=counterpart
+            )
         )
 
         assert await agenda_repo.get_by_id(agenda.id) is None
@@ -152,7 +156,9 @@ class TestDeleteAgenda:
         await agenda_repo.save(agenda)
 
         await service.execute(
-            DeleteAgendaInput(agenda_id=agenda.id, actor_id=organizer)
+            DeleteAgendaInput(
+                schedule_id=schedule.id, agenda_id=agenda.id, actor_id=organizer
+            )
         )
 
         assert len(dispatched) == 1
@@ -180,7 +186,9 @@ class TestDeleteAgenda:
 
         with pytest.raises(UnauthorizedAgendaOperationError):
             await service.execute(
-                DeleteAgendaInput(agenda_id=agenda.id, actor_id=outsider)
+                DeleteAgendaInput(
+                    schedule_id=schedule.id, agenda_id=agenda.id, actor_id=outsider
+                )
             )
 
     async def test_raises_agenda_not_found(
@@ -191,8 +199,34 @@ class TestDeleteAgenda:
         with pytest.raises(AgendaNotFoundError):
             await service.execute(
                 DeleteAgendaInput(
+                    schedule_id=ScheduleId.generate(),
                     agenda_id=AgendaId.generate(),
                     actor_id=UserId.generate(),
+                )
+            )
+
+    async def test_raises_agenda_not_found_when_schedule_id_mismatch(
+        self,
+        service: DeleteAgendaService,
+        schedule_repo: InMemoryScheduleRepository,
+        agenda_repo: InMemoryAgendaRepository,
+    ) -> None:
+        """Raises AgendaNotFoundError when agenda belongs to a different schedule."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        now = datetime.now(UTC)
+        schedule = _create_confirmed_schedule(organizer, counterpart, now)
+        await schedule_repo.save(schedule)
+        agenda = _create_agenda(schedule, organizer, now)
+        await agenda_repo.save(agenda)
+
+        wrong_schedule_id = ScheduleId.generate()
+        with pytest.raises(AgendaNotFoundError):
+            await service.execute(
+                DeleteAgendaInput(
+                    schedule_id=wrong_schedule_id,
+                    agenda_id=agenda.id,
+                    actor_id=organizer,
                 )
             )
 
@@ -213,6 +247,8 @@ class TestDeleteAgenda:
         await agenda_repo.save(agenda)
 
         await service.execute(
-            DeleteAgendaInput(agenda_id=agenda.id, actor_id=organizer)
+            DeleteAgendaInput(
+                schedule_id=schedule.id, agenda_id=agenda.id, actor_id=organizer
+            )
         )
         assert uow.committed is True

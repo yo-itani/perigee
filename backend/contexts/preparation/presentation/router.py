@@ -520,9 +520,13 @@ async def delete_agenda(
     agenda_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[DeleteAgendaService, Depends(get_delete_agenda_service)],
-) -> None:  # noqa: ARG001
+) -> None:
     await service.execute(
-        DeleteAgendaInput(agenda_id=AgendaId(value=agenda_id), actor_id=current_user_id)
+        DeleteAgendaInput(
+            schedule_id=ScheduleId(value=schedule_id),
+            agenda_id=AgendaId(value=agenda_id),
+            actor_id=current_user_id,
+        )
     )
 
 

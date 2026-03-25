@@ -44,6 +44,7 @@ class UnauthorizedAgendaOperationError(Exception):
 class DeleteAgendaInput:
     """Input DTO for DeleteAgendaService."""
 
+    schedule_id: ScheduleId
     agenda_id: AgendaId
     actor_id: UserId
 
@@ -81,6 +82,10 @@ class DeleteAgendaService:
 
         agenda = await self._agenda_repo.get_by_id(input_dto.agenda_id)
         if agenda is None:
+            raise AgendaNotFoundError(input_dto.agenda_id)
+
+        # Verify that the agenda belongs to the specified schedule
+        if agenda.schedule_id != input_dto.schedule_id:
             raise AgendaNotFoundError(input_dto.agenda_id)
 
         schedule = await self._schedule_repo.get_by_id(agenda.schedule_id)
