@@ -44,12 +44,33 @@ from contexts.record.application.delete_action_item import (
     DeleteActionItemOutput,
     DeleteActionItemUseCase,
 )
+from contexts.record.application.publish_record import (
+    PublishRecordOutput,
+    PublishRecordUseCase,
+)
+from contexts.record.application.publish_record import (
+    RecordNotFoundError as PublishRecordNotFoundError,
+)
 from contexts.record.application.save_draft import (
     RecordNotFoundError as SaveDraftRecordNotFoundError,
 )
 from contexts.record.application.save_draft import (
     SaveDraftOutput,
     SaveDraftUseCase,
+)
+from contexts.record.application.set_viewers import (
+    RecordNotFoundError as SetViewersRecordNotFoundError,
+)
+from contexts.record.application.set_viewers import (
+    SetViewersOutput,
+    SetViewersUseCase,
+)
+from contexts.record.application.suggest_default_viewers import (
+    RecordNotFoundError as SuggestViewersRecordNotFoundError,
+)
+from contexts.record.application.suggest_default_viewers import (
+    SuggestDefaultViewersOutput,
+    SuggestDefaultViewersUseCase,
 )
 from contexts.record.application.update_memo import (
     RecordNotFoundError as UpdateMemoRecordNotFoundError,
@@ -70,7 +91,10 @@ from contexts.record.presentation.dependencies import (
     get_create_post_hoc_record_use_case,
     get_create_record_from_schedule_use_case,
     get_delete_action_item_use_case,
+    get_publish_record_use_case,
     get_save_draft_use_case,
+    get_set_viewers_use_case,
+    get_suggest_default_viewers_use_case,
     get_update_memo_use_case,
 )
 from contexts.record.presentation.router import router
@@ -83,6 +107,7 @@ RECORD_ID = uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
 SCHEDULE_ID = uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
 AGENDA_ID = uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
 ACTION_ITEM_ID = uuid.UUID("ffffffff-ffff-ffff-ffff-ffffffffffff")
+VIEWER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 
 
 def _build_app() -> FastAPI:
@@ -737,6 +762,264 @@ class TestSaveDraft:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.post(
                 f"/records/{RECORD_ID}/save-draft",
+            )
+
+        assert response.status_code == 401
+
+
+# -----------------------------------------------------------------------
+# GET /records/{id}/suggested-viewers
+# -----------------------------------------------------------------------
+
+
+class TestGetSuggestedViewers:
+    """Tests for GET /records/{id}/suggested-viewers."""
+
+    async def test_success_returns_200(self) -> None:
+        viewer = UserId.generate()
+        mock_use_case = AsyncMock(spec=SuggestDefaultViewersUseCase)
+        mock_use_case.execute.return_value = SuggestDefaultViewersOutput(
+            suggested_viewer_ids=[viewer],
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_suggest_default_viewers_use_case] = lambda: (
+            mock_use_case
+        )
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/records/{RECORD_ID}/suggested-viewers",
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["suggested_viewer_ids"] == [str(viewer.value)]
+        mock_use_case.execute.assert_awaited_once()
+
+    async def test_record_not_found_returns_404(self) -> None:
+        mock_use_case = AsyncMock(spec=SuggestDefaultViewersUseCase)
+        mock_use_case.execute.side_effect = SuggestViewersRecordNotFoundError(
+            RecordId(value=RECORD_ID)
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_suggest_default_viewers_use_case] = lambda: (
+            mock_use_case
+        )
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/records/{RECORD_ID}/suggested-viewers",
+            )
+
+        assert response.status_code == 404
+
+    async def test_non_organizer_returns_403(self) -> None:
+        mock_use_case = AsyncMock(spec=SuggestDefaultViewersUseCase)
+        mock_use_case.execute.side_effect = UnauthorizedOperationError(
+            "Only the organizer can suggest default viewers."
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_suggest_default_viewers_use_case] = lambda: (
+            mock_use_case
+        )
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/records/{RECORD_ID}/suggested-viewers",
+            )
+
+        assert response.status_code == 403
+
+    async def test_no_auth_returns_401(self) -> None:
+        app = _build_app()
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/records/{RECORD_ID}/suggested-viewers",
+            )
+
+        assert response.status_code == 401
+
+
+# -----------------------------------------------------------------------
+# PUT /records/{id}/viewers
+# -----------------------------------------------------------------------
+
+
+class TestSetViewers:
+    """Tests for PUT /records/{id}/viewers."""
+
+    async def test_success_returns_200(self) -> None:
+        mock_use_case = AsyncMock(spec=SetViewersUseCase)
+        mock_use_case.execute.return_value = SetViewersOutput(
+            record_id=RecordId(value=RECORD_ID),
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_set_viewers_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.put(
+                f"/records/{RECORD_ID}/viewers",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 200
+        assert response.json()["record_id"] == str(RECORD_ID)
+        mock_use_case.execute.assert_awaited_once()
+
+    async def test_record_not_found_returns_404(self) -> None:
+        mock_use_case = AsyncMock(spec=SetViewersUseCase)
+        mock_use_case.execute.side_effect = SetViewersRecordNotFoundError(
+            RecordId(value=RECORD_ID)
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_set_viewers_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.put(
+                f"/records/{RECORD_ID}/viewers",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 404
+
+    async def test_non_organizer_returns_403(self) -> None:
+        mock_use_case = AsyncMock(spec=SetViewersUseCase)
+        mock_use_case.execute.side_effect = UnauthorizedOperationError(
+            "Only the organizer can edit the record."
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_set_viewers_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.put(
+                f"/records/{RECORD_ID}/viewers",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 403
+
+    async def test_no_auth_returns_401(self) -> None:
+        app = _build_app()
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.put(
+                f"/records/{RECORD_ID}/viewers",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 401
+
+
+# -----------------------------------------------------------------------
+# POST /records/{id}/publish
+# -----------------------------------------------------------------------
+
+
+class TestPublishRecord:
+    """Tests for POST /records/{id}/publish."""
+
+    async def test_success_returns_200(self) -> None:
+        mock_use_case = AsyncMock(spec=PublishRecordUseCase)
+        mock_use_case.execute.return_value = PublishRecordOutput(
+            record_id=RecordId(value=RECORD_ID),
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_publish_record_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/records/{RECORD_ID}/publish",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 200
+        assert response.json()["record_id"] == str(RECORD_ID)
+        mock_use_case.execute.assert_awaited_once()
+
+    async def test_record_not_found_returns_404(self) -> None:
+        mock_use_case = AsyncMock(spec=PublishRecordUseCase)
+        mock_use_case.execute.side_effect = PublishRecordNotFoundError(
+            RecordId(value=RECORD_ID)
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_publish_record_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/records/{RECORD_ID}/publish",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 404
+
+    async def test_non_organizer_returns_403(self) -> None:
+        mock_use_case = AsyncMock(spec=PublishRecordUseCase)
+        mock_use_case.execute.side_effect = UnauthorizedOperationError(
+            "Only the organizer can edit the record."
+        )
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_publish_record_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/records/{RECORD_ID}/publish",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 403
+
+    async def test_already_published_returns_409(self) -> None:
+        mock_use_case = AsyncMock(spec=PublishRecordUseCase)
+        mock_use_case.execute.side_effect = RecordAlreadyPublishedError()
+
+        app = _build_app()
+        _override_auth(app)
+        app.dependency_overrides[get_publish_record_use_case] = lambda: mock_use_case
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/records/{RECORD_ID}/publish",
+                json={"viewer_ids": [str(VIEWER_ID)]},
+            )
+
+        assert response.status_code == 409
+
+    async def test_no_auth_returns_401(self) -> None:
+        app = _build_app()
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post(
+                f"/records/{RECORD_ID}/publish",
+                json={"viewer_ids": [str(VIEWER_ID)]},
             )
 
         assert response.status_code == 401
