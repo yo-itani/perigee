@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response
@@ -136,7 +137,7 @@ async def list_notifications(
 
 @notifications_router.post("/{notification_id}/read", status_code=204)
 async def mark_notification_as_read(
-    notification_id: str,
+    notification_id: uuid.UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
         MarkNotificationAsReadUseCase,
@@ -146,7 +147,7 @@ async def mark_notification_as_read(
     """Mark a notification as read."""
     await service.execute(
         MarkNotificationAsReadInput(
-            notification_id=NotificationRecordId.from_str(notification_id),
+            notification_id=NotificationRecordId(value=notification_id),
             actor_id=current_user_id,
         )
     )
