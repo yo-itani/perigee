@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import (
     CHAR,
     INTEGER,
+    TEXT,
     VARCHAR,
     ForeignKey,
     UniqueConstraint,
@@ -254,4 +255,74 @@ class ConfirmationRequestTable(Base, TimestampMixin):
 
     schedule: Mapped["ScheduleTable"] = relationship(
         back_populates="confirmation_requests",
+    )
+
+
+# ------------------------------------------------------------------
+# Agenda
+# ------------------------------------------------------------------
+
+
+class AgendaTable(Base, TimestampMixin):
+    """ORM model for the agendas table."""
+
+    __tablename__ = "agendas"
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True)
+    schedule_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "schedules.id",
+            name="fk_agendas_schedule_id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    topic: Mapped[str] = mapped_column(VARCHAR(200), nullable=False)
+    added_by: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "users.id",
+            name="fk_agendas_added_by",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+    added_by_tag: Mapped[str] = mapped_column(VARCHAR(20), nullable=False)
+
+    comments: Mapped[list["AgendaCommentTable"]] = relationship(
+        back_populates="agenda",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+
+class AgendaCommentTable(Base, TimestampMixin):
+    """ORM model for the agenda_comments table."""
+
+    __tablename__ = "agenda_comments"
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True)
+    agenda_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "agendas.id",
+            name="fk_agenda_comments_agenda_id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    author_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "users.id",
+            name="fk_agenda_comments_author_id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+    body: Mapped[str] = mapped_column(TEXT, nullable=False)
+
+    agenda: Mapped["AgendaTable"] = relationship(
+        back_populates="comments",
     )
