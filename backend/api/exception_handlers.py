@@ -61,11 +61,17 @@ from contexts.preparation.application.delete_agenda_service import (
 from contexts.preparation.application.delete_agenda_service import (
     UnauthorizedAgendaOperationError as DeleteAgendaUnauthorizedError,
 )
+from contexts.preparation.application.get_schedule_detail_service import (
+    ScheduleNotFoundError as GetScheduleDetailScheduleNotFoundError,
+)
 from contexts.preparation.application.get_template_service import (
     TemplateNotFoundError as GetTemplateNotFoundError,
 )
 from contexts.preparation.application.get_template_service import (
     UnauthorizedTemplateAccessError,
+)
+from contexts.preparation.application.list_schedule_agendas_service import (
+    ScheduleNotFoundError as ListAgendasScheduleNotFoundError,
 )
 from contexts.preparation.application.reject_consultation_request_service import (
     ScheduleNotFoundError as RejectConsultationScheduleNotFoundError,
@@ -232,6 +238,8 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     AcceptConsultationScheduleNotFoundError: 404,
     AddAgendaScheduleNotFoundError: 404,
     AgendaCommentScheduleNotFoundError: 404,
+    GetScheduleDetailScheduleNotFoundError: 404,
+    ListAgendasScheduleNotFoundError: 404,
     DeleteAgendaScheduleNotFoundError: 404,
     RenameScheduleNotFoundError: 404,
     # Preparation -- ScheduleGroup

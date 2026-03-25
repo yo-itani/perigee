@@ -155,3 +155,162 @@ class SaveTemplateResponse(BaseModel):
     """Response body for POST /templates."""
 
     template_id: UUID
+
+
+# ---------------------------------------------------------------------------
+# Upcoming schedules -- GET /schedules/upcoming
+# ---------------------------------------------------------------------------
+
+
+class UpcomingScheduleItemSchema(BaseModel):
+    """A single item in the upcoming schedules response."""
+
+    schedule_id: UUID
+    organizer_id: UUID
+    counterpart_id: UUID
+    scheduled_at: datetime
+    status: str
+    title: str
+    schedule_group_id: UUID | None
+
+
+class ListUpcomingSchedulesResponse(BaseModel):
+    """Response body for GET /schedules/upcoming."""
+
+    schedules: list[UpcomingScheduleItemSchema]
+
+
+# ---------------------------------------------------------------------------
+# Schedule detail -- GET /schedules/{id}
+# ---------------------------------------------------------------------------
+
+
+class GetScheduleDetailResponse(BaseModel):
+    """Response body for GET /schedules/{schedule_id}."""
+
+    schedule_id: UUID
+    organizer_id: UUID
+    counterpart_id: UUID
+    title: str
+    scheduled_at: datetime
+    status: str
+    schedule_group_id: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Schedule agendas -- GET /schedules/{id}/agendas
+# ---------------------------------------------------------------------------
+
+
+class AgendaCommentSchema(BaseModel):
+    """A single comment within an agenda."""
+
+    comment_id: UUID
+    author_id: UUID
+    body: str
+    created_at: datetime
+
+
+class AgendaItemSchema(BaseModel):
+    """A single agenda item with its comments."""
+
+    agenda_id: UUID
+    topic: str
+    added_by: UUID
+    added_by_tag: str
+    comments: list[AgendaCommentSchema]
+    created_at: datetime
+
+
+class ListScheduleAgendasResponse(BaseModel):
+    """Response body for GET /schedules/{schedule_id}/agendas."""
+
+    agendas: list[AgendaItemSchema]
+
+
+# ---------------------------------------------------------------------------
+# Schedule operations -- reschedule, rename
+# ---------------------------------------------------------------------------
+
+
+class RescheduleRequest(BaseModel):
+    """Request body for POST /schedules/{schedule_id}/reschedule."""
+
+    new_scheduled_at: AwareDatetime
+
+
+class RenameScheduleRequest(BaseModel):
+    """Request body for PUT /schedules/{schedule_id}/title."""
+
+    title: str
+
+
+# ---------------------------------------------------------------------------
+# Agenda operations -- add, add comment
+# ---------------------------------------------------------------------------
+
+
+class AddAgendaRequest(BaseModel):
+    """Request body for POST /schedules/{schedule_id}/agendas."""
+
+    topic: str
+
+
+class AddAgendaResponse(BaseModel):
+    """Response body for POST /schedules/{schedule_id}/agendas."""
+
+    agenda_id: UUID
+
+
+class AddAgendaCommentRequest(BaseModel):
+    """Request body for POST /agendas/{agenda_id}/comments."""
+
+    body: str
+
+
+class AddAgendaCommentResponse(BaseModel):
+    """Response body for POST /agendas/{agenda_id}/comments."""
+
+    comment_id: UUID
+
+
+# ---------------------------------------------------------------------------
+# Cross-context reads -- last session summary, pending action items
+# ---------------------------------------------------------------------------
+
+
+class ActionItemSummarySchema(BaseModel):
+    """A single action item in the session summary."""
+
+    action_item_id: UUID
+    content: str
+    is_completed: bool
+    created_at: datetime
+
+
+class GetLastSessionSummaryResponse(BaseModel):
+    """Response body for GET /records/last-summary."""
+
+    record_id: UUID
+    conducted_at: datetime
+    memo_excerpt: str
+    action_items: list[ActionItemSummarySchema]
+
+
+class PendingActionItemSchema(BaseModel):
+    """A single pending action item."""
+
+    action_item_id: UUID
+    content: str
+    created_at: datetime
+    record_id: UUID
+    organizer_id: UUID
+    conducted_at: datetime
+
+
+class ListPendingActionItemsResponse(BaseModel):
+    """Response body for GET /action-items/pending/{counterpart_id}."""
+
+    items: list[PendingActionItemSchema]

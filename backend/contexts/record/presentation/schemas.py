@@ -1,6 +1,5 @@
 """Pydantic request/response schemas for the Record context API."""
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, Field
