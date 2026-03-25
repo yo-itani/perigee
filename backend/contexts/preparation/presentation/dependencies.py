@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
@@ -19,15 +20,20 @@ from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 
 
-def _get_session() -> AsyncSession:
-    """Lazy import wrapper to avoid DB driver import at collection time."""
-    from foundation.db.session import get_session
+async def get_session() -> AsyncGenerator[AsyncSession]:
+    """Lazy wrapper around foundation.db.session.get_session.
 
-    return get_session  # type: ignore[return-value]
+    Avoids importing the DB engine at module collection time,
+    which would fail without the asyncmy driver installed.
+    """
+    from foundation.db.session import async_session_factory
+
+    async with async_session_factory() as session:
+        yield session
 
 
 def get_schedule_repository(
-    session: Annotated[AsyncSession, Depends(_get_session)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ScheduleRepository:
     """Provide a ScheduleRepository backed by the current DB session."""
     return SqlAlchemyScheduleRepository(session)
