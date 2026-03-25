@@ -46,6 +46,15 @@ class SqlAlchemyCommentRepository(CommentRepository):
         self._session.add(comment_row)
         await self._session.flush()
 
+    async def list_by_record_id(self, record_id: RecordId) -> list[Comment]:
+        stmt = (
+            select(CommentTable)
+            .where(CommentTable.record_id == str(record_id.value))
+            .order_by(CommentTable.created_at.asc())
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
+
     @staticmethod
     def _to_entity(row: CommentTable) -> Comment:
         return Comment(
