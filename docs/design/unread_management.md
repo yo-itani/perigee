@@ -178,31 +178,35 @@ Viewer が削除された場合、該当ユーザーの `record_read_statuses` �
 
 ### 既存データのバックフィル方針
 
-マイグレーションで `latest_activity_at` カラムを追加する際、既存の公開済み Record に対して以下のルールでバックフィルする:
+マイグレーションで `latest_activity_at` カラムを追加する際、既存の公開済み Record に対して以下のルールでバックフィルする。
+
+> **現行テーブル構造の前提**: `records` テーブルに `published_at` カラムは存在しない（公開時は `updated_at` が更新される）。コメントテーブル名は `comments`。
 
 ```sql
--- Step 1: 公開済み Record に published_at をベースに設定
+-- Step 1: 公開済み Record に updated_at をベースに設定
+-- （published_at がないため updated_at で代用。公開後に編集がなければ公開時刻に近い値になる）
 UPDATE records
-SET latest_activity_at = published_at
+SET latest_activity_at = updated_at
 WHERE status = 'published' AND latest_activity_at IS NULL;
 
 -- Step 2: コメントがある Record は最新コメントの created_at で上書き
 UPDATE records r
 SET latest_activity_at = (
-    SELECT MAX(rc.created_at)
-    FROM record_comments rc
-    WHERE rc.record_id = r.id
+    SELECT MAX(c.created_at)
+    FROM comments c
+    WHERE c.record_id = r.id
 )
 WHERE r.status = 'published'
   AND EXISTS (
-    SELECT 1 FROM record_comments rc
-    WHERE rc.record_id = r.id AND rc.created_at > r.latest_activity_at
+    SELECT 1 FROM comments c
+    WHERE c.record_id = r.id AND c.created_at > r.latest_activity_at
   );
 ```
 
 - 未公開（下書き）の Record は `latest_activity_at = NULL` のまま（公開時に設定される）
 - バックフィルはマイグレーションファイル内の `data_migrations` ステップとして実行する
 - バックフィル完了後も `latest_activity_at` は NULL 許容のまま（新規作成→公開前の Record のため）
+- `updated_at` による代用は厳密な公開日時ではないが、初回移行としては十分。将来 `published_at` カラムを追加する場合はそちらに切り替える
 
 ### インデックス戦略
 
