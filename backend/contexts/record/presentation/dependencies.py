@@ -265,6 +265,9 @@ def get_get_viewers_use_case(
 def get_add_comment_use_case(
     record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
     comment_repo: Annotated[CommentRepository, Depends(get_comment_repository)],
+    read_status_repo: Annotated[
+        ReadStatusRepository, Depends(get_read_status_repository)
+    ],
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
 ) -> AddCommentUseCase:
@@ -272,6 +275,7 @@ def get_add_comment_use_case(
     return AddCommentUseCase(
         record_repository=record_repo,
         comment_repository=comment_repo,
+        read_status_repository=read_status_repo,
         unit_of_work=uow,
         event_dispatcher=event_dispatcher,
     )
