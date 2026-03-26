@@ -56,11 +56,8 @@ export function ViewerList({
     );
   }
 
-  // Viewer role: only show self
-  const displayIds =
-    role === "viewer"
-      ? viewerIds.filter((id) => id === currentUserId)
-      : viewerIds;
+  // Viewer role: always show self (even if API response doesn't include it)
+  const displayIds = role === "viewer" ? [currentUserId] : viewerIds;
 
   // Always include counterpart in the display for organizer/counterpart roles
   const allDisplayIds =

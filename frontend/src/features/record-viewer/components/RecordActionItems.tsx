@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { RecordActionItem } from "../types";
+import type { RecordActionItem, RecordViewerRole } from "../types";
 import { formatDateShort } from "../utils";
 
 interface RecordActionItemsProps {
   actionItems: RecordActionItem[];
   isLoading: boolean;
+  role: RecordViewerRole;
   onComplete: (actionItemId: string) => void;
   isCompleting: boolean;
   completeError: string | null;
@@ -14,6 +15,7 @@ interface RecordActionItemsProps {
 export function RecordActionItems({
   actionItems,
   isLoading,
+  role,
   onComplete,
   isCompleting,
   completeError,
@@ -75,7 +77,7 @@ export function RecordActionItems({
                   <span className="text-xs text-muted-foreground">
                     {formatDateShort(item.created_at)}
                   </span>
-                  {!item.is_completed && (
+                  {!item.is_completed && role === "counterpart" && (
                     <Button
                       variant="outline"
                       size="sm"

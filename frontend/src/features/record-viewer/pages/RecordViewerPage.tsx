@@ -118,6 +118,7 @@ export function RecordViewerPage() {
       <RecordActionItems
         actionItems={record?.action_items ?? []}
         isLoading={recordLoading}
+        role={role}
         onComplete={(id) => void handleCompleteActionItem(id)}
         isCompleting={isCompleting}
         completeError={completeError}

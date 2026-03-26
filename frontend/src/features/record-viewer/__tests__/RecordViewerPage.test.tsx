@@ -205,10 +205,25 @@ describe("RecordViewerPage", () => {
     expect(screen.getByText("進捗共有メールを送る")).toBeInTheDocument();
   });
 
-  it("renders incomplete action item with complete button", () => {
+  it("hides complete button for organizer role", () => {
+    // Default mock: current user is the organizer
+    renderPage();
+    const completeButtons = screen.queryAllByRole("button", { name: "完了" });
+    expect(completeButtons).toHaveLength(0);
+  });
+
+  it("shows complete button for counterpart role", () => {
+    // Override record so current user is the counterpart
+    recordDetailReturn = {
+      ...recordDetailReturn,
+      record: {
+        ...mockRecord,
+        organizer_id: "other-user",
+        counterpart_id: "00000000-0000-0000-0000-000000000001",
+      },
+    };
     renderPage();
     const completeButtons = screen.getAllByRole("button", { name: "完了" });
-    // Only 1 incomplete item should have a complete button
     expect(completeButtons).toHaveLength(1);
   });
 
@@ -358,7 +373,16 @@ describe("RecordViewerPage", () => {
 
   // -- Complete action item -------------------------------------------------
 
-  it("calls completeItem when clicking complete button", async () => {
+  it("calls completeItem when clicking complete button as counterpart", async () => {
+    // Set current user as counterpart to show the complete button
+    recordDetailReturn = {
+      ...recordDetailReturn,
+      record: {
+        ...mockRecord,
+        organizer_id: "other-user",
+        counterpart_id: "00000000-0000-0000-0000-000000000001",
+      },
+    };
     const user = userEvent.setup();
     renderPage();
 
