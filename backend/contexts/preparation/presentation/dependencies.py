@@ -88,13 +88,13 @@ if TYPE_CHECKING:
         RescheduleService,
     )
     from contexts.record.application.get_last_session_summary import (
-        GetLastSessionSummaryService,
+        GetLastSessionSummaryQueryService,
     )
     from contexts.record.application.list_all_pending_action_items import (
-        ListAllPendingActionItemsService,
+        ListAllPendingActionItemsQueryService,
     )
     from contexts.record.application.list_pending_action_items import (
-        ListPendingActionItemsService,
+        ListPendingActionItemsQueryService,
     )
     from contexts.record.domain.action_item_repository import ActionItemRepository
     from contexts.record.domain.record_repository import RecordRepository
@@ -454,13 +454,13 @@ def get_list_pending_action_items_service(
     action_item_repo: Annotated[
         ActionItemRepository, Depends(_get_action_item_repository)
     ],
-) -> ListPendingActionItemsService:
-    """Provide a ListPendingActionItemsService."""
+) -> ListPendingActionItemsQueryService:
+    """Provide a ListPendingActionItemsQueryService."""
     from contexts.record.application.list_pending_action_items import (
-        ListPendingActionItemsService,
+        ListPendingActionItemsQueryService,
     )
 
-    return ListPendingActionItemsService(
+    return ListPendingActionItemsQueryService(
         action_item_repository=action_item_repo,
         record_repository=record_repo,
     )
@@ -471,13 +471,13 @@ def get_list_all_pending_action_items_service(
     action_item_repo: Annotated[
         ActionItemRepository, Depends(_get_action_item_repository)
     ],
-) -> ListAllPendingActionItemsService:
-    """Provide a ListAllPendingActionItemsService."""
+) -> ListAllPendingActionItemsQueryService:
+    """Provide a ListAllPendingActionItemsQueryService."""
     from contexts.record.application.list_all_pending_action_items import (
-        ListAllPendingActionItemsService,
+        ListAllPendingActionItemsQueryService,
     )
 
-    return ListAllPendingActionItemsService(
+    return ListAllPendingActionItemsQueryService(
         action_item_repository=action_item_repo,
         record_repository=record_repo,
     )
@@ -488,13 +488,13 @@ def get_get_last_session_summary_service(
     action_item_repo: Annotated[
         ActionItemRepository, Depends(_get_action_item_repository)
     ],
-) -> GetLastSessionSummaryService:
-    """Provide a GetLastSessionSummaryService."""
+) -> GetLastSessionSummaryQueryService:
+    """Provide a GetLastSessionSummaryQueryService."""
     from contexts.record.application.get_last_session_summary import (
-        GetLastSessionSummaryService,
+        GetLastSessionSummaryQueryService,
     )
 
-    return GetLastSessionSummaryService(
+    return GetLastSessionSummaryQueryService(
         record_repository=record_repo,
         action_item_repository=action_item_repo,
     )

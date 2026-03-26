@@ -1,11 +1,11 @@
-"""Tests for SendReminderService."""
+"""Tests for SendReminderUseCase."""
 
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from contexts.notification.application.send_reminder_service import (
-    SendReminderService,
+from contexts.notification.application.send_reminder_use_case import (
+    SendReminderUseCase,
 )
 from contexts.notification.domain.notification_setting import NotificationSetting
 from contexts.notification.domain.notification_setting_repository import (
@@ -81,7 +81,7 @@ def _build_service(
     reminder_log_repo: InMemoryReminderLogRepository | None = None,
     sender: SpyNotificationSender | None = None,
 ) -> tuple[
-    SendReminderService,
+    SendReminderUseCase,
     InMemoryScheduleRepository,
     InMemoryReminderLogRepository,
     SpyNotificationSender,
@@ -90,7 +90,7 @@ def _build_service(
     st = setting_repo or InMemoryNotificationSettingRepository()
     rl = reminder_log_repo or InMemoryReminderLogRepository()
     sn = sender or SpyNotificationSender()
-    service = SendReminderService(
+    service = SendReminderUseCase(
         schedule_repository=sr,
         notification_setting_repository=st,
         reminder_log_repository=rl,
@@ -99,8 +99,8 @@ def _build_service(
     return service, sr, rl, sn
 
 
-class TestSendReminderService:
-    """Tests for SendReminderService reminder logic."""
+class TestSendReminderUseCase:
+    """Tests for SendReminderUseCase reminder logic."""
 
     async def test_sends_reminder_to_both_participants(self) -> None:
         """Both organizer and counterpart receive reminders."""

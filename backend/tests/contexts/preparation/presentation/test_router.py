@@ -164,7 +164,7 @@ from contexts.preparation.presentation.router import router
 from contexts.record.application.get_last_session_summary import (
     ActionItemSummaryDTO,
     GetLastSessionSummaryOutput,
-    GetLastSessionSummaryService,
+    GetLastSessionSummaryQueryService,
 )
 from contexts.record.domain.value_objects import ActionItemId, RecordId
 from foundation.auth.dependencies import get_current_user_id
@@ -1237,7 +1237,7 @@ class TestGetLastSessionSummary:
         record_id = RecordId.generate()
         now = datetime.now(UTC)
         action_item_id = ActionItemId.generate()
-        mock_service = AsyncMock(spec=GetLastSessionSummaryService)
+        mock_service = AsyncMock(spec=GetLastSessionSummaryQueryService)
         mock_service.execute.return_value = GetLastSessionSummaryOutput(
             record_id=record_id,
             conducted_at=now,
@@ -1277,7 +1277,7 @@ class TestGetLastSessionSummary:
         assert len(body["action_items"]) == 1
 
     async def test_no_record_returns_200_null(self) -> None:
-        mock_service = AsyncMock(spec=GetLastSessionSummaryService)
+        mock_service = AsyncMock(spec=GetLastSessionSummaryQueryService)
         mock_service.execute.return_value = None
 
         app = _build_app()

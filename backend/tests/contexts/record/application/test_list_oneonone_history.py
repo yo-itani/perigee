@@ -1,4 +1,4 @@
-"""Tests for ListOneOnOneHistoryService."""
+"""Tests for ListOneOnOneHistoryQueryService."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from contexts.record.application.list_oneonone_history import (
     InvalidPaginationError,
     ListOneOnOneHistoryInput,
     ListOneOnOneHistoryOutput,
-    ListOneOnOneHistoryService,
+    ListOneOnOneHistoryQueryService,
 )
 from contexts.record.domain.memo import Memo
 from contexts.record.domain.record import Record
@@ -48,9 +48,9 @@ def _make_published_record(
 def _build_service(
     *,
     record_repo: InMemoryRecordRepository | None = None,
-) -> tuple[ListOneOnOneHistoryService, InMemoryRecordRepository]:
+) -> tuple[ListOneOnOneHistoryQueryService, InMemoryRecordRepository]:
     rr = record_repo or InMemoryRecordRepository()
-    svc = ListOneOnOneHistoryService(record_repository=rr)
+    svc = ListOneOnOneHistoryQueryService(record_repository=rr)
     return svc, rr
 
 

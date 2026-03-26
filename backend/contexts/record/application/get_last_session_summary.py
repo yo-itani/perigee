@@ -31,7 +31,7 @@ class ActionItemSummaryDTO:
 
 @dataclass(frozen=True)
 class GetLastSessionSummaryInput:
-    """Input DTO for GetLastSessionSummaryService."""
+    """Input DTO for GetLastSessionSummaryQueryService."""
 
     actor_id: UserId
     organizer_id: UserId
@@ -40,7 +40,7 @@ class GetLastSessionSummaryInput:
 
 @dataclass(frozen=True)
 class GetLastSessionSummaryOutput:
-    """Output DTO for GetLastSessionSummaryService.
+    """Output DTO for GetLastSessionSummaryQueryService.
 
     None is returned by execute() when no matching Record exists.
     """
@@ -51,7 +51,7 @@ class GetLastSessionSummaryOutput:
     action_items: list[ActionItemSummaryDTO]
 
 
-class GetLastSessionSummaryService:
+class GetLastSessionSummaryQueryService:
     """Query the last session summary for a pair.
 
     Returns the most recent published Record visible to actor,

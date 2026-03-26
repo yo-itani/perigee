@@ -32,15 +32,15 @@ class _SessionScopedReminderService:
 
     The scheduler runs outside of FastAPI's request lifecycle, so each
     execute() call creates its own session and wires up repositories
-    and the SendReminderService.
+    and the SendReminderUseCase.
     """
 
     async def execute(self, now: object) -> None:
-        """Create dependencies and delegate to SendReminderService."""
+        """Create dependencies and delegate to SendReminderUseCase."""
         from datetime import datetime as dt
 
-        from contexts.notification.application.send_reminder_service import (
-            SendReminderService,
+        from contexts.notification.application.send_reminder_use_case import (
+            SendReminderUseCase,
         )
         from contexts.notification.infrastructure.sqlalchemy_notification_setting_repository import (  # noqa: E501
             SqlAlchemyNotificationSettingRepository,
@@ -56,7 +56,7 @@ class _SessionScopedReminderService:
         assert isinstance(now, dt)
 
         async with async_session_factory() as session:
-            service = SendReminderService(
+            service = SendReminderUseCase(
                 schedule_repository=SqlAlchemyScheduleRepository(session),
                 notification_setting_repository=SqlAlchemyNotificationSettingRepository(
                     session

@@ -1,4 +1,4 @@
-"""Tests for GetLastSessionSummaryService."""
+"""Tests for GetLastSessionSummaryQueryService."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from contexts.record.application.get_last_session_summary import (
     GetLastSessionSummaryInput,
     GetLastSessionSummaryOutput,
-    GetLastSessionSummaryService,
+    GetLastSessionSummaryQueryService,
 )
 from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.memo import Memo
@@ -71,13 +71,13 @@ def _build_service(
     record_repo: InMemoryRecordRepository | None = None,
     action_item_repo: InMemoryActionItemRepository | None = None,
 ) -> tuple[
-    GetLastSessionSummaryService,
+    GetLastSessionSummaryQueryService,
     InMemoryRecordRepository,
     InMemoryActionItemRepository,
 ]:
     rr = record_repo or InMemoryRecordRepository()
     air = action_item_repo or InMemoryActionItemRepository()
-    svc = GetLastSessionSummaryService(
+    svc = GetLastSessionSummaryQueryService(
         record_repository=rr,
         action_item_repository=air,
     )

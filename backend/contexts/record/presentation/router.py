@@ -46,11 +46,11 @@ from contexts.record.application.get_viewers import (
 )
 from contexts.record.application.list_draft_records import (
     ListDraftRecordsInput,
-    ListDraftRecordsService,
+    ListDraftRecordsQueryService,
 )
 from contexts.record.application.list_oneonone_history import (
     ListOneOnOneHistoryInput,
-    ListOneOnOneHistoryService,
+    ListOneOnOneHistoryQueryService,
 )
 from contexts.record.application.list_record_comments import (
     ListRecordCommentsInput,
@@ -337,7 +337,7 @@ async def save_draft(
 async def list_draft_records(
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListDraftRecordsService, Depends(get_list_draft_records_service)
+        ListDraftRecordsQueryService, Depends(get_list_draft_records_service)
     ],
 ) -> ListDraftRecordsResponse:
     """List draft (unpublished) records for the current user."""
@@ -366,7 +366,7 @@ async def list_oneonone_history(
     counterpart_id: Annotated[UUID, Query()],
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListOneOnOneHistoryService, Depends(get_list_oneonone_history_service)
+        ListOneOnOneHistoryQueryService, Depends(get_list_oneonone_history_service)
     ],
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 20,

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 _MAX_REMINDER_MINUTES = 1440
 
 
-class SendReminderService:
+class SendReminderUseCase:
     """Send reminder notifications for upcoming confirmed schedules.
 
     Processing flow:
