@@ -9,4 +9,5 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+ENV CI=true
 CMD ["sh", "-c", "pnpm install --frozen-lockfile && pnpm dev --host 0.0.0.0"]
