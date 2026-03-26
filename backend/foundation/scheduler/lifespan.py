@@ -71,8 +71,22 @@ class _SessionScopedReminderService:
 def get_base_notification_sender() -> NotificationSender:
     """Get the base NotificationSender implementation.
 
-    Returns a log-only sender until Slack integration is configured.
+    Returns SlackNotificationSender when Slack is enabled and configured,
+    otherwise falls back to a log-only sender.
     """
+    from foundation.config.settings import settings
+
+    if settings.slack_enabled and settings.slack_webhook_url:
+        from contexts.notification.infrastructure.slack_notification_sender import (
+            SlackNotificationSender,
+        )
+
+        logger.info("Using SlackNotificationSender")
+        return SlackNotificationSender(
+            webhook_url=settings.slack_webhook_url,
+            timeout=settings.slack_http_timeout,
+        )
+
     from contexts.notification.domain.notification_message import NotificationMessage
     from shared.domain.value_objects import UserId
 
@@ -83,11 +97,12 @@ def get_base_notification_sender() -> NotificationSender:
             self, recipient_id: UserId, message: NotificationMessage
         ) -> None:
             logger.info(
-                "Reminder notification for user %s: %s",
+                "Notification (log-only) for user %s: %s",
                 recipient_id,
                 message.title,
             )
 
+    logger.info("Using LogOnlyNotificationSender (Slack not configured)")
     return LogOnlyNotificationSender()
 
 

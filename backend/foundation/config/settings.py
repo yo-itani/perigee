@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "perigee"
     debug: bool = False
 
+    # Slack
+    slack_webhook_url: str | None = None
+    slack_enabled: bool = True
+    slack_http_timeout: int = 10
+
     # Database
     db_host: str = "localhost"
     db_port: int = 3306
