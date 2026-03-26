@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException
 
 from shared.domain.user import User
 from shared.domain.user_repository import UserRepository
@@ -28,12 +28,11 @@ def _parse_user_id_header(
         ) from None
 
 
-async def get_current_user_id(
-    request: Request,
+async def get_current_user(
     parsed_id: Annotated[UserId, Depends(_parse_user_id_header)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
-) -> UserId:
-    """Extract and verify UserId from X-User-Id header.
+) -> User:
+    """Extract and verify User from X-User-Id header.
 
     This is a development-only authentication dependency.
     Replace the implementation body with JWT validation (or
@@ -49,17 +48,7 @@ async def get_current_user_id(
             status_code=403,
             detail="User account is deactivated",
         )
-    # Cache for get_current_user to avoid duplicate query
-    request.state._current_user = user  # noqa: SLF001
-    return parsed_id
-
-
-async def get_current_user(
-    request: Request,
-    _: Annotated[UserId, Depends(get_current_user_id)],
-) -> User:
-    """Return the current User, cached by get_current_user_id."""
-    return request.state._current_user  # noqa: SLF001
+    return user
 
 
 async def require_admin(

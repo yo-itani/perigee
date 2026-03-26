@@ -3,7 +3,7 @@ import uuid
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from foundation.auth.dependencies import _parse_user_id_header, get_current_user_id
+from foundation.auth.dependencies import _parse_user_id_header, get_current_user
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
@@ -63,7 +63,7 @@ async def test_empty_string_returns_401() -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_current_user_id (with DB check via in-memory repo)
+# get_current_user (with DB check via in-memory repo)
 # ---------------------------------------------------------------------------
 
 _ACTIVE_USER_ID = str(uuid.uuid4())
@@ -95,24 +95,23 @@ def _build_auth_app() -> FastAPI:
 
     @app.get("/test-auth")
     async def _auth_endpoint(
-        user_id: UserId = Depends(get_current_user_id),  # noqa: B008
+        user: User = Depends(get_current_user),  # noqa: B008
     ) -> dict[str, str]:
-        return {"user_id": str(user_id.value)}
+        return {"user_id": str(user.id.value)}
 
-    # Override get_session — not needed by in-memory repo but required by the
+    # Override get_session -- not needed by in-memory repo but required by the
     # dependency signature. We inject None; the repo override below bypasses it.
     async def _fake_session():  # type: ignore[no-untyped-def]
         yield None
 
     app.dependency_overrides[get_session] = _fake_session
 
-    # Monkey-patch the SqlAlchemy import inside get_current_user_id
-    # by overriding the entire dependency with a version that uses in-memory repo.
+    # Override get_current_user with a version that uses the in-memory repo.
     from foundation.auth.dependencies import _parse_user_id_header
 
-    async def _fake_get_current_user_id(
+    async def _fake_get_current_user(
         parsed_id: UserId = Depends(_parse_user_id_header),  # noqa: B008
-    ) -> UserId:
+    ) -> User:
         from fastapi import HTTPException
 
         user = await _repo.get_by_id(parsed_id)
@@ -122,9 +121,9 @@ def _build_auth_app() -> FastAPI:
             raise HTTPException(
                 status_code=403, detail="User account is deactivated"
             )
-        return parsed_id
+        return user
 
-    app.dependency_overrides[get_current_user_id] = _fake_get_current_user_id
+    app.dependency_overrides[get_current_user] = _fake_get_current_user
     return app
 
 

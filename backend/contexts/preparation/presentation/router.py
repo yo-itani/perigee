@@ -163,7 +163,8 @@ from contexts.record.application.list_pending_action_items import (
     ListPendingActionItemsInput,
     ListPendingActionItemsQueryService,
 )
-from foundation.auth.dependencies import get_current_user_id
+from foundation.auth.dependencies import get_current_user
+from shared.domain.user import User
 from shared.domain.value_objects import UserId
 
 router = APIRouter()
@@ -179,14 +180,14 @@ router = APIRouter()
 )
 async def create_schedule_group(
     body: CreateScheduleGroupRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         CreateScheduleGroupUseCase, Depends(get_create_schedule_group_use_case)
     ],
 ) -> CreateScheduleGroupResponse:
     output = await service.execute(
         CreateScheduleGroupInput(
-            organizer_id=current_user_id,
+            organizer_id=current_user.id,
             title=body.title,
             counterpart_schedules=[
                 CounterpartSchedule(
@@ -209,7 +210,7 @@ async def create_schedule_group(
 )
 async def create_schedule_group_from_template(
     body: CreateScheduleGroupFromTemplateRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         CreateScheduleGroupFromTemplateUseCase,
         Depends(get_create_schedule_group_from_template_use_case),
@@ -217,7 +218,7 @@ async def create_schedule_group_from_template(
 ) -> CreateScheduleGroupFromTemplateResponse:
     output = await service.execute(
         CreateScheduleGroupFromTemplateInput(
-            organizer_id=current_user_id,
+            organizer_id=current_user.id,
             template_id=TemplateId(value=body.template_id),
             title=body.title,
             counterpart_schedules=[
@@ -241,7 +242,7 @@ async def create_schedule_group_from_template(
 )
 async def create_schedule_group_from_past(
     body: CreateScheduleGroupFromPastRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         CreateScheduleGroupFromPastUseCase,
         Depends(get_create_schedule_group_from_past_use_case),
@@ -249,7 +250,7 @@ async def create_schedule_group_from_past(
 ) -> CreateScheduleGroupFromPastResponse:
     output = await service.execute(
         CreateScheduleGroupFromPastInput(
-            organizer_id=current_user_id,
+            organizer_id=current_user.id,
             source_schedule_group_id=ScheduleGroupId(
                 value=body.source_schedule_group_id
             ),
@@ -278,12 +279,12 @@ async def create_schedule_group_from_past(
 )
 async def create_schedule(
     body: CreateScheduleRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[CreateScheduleUseCase, Depends(get_create_schedule_use_case)],
 ) -> CreateScheduleResponse:
     output = await service.execute(
         CreateScheduleInput(
-            organizer_id=current_user_id,
+            organizer_id=current_user.id,
             counterpart_id=UserId(value=body.counterpart_id),
             scheduled_at=body.scheduled_at,
             title=body.title,
@@ -299,7 +300,7 @@ async def create_schedule(
 )
 async def send_consultation_request(
     body: SendConsultationRequestRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         SendConsultationRequestUseCase, Depends(get_send_consultation_request_use_case)
     ],
@@ -307,11 +308,11 @@ async def send_consultation_request(
     output = await service.execute(
         SendConsultationRequestInput(
             organizer_id=UserId(value=body.organizer_id),
-            counterpart_id=current_user_id,
+            counterpart_id=current_user.id,
             scheduled_at=body.scheduled_at,
             title=body.title,
             agenda_topics=body.agenda_topics,
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
     return SendConsultationRequestResponse(schedule_id=output.schedule_id.value)
@@ -319,14 +320,14 @@ async def send_consultation_request(
 
 @router.get("/schedules/upcoming", response_model=ListUpcomingSchedulesResponse)
 async def list_upcoming_schedules(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListUpcomingSchedulesQueryService, Depends(get_list_upcoming_schedules_query_service)
     ],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> ListUpcomingSchedulesResponse:
     output = await service.execute(
-        ListUpcomingSchedulesInput(actor_id=current_user_id, limit=limit)
+        ListUpcomingSchedulesInput(actor_id=current_user.id, limit=limit)
     )
     return ListUpcomingSchedulesResponse(
         schedules=[
@@ -352,14 +353,14 @@ async def list_upcoming_schedules(
 @router.get("/schedules/{schedule_id}", response_model=GetScheduleDetailResponse)
 async def get_schedule_detail(
     schedule_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         GetScheduleDetailQueryService, Depends(get_get_schedule_detail_query_service)
     ],
 ) -> GetScheduleDetailResponse:
     output = await service.execute(
         GetScheduleDetailInput(
-            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user_id
+            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user.id
         )
     )
     return GetScheduleDetailResponse(
@@ -382,14 +383,14 @@ async def get_schedule_detail(
 )
 async def list_schedule_agendas(
     schedule_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListScheduleAgendasQueryService, Depends(get_list_schedule_agendas_query_service)
     ],
 ) -> ListScheduleAgendasResponse:
     output = await service.execute(
         ListScheduleAgendasInput(
-            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user_id
+            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user.id
         )
     )
     return ListScheduleAgendasResponse(
@@ -418,7 +419,7 @@ async def list_schedule_agendas(
 @router.post("/schedules/{schedule_id}/confirm", status_code=status.HTTP_204_NO_CONTENT)
 async def confirm_schedule(
     schedule_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         AcceptConsultationRequestUseCase,
         Depends(get_accept_consultation_request_use_case),
@@ -426,7 +427,7 @@ async def confirm_schedule(
 ) -> None:
     await service.execute(
         AcceptConsultationRequestInput(
-            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user_id
+            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user.id
         )
     )
 
@@ -434,7 +435,7 @@ async def confirm_schedule(
 @router.post("/schedules/{schedule_id}/reject", status_code=status.HTTP_204_NO_CONTENT)
 async def reject_schedule(
     schedule_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         RejectConsultationRequestUseCase,
         Depends(get_reject_consultation_request_use_case),
@@ -442,7 +443,7 @@ async def reject_schedule(
 ) -> None:
     await service.execute(
         RejectConsultationRequestInput(
-            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user_id
+            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user.id
         )
     )
 
@@ -453,13 +454,13 @@ async def reject_schedule(
 async def reschedule(
     schedule_id: UUID,
     body: RescheduleRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[RescheduleUseCase, Depends(get_reschedule_use_case)],
 ) -> None:
     await service.execute(
         RescheduleInput(
             schedule_id=ScheduleId(value=schedule_id),
-            actor_id=current_user_id,
+            actor_id=current_user.id,
             new_scheduled_at=body.new_scheduled_at,
         )
     )
@@ -468,12 +469,12 @@ async def reschedule(
 @router.post("/schedules/{schedule_id}/cancel", status_code=status.HTTP_204_NO_CONTENT)
 async def cancel_schedule(
     schedule_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[CancelScheduleUseCase, Depends(get_cancel_schedule_use_case)],
 ) -> None:
     await service.execute(
         CancelScheduleInput(
-            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user_id
+            schedule_id=ScheduleId(value=schedule_id), actor_id=current_user.id
         )
     )
 
@@ -482,14 +483,14 @@ async def cancel_schedule(
 async def rename_schedule(
     schedule_id: UUID,
     body: RenameScheduleRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[RenameScheduleUseCase, Depends(get_rename_schedule_use_case)],
 ) -> None:
     await service.execute(
         RenameScheduleInput(
             schedule_id=ScheduleId(value=schedule_id),
             new_title=body.title,
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
 
@@ -505,14 +506,14 @@ async def rename_schedule(
 async def add_agenda(
     schedule_id: UUID,
     body: AddAgendaRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[AddAgendaUseCase, Depends(get_add_agenda_use_case)],
 ) -> AddAgendaResponse:
     output = await service.execute(
         AddAgendaInput(
             schedule_id=ScheduleId(value=schedule_id),
             topic=body.topic,
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
     return AddAgendaResponse(agenda_id=output.agenda_id.value)
@@ -525,14 +526,14 @@ async def add_agenda(
 async def delete_agenda(
     schedule_id: UUID,
     agenda_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[DeleteAgendaUseCase, Depends(get_delete_agenda_use_case)],
 ) -> None:
     await service.execute(
         DeleteAgendaInput(
             schedule_id=ScheduleId(value=schedule_id),
             agenda_id=AgendaId(value=agenda_id),
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
 
@@ -548,7 +549,7 @@ async def delete_agenda(
 async def add_agenda_comment(
     agenda_id: UUID,
     body: AddAgendaCommentRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         AddAgendaCommentUseCase, Depends(get_add_agenda_comment_use_case)
     ],
@@ -557,7 +558,7 @@ async def add_agenda_comment(
         AddAgendaCommentInput(
             agenda_id=AgendaId(value=agenda_id),
             body=body.body,
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
     return AddAgendaCommentResponse(comment_id=output.comment_id.value)
@@ -571,7 +572,7 @@ async def add_agenda_comment(
     response_model=ListAllPendingActionItemsResponse,
 )
 async def list_all_pending_action_items(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListAllPendingActionItemsQueryService,
         Depends(get_list_all_pending_action_items_service),
@@ -580,7 +581,7 @@ async def list_all_pending_action_items(
 ) -> ListAllPendingActionItemsResponse:
     output = await service.execute(
         ListAllPendingActionItemsInput(
-            actor_id=current_user_id,
+            actor_id=current_user.id,
             limit=limit,
         )
     )
@@ -605,7 +606,7 @@ async def list_all_pending_action_items(
 )
 async def list_pending_action_items(
     counterpart_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListPendingActionItemsQueryService,
         Depends(get_list_pending_action_items_service),
@@ -614,7 +615,7 @@ async def list_pending_action_items(
 ) -> ListPendingActionItemsResponse:
     output = await service.execute(
         ListPendingActionItemsInput(
-            actor_id=current_user_id,
+            actor_id=current_user.id,
             counterpart_id=UserId(value=counterpart_id),
             limit=limit,
         )
@@ -643,14 +644,14 @@ async def list_pending_action_items(
 async def get_last_session_summary(
     organizer_id: Annotated[UUID, Query()],
     counterpart_id: Annotated[UUID, Query()],
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         GetLastSessionSummaryQueryService, Depends(get_get_last_session_summary_service)
     ],
 ) -> GetLastSessionSummaryResponse | None:
     output = await service.execute(
         GetLastSessionSummaryInput(
-            actor_id=current_user_id,
+            actor_id=current_user.id,
             organizer_id=UserId(value=organizer_id),
             counterpart_id=UserId(value=counterpart_id),
         )
@@ -678,10 +679,10 @@ async def get_last_session_summary(
 
 @router.get("/templates", response_model=ListTemplatesResponse)
 async def list_templates(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[ListTemplatesQueryService, Depends(get_list_templates_query_service)],
 ) -> ListTemplatesResponse:
-    output = await service.execute(ListTemplatesInput(actor_id=current_user_id))
+    output = await service.execute(ListTemplatesInput(actor_id=current_user.id))
     return ListTemplatesResponse(
         templates=[
             TemplateListItemSchema(
@@ -702,12 +703,12 @@ async def list_templates(
 @router.get("/templates/{template_id}", response_model=GetTemplateResponse)
 async def get_template(
     template_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[GetTemplateQueryService, Depends(get_get_template_query_service)],
 ) -> GetTemplateResponse:
     output = await service.execute(
         GetTemplateInput(
-            template_id=TemplateId(value=template_id), actor_id=current_user_id
+            template_id=TemplateId(value=template_id), actor_id=current_user.id
         )
     )
     return GetTemplateResponse(
@@ -728,12 +729,12 @@ async def get_template(
 )
 async def save_template(
     body: SaveTemplateRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[SaveTemplateUseCase, Depends(get_save_template_use_case)],
 ) -> SaveTemplateResponse:
     output = await service.execute(
         SaveTemplateInput(
-            organizer_id=current_user_id,
+            organizer_id=current_user.id,
             name=body.name,
             default_counterpart_ids=[
                 UserId(value=uid) for uid in body.default_counterpart_ids

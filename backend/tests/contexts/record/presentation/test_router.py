@@ -98,10 +98,14 @@ from contexts.record.presentation.dependencies import (
     get_update_memo_use_case,
 )
 from contexts.record.presentation.router import router
-from foundation.auth.dependencies import get_current_user_id
-from shared.domain.value_objects import UserId
+from foundation.auth.dependencies import get_current_user
+from shared.domain.user import User
+from shared.domain.value_objects import UserId, UserRole
 
 ACTOR_ID = UserId(value=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+ACTOR_USER = User(
+    id=ACTOR_ID, name="Test User", email="test@example.com", role=UserRole.MEMBER
+)
 COUNTERPART_ID = uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 RECORD_ID = uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
 SCHEDULE_ID = uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")
@@ -120,7 +124,7 @@ def _build_app() -> FastAPI:
 
 def _override_auth(app: FastAPI) -> None:
     """Override the auth dependency to return a fixed user."""
-    app.dependency_overrides[get_current_user_id] = lambda: ACTOR_ID
+    app.dependency_overrides[get_current_user] = lambda: ACTOR_USER
 
 
 # -----------------------------------------------------------------------
