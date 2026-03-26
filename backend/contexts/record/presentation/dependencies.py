@@ -330,11 +330,15 @@ def get_suggest_default_viewers_use_case(
 def get_set_viewers_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+    read_status_repo: Annotated[
+        ReadStatusRepository, Depends(get_read_status_repository)
+    ],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
 ) -> SetViewersUseCase:
     """Provide a SetViewersUseCase with all dependencies injected."""
     return SetViewersUseCase(
         record_repository=record_repo,
+        read_status_repository=read_status_repo,
         unit_of_work=uow,
         event_dispatcher=event_dispatcher,
     )
