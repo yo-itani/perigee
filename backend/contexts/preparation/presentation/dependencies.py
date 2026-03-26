@@ -90,6 +90,9 @@ if TYPE_CHECKING:
     from contexts.record.application.get_last_session_summary import (
         GetLastSessionSummaryService,
     )
+    from contexts.record.application.list_all_pending_action_items import (
+        ListAllPendingActionItemsService,
+    )
     from contexts.record.application.list_pending_action_items import (
         ListPendingActionItemsService,
     )
@@ -458,6 +461,23 @@ def get_list_pending_action_items_service(
     )
 
     return ListPendingActionItemsService(
+        action_item_repository=action_item_repo,
+        record_repository=record_repo,
+    )
+
+
+def get_list_all_pending_action_items_service(
+    record_repo: Annotated[RecordRepository, Depends(_get_record_repository)],
+    action_item_repo: Annotated[
+        ActionItemRepository, Depends(_get_action_item_repository)
+    ],
+) -> ListAllPendingActionItemsService:
+    """Provide a ListAllPendingActionItemsService."""
+    from contexts.record.application.list_all_pending_action_items import (
+        ListAllPendingActionItemsService,
+    )
+
+    return ListAllPendingActionItemsService(
         action_item_repository=action_item_repo,
         record_repository=record_repo,
     )

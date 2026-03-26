@@ -25,6 +25,9 @@ from contexts.record.application.create_record_from_schedule import (
 from contexts.record.application.delete_action_item import DeleteActionItemUseCase
 from contexts.record.application.get_record_detail import GetRecordDetailUseCase
 from contexts.record.application.get_viewers import GetViewersUseCase
+from contexts.record.application.list_draft_records import (
+    ListDraftRecordsService,
+)
 from contexts.record.application.list_oneonone_history import (
     ListOneOnOneHistoryService,
 )
@@ -272,6 +275,15 @@ def get_complete_action_item_use_case(
         action_item_repository=action_item_repo,
         unit_of_work=uow,
         event_dispatcher=event_dispatcher,
+    )
+
+
+def get_list_draft_records_service(
+    record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+) -> ListDraftRecordsService:
+    """Provide a ListDraftRecordsService with all dependencies injected."""
+    return ListDraftRecordsService(
+        record_repository=record_repo,
     )
 
 

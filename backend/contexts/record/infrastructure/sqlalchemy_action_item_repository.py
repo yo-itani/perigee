@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.value_objects import ActionItemId, ActionItemTitle, RecordId
-from contexts.record.infrastructure.tables import ActionItemTable
+from contexts.record.infrastructure.tables import ActionItemTable, RecordTable
 from shared.domain.value_objects import UserId
 
 _DEFAULT_PENDING_LIMIT = 50
@@ -40,6 +40,22 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
             select(ActionItemTable)
             .where(
                 ActionItemTable.counterpart_id == str(counterpart_id.value),
+                ActionItemTable.is_completed.is_(False),
+            )
+            .order_by(ActionItemTable.created_at.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_entity(row) for row in result.scalars().all()]
+
+    async def list_pending_by_organizer(
+        self, organizer_id: UserId, *, limit: int = _DEFAULT_PENDING_LIMIT
+    ) -> list[ActionItem]:
+        stmt = (
+            select(ActionItemTable)
+            .join(RecordTable, ActionItemTable.record_id == RecordTable.id)
+            .where(
+                RecordTable.organizer_id == str(organizer_id.value),
                 ActionItemTable.is_completed.is_(False),
             )
             .order_by(ActionItemTable.created_at.asc())

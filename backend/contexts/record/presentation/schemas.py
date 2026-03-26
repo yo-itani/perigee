@@ -1,5 +1,6 @@
 """Pydantic request/response schemas for the Record context API."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, Field
@@ -264,3 +265,25 @@ class PublishRecordResponse(BaseModel):
     """Response body for POST /records/{id}/publish."""
 
     record_id: UUID
+
+
+# ---------------------------------------------------------------------------
+# Draft records -- GET /records/drafts
+# ---------------------------------------------------------------------------
+
+
+class DraftRecordItemSchema(BaseModel):
+    """A single item in the draft records response."""
+
+    record_id: UUID
+    counterpart_id: UUID
+    conducted_at: AwareDatetime
+    memo_excerpt: str
+    created_at: AwareDatetime
+    schedule_id: UUID | None
+
+
+class ListDraftRecordsResponse(BaseModel):
+    """Response body for GET /records/drafts."""
+
+    items: list[DraftRecordItemSchema]

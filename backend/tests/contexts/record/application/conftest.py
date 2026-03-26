@@ -129,6 +129,7 @@ class InMemoryActionItemRepository(ActionItemRepository):
 
     def __init__(self) -> None:
         self._items: dict[ActionItemId, ActionItem] = {}
+        self._organizer_map: dict[RecordId, UserId] = {}
 
     async def get_by_id(self, entity_id: ActionItemId) -> ActionItem | None:
         return self._items.get(entity_id)
@@ -146,6 +147,25 @@ class InMemoryActionItemRepository(ActionItemRepository):
         ]
         pending.sort(key=lambda item: item.created_at)
         return pending[: max(0, limit)]
+
+    async def list_pending_by_organizer(
+        self, organizer_id: UserId, *, limit: int = 50
+    ) -> list[ActionItem]:
+        # Need to find records by organizer; store a reference to record_repo
+        # For in-memory testing, we filter by record_id matching records
+        # where organizer_id matches. We rely on _record_repo being set externally.
+        pending = [
+            item
+            for item in self._items.values()
+            if not item.is_completed
+            and self._organizer_map.get(item.record_id) == organizer_id
+        ]
+        pending.sort(key=lambda item: item.created_at)
+        return pending[: max(0, limit)]
+
+    def set_organizer_map(self, record_id: RecordId, organizer_id: UserId) -> None:
+        """Register organizer for a record (test helper)."""
+        self._organizer_map[record_id] = organizer_id
 
     async def list_by_record_id(self, record_id: RecordId) -> list[ActionItem]:
         items = [item for item in self._items.values() if item.record_id == record_id]
