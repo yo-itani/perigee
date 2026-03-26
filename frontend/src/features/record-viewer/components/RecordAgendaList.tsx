@@ -46,6 +46,7 @@ export function RecordAgendaList({
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs">
                   &#x2713;
                 </div>
+                {/* TODO: Display agenda text content instead of UUID once the API returns agenda details */}
                 <span className="text-sm">{agendaId}</span>
               </div>
             ))}

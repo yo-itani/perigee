@@ -236,6 +236,51 @@ describe("RecordViewerPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows change viewers button for organizer role", () => {
+    renderPage();
+    expect(
+      screen.getByRole("button", { name: "変更する" }),
+    ).toBeInTheDocument();
+  });
+
+  it("navigates to publish page when clicking change viewers button", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const changeButton = screen.getByRole("button", { name: "変更する" });
+    await user.click(changeButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith("/records/r1/publish");
+  });
+
+  it("hides change viewers button for counterpart role", () => {
+    recordDetailReturn = {
+      ...recordDetailReturn,
+      record: {
+        ...mockRecord,
+        organizer_id: "other-user",
+        counterpart_id: "00000000-0000-0000-0000-000000000001",
+      },
+    };
+    renderPage();
+    expect(
+      screen.queryByRole("button", { name: "変更する" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows 'この記録の公開先' title for counterpart role", () => {
+    recordDetailReturn = {
+      ...recordDetailReturn,
+      record: {
+        ...mockRecord,
+        organizer_id: "other-user",
+        counterpart_id: "00000000-0000-0000-0000-000000000001",
+      },
+    };
+    renderPage();
+    expect(screen.getByText("この記録の公開先")).toBeInTheDocument();
+  });
+
   it("hides edit button for counterpart role", () => {
     recordDetailReturn = {
       ...recordDetailReturn,

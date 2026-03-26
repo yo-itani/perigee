@@ -76,6 +76,12 @@ export function RecordViewerPage() {
     }
   };
 
+  const handleChangeViewers = () => {
+    if (recordId) {
+      void navigate(`/records/${recordId}/publish`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -125,6 +131,7 @@ export function RecordViewerPage() {
         role={role}
         isLoading={viewersLoading}
         error={viewersError}
+        onChangeViewers={handleChangeViewers}
       />
 
       {/* Comments */}

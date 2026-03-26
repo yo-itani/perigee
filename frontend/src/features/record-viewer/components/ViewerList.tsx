@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { RecordViewerRole } from "../types";
 
 interface ViewerListProps {
@@ -8,6 +9,7 @@ interface ViewerListProps {
   role: RecordViewerRole;
   isLoading: boolean;
   error: string | null;
+  onChangeViewers?: () => void;
 }
 
 export function ViewerList({
@@ -17,12 +19,15 @@ export function ViewerList({
   role,
   isLoading,
   error,
+  onChangeViewers,
 }: ViewerListProps) {
+  const cardTitle = role === "counterpart" ? "この記録の公開先" : "公開先";
+
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>公開先</CardTitle>
+          <CardTitle>{cardTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -42,7 +47,7 @@ export function ViewerList({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>公開先</CardTitle>
+          <CardTitle>{cardTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-destructive">{error}</p>
@@ -66,7 +71,17 @@ export function ViewerList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>公開先</CardTitle>
+        <CardTitle>{cardTitle}</CardTitle>
+        {role === "organizer" && onChangeViewers && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onChangeViewers}
+            className="text-xs"
+          >
+            変更する
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {allDisplayIds.length === 0 ? (

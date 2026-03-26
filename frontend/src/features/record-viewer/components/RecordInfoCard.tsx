@@ -71,6 +71,7 @@ export function RecordInfoCard({
         )}
       </CardHeader>
       <CardContent>
+        {/* TODO: Add "所要時間" (duration) and "種別" (type) fields once the API provides them */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div>
             <div className="text-xs text-muted-foreground">日時</div>
