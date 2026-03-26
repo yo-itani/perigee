@@ -21,7 +21,6 @@ const DURATION_OPTIONS = [
   { value: 90, label: "90分" },
 ];
 
-
 export function CounterpartScheduleBlock({
   data,
   onChange,
