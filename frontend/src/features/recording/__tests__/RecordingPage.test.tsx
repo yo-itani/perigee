@@ -431,7 +431,7 @@ describe("RecordingPage", () => {
     });
 
     // updateMemo should be called exactly once (from handleSaveAndComplete),
-    // blur is skipped because dirty check sees memo was already marked as saved
+    // blur save is deferred via setTimeout and skipped because savingInProgressRef is set
     expect(mockUpdateMemo).toHaveBeenCalledTimes(1);
   });
 

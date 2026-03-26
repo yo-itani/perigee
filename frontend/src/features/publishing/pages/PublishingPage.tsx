@@ -54,7 +54,7 @@ export function PublishingPage() {
 
   const [memo, setMemo] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isSavingRef = useRef(false);
+  const savingInProgressRef = useRef(false);
 
   // Initialize memo from record once loaded
   const currentMemo = memo ?? record?.memo ?? "";
@@ -63,24 +63,22 @@ export function PublishingPage() {
     setMemo(value);
   };
 
-  const handleSaveMemo = async () => {
-    if (isSavingRef.current) return;
-    await updateMemo(currentMemo);
-  };
-
-  // Suppress blur save before button action (mousedown/keydown fires before blur)
-  const handleButtonInteraction = () => {
-    isSavingRef.current = true;
+  const handleSaveMemo = () => {
+    // Defer to next frame so button click handlers can set savingInProgressRef first
+    setTimeout(() => {
+      if (savingInProgressRef.current) return;
+      void updateMemo(currentMemo);
+    }, 0);
   };
 
   const handleSaveDraft = async () => {
-    isSavingRef.current = true;
+    savingInProgressRef.current = true;
     try {
       const memoResult = await updateMemo(currentMemo);
       if (!memoResult) return;
       await saveDraft();
     } finally {
-      isSavingRef.current = false;
+      savingInProgressRef.current = false;
     }
   };
 
@@ -93,36 +91,40 @@ export function PublishingPage() {
   };
 
   const handlePublish = async (viewerIds: string[]) => {
-    // Save memo first
-    const memoResult = await updateMemo(currentMemo);
-    if (!memoResult) return;
+    savingInProgressRef.current = true;
+    try {
+      const memoResult = await updateMemo(currentMemo);
+      if (!memoResult) return;
 
-    // Set viewers
-    const viewersResult = await setViewers(viewerIds);
-    if (!viewersResult) return;
+      const viewersResult = await setViewers(viewerIds);
+      if (!viewersResult) return;
 
-    // Publish
-    const result = await publishRecord();
-    if (result) {
-      setIsModalOpen(false);
-      void navigate(`/records/${recordId}`);
+      const result = await publishRecord();
+      if (result) {
+        setIsModalOpen(false);
+        void navigate(`/records/${recordId}`);
+      }
+    } finally {
+      savingInProgressRef.current = false;
     }
   };
 
   const handleModalSaveDraft = async (viewerIds: string[]) => {
-    // Save memo first
-    const memoResult = await updateMemo(currentMemo);
-    if (!memoResult) return;
+    savingInProgressRef.current = true;
+    try {
+      const memoResult = await updateMemo(currentMemo);
+      if (!memoResult) return;
 
-    // Set viewers
-    const viewersResult = await setViewers(viewerIds);
-    if (!viewersResult) return;
+      const viewersResult = await setViewers(viewerIds);
+      if (!viewersResult) return;
 
-    // Save draft
-    const result = await saveDraft();
-    if (result) {
-      setIsModalOpen(false);
-      void navigate(`/records/drafts`);
+      const result = await saveDraft();
+      if (result) {
+        setIsModalOpen(false);
+        void navigate(`/records/drafts`);
+      }
+    } finally {
+      savingInProgressRef.current = false;
     }
   };
 
@@ -210,8 +212,6 @@ export function PublishingPage() {
         )}
         <Button
           variant="ghost"
-          onMouseDown={handleButtonInteraction}
-          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveDraft()}
           disabled={isSavingDraft || isSavingMemo}
         >

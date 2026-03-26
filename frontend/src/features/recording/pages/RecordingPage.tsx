@@ -66,7 +66,7 @@ export function RecordingPage() {
   } = useSaveDraft(recordId!);
 
   const [memo, setMemo] = useState<string | null>(null);
-  const isSavingRef = useRef(false);
+  const savingInProgressRef = useRef(false);
 
   // Initialize memo from record once loaded
   const currentMemo = memo ?? record?.memo ?? "";
@@ -75,14 +75,12 @@ export function RecordingPage() {
     setMemo(value);
   };
 
-  const handleSaveMemo = async () => {
-    if (isSavingRef.current) return;
-    await updateMemo(currentMemo);
-  };
-
-  // Suppress blur save before button action (mousedown fires before blur)
-  const handleButtonInteraction = () => {
-    isSavingRef.current = true;
+  const handleSaveMemo = () => {
+    // Defer to next frame so button click handlers can set savingInProgressRef first
+    setTimeout(() => {
+      if (savingInProgressRef.current) return;
+      void updateMemo(currentMemo);
+    }, 0);
   };
 
   const handleConfirmAgenda = async (agendaId: string) => {
@@ -123,7 +121,7 @@ export function RecordingPage() {
   };
 
   const handleSaveAndComplete = async () => {
-    isSavingRef.current = true;
+    savingInProgressRef.current = true;
     try {
       const memoResult = await updateMemo(currentMemo);
       if (!memoResult) return;
@@ -132,7 +130,7 @@ export function RecordingPage() {
         void navigate(`/records/${recordId}/publish`);
       }
     } finally {
-      isSavingRef.current = false;
+      savingInProgressRef.current = false;
     }
   };
 
@@ -173,8 +171,6 @@ export function RecordingPage() {
         </div>
         <Button
           size="lg"
-          onMouseDown={handleButtonInteraction}
-          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
@@ -231,8 +227,6 @@ export function RecordingPage() {
         )}
         <Button
           size="lg"
-          onMouseDown={handleButtonInteraction}
-          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
