@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useScheduleAgendas } from "@/features/preparation/hooks/useScheduleAgendas";
@@ -66,7 +66,7 @@ export function RecordingPage() {
   } = useSaveDraft(recordId!);
 
   const [memo, setMemo] = useState<string | null>(null);
-  const isSavingRef = useRef(false);
+  const savingInProgressRef = useRef(false);
 
   // Initialize memo from record once loaded
   const currentMemo = memo ?? record?.memo ?? "";
@@ -75,9 +75,12 @@ export function RecordingPage() {
     setMemo(value);
   };
 
-  const handleSaveMemo = async () => {
-    if (isSavingRef.current) return;
-    await updateMemo(currentMemo);
+  const handleSaveMemo = () => {
+    // Defer to next frame so button click handlers can set savingInProgressRef first
+    setTimeout(() => {
+      if (savingInProgressRef.current) return;
+      void updateMemo(currentMemo);
+    }, 0);
   };
 
   const handleConfirmAgenda = async (agendaId: string) => {
@@ -117,13 +120,9 @@ export function RecordingPage() {
     }
   };
 
-  const handleCompleteMouseDown = () => {
-    isSavingRef.current = true;
-  };
-
   const handleSaveAndComplete = async () => {
+    savingInProgressRef.current = true;
     try {
-      // Save memo first, then save draft, then navigate to publish
       const memoResult = await updateMemo(currentMemo);
       if (!memoResult) return;
       const result = await saveDraft();
@@ -131,7 +130,7 @@ export function RecordingPage() {
         void navigate(`/records/${recordId}/publish`);
       }
     } finally {
-      isSavingRef.current = false;
+      savingInProgressRef.current = false;
     }
   };
 
@@ -172,7 +171,6 @@ export function RecordingPage() {
         </div>
         <Button
           size="lg"
-          onMouseDown={handleCompleteMouseDown}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
@@ -229,7 +227,6 @@ export function RecordingPage() {
         )}
         <Button
           size="lg"
-          onMouseDown={handleCompleteMouseDown}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
