@@ -287,3 +287,14 @@ class ListDraftRecordsResponse(BaseModel):
     """Response body for GET /records/drafts."""
 
     items: list[DraftRecordItemSchema]
+
+
+# ---------------------------------------------------------------------------
+# Mark record as viewed -- POST /records/{record_id}/viewed
+# ---------------------------------------------------------------------------
+
+
+class MarkRecordAsViewedResponse(BaseModel):
+    """Response body for POST /records/{record_id}/viewed."""
+
+    record_id: UUID

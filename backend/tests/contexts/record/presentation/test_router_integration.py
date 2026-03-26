@@ -306,3 +306,123 @@ class TestPublishRecordIntegration:
             )
 
         assert response.status_code == 409
+
+
+# -----------------------------------------------------------------------
+# POST /records/{id}/viewed
+# -----------------------------------------------------------------------
+
+
+class TestMarkRecordAsViewedAuth:
+    """POST /records/{id}/viewed -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without X-User-Id header returns 401."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/viewed",
+            )
+
+        assert response.status_code == 401
+
+
+class TestMarkRecordAsViewedIntegration:
+    """POST /records/{id}/viewed -- authenticated access."""
+
+    async def test_returns_404_for_nonexistent_record(self, app, user_id: str) -> None:
+        """Marking a nonexistent record as viewed returns 404."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/viewed",
+                headers={"X-User-Id": user_id},
+            )
+
+        assert response.status_code == 404
+
+    async def test_organizer_marks_draft_as_viewed(self, app, user_id: str) -> None:
+        """Organizer can mark their own draft record as viewed."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Mark as viewed
+            response = await client.post(
+                f"/records/{record_id}/viewed",
+                headers={"X-User-Id": user_id},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["record_id"] == record_id
+
+    async def test_returns_403_for_non_visible_user(self, app, user_id: str) -> None:
+        """A user without visibility cannot mark the record as viewed."""
+        stranger_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create a record as organizer
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Stranger tries to mark as viewed
+            response = await client.post(
+                f"/records/{record_id}/viewed",
+                headers={"X-User-Id": stranger_id},
+            )
+
+        assert response.status_code == 403
+
+    async def test_marks_published_record_as_viewed_twice(
+        self, app, user_id: str
+    ) -> None:
+        """Marking a record as viewed twice succeeds (idempotent update)."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create and publish
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers={"X-User-Id": user_id},
+                json={
+                    "counterpart_id": str(uuid.uuid4()),
+                    "conducted_at": "2026-03-20T14:00:00+09:00",
+                },
+            )
+            record_id = create_response.json()["record_id"]
+            await client.post(
+                f"/records/{record_id}/publish",
+                headers={"X-User-Id": user_id},
+                json={"viewer_ids": []},
+            )
+
+            # Mark as viewed twice
+            response1 = await client.post(
+                f"/records/{record_id}/viewed",
+                headers={"X-User-Id": user_id},
+            )
+            response2 = await client.post(
+                f"/records/{record_id}/viewed",
+                headers={"X-User-Id": user_id},
+            )
+
+        assert response1.status_code == 200
+        assert response2.status_code == 200

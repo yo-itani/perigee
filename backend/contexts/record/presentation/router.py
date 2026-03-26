@@ -56,6 +56,10 @@ from contexts.record.application.list_record_comments import (
     ListRecordCommentsInput,
     ListRecordCommentsUseCase,
 )
+from contexts.record.application.mark_record_as_viewed import (
+    MarkRecordAsViewedInput,
+    MarkRecordAsViewedUseCase,
+)
 from contexts.record.application.publish_record import (
     PublishRecordInput,
     PublishRecordUseCase,
@@ -92,6 +96,7 @@ from contexts.record.presentation.dependencies import (
     get_list_draft_records_service,
     get_list_oneonone_history_service,
     get_list_record_comments_use_case,
+    get_mark_record_as_viewed_use_case,
     get_publish_record_use_case,
     get_save_draft_use_case,
     get_set_viewers_use_case,
@@ -118,6 +123,7 @@ from contexts.record.presentation.schemas import (
     ListDraftRecordsResponse,
     ListOneOnOneHistoryResponse,
     ListRecordCommentsResponse,
+    MarkRecordAsViewedResponse,
     OneOnOneHistoryItemSchema,
     PublishRecordRequest,
     PublishRecordResponse,
@@ -587,3 +593,28 @@ async def publish_record(
     )
     output = await use_case.execute(input_dto)
     return PublishRecordResponse(record_id=output.record_id.value)
+
+
+# ---------------------------------------------------------------------------
+# POST /records/{record_id}/viewed
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/records/{record_id}/viewed",
+    response_model=MarkRecordAsViewedResponse,
+)
+async def mark_record_as_viewed(
+    record_id: UUID,
+    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    use_case: Annotated[
+        MarkRecordAsViewedUseCase, Depends(get_mark_record_as_viewed_use_case)
+    ],
+) -> MarkRecordAsViewedResponse:
+    """Mark a record as viewed by the current user."""
+    input_dto = MarkRecordAsViewedInput(
+        record_id=RecordId(value=record_id),
+        actor_id=current_user_id,
+    )
+    await use_case.execute(input_dto)
+    return MarkRecordAsViewedResponse(record_id=record_id)
