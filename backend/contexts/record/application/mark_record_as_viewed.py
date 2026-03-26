@@ -50,9 +50,12 @@ class MarkRecordAsViewedUseCase:
     Workflow:
     1. Load the record and verify it exists.
     2. Verify the actor has visibility (is_visible_to).
-    3. Find or create a ReadStatus for (record_id, actor_id).
-    4. Update last_viewed_at to current time.
-    5. Save within a transaction.
+    3. Create a ReadStatus and upsert (insert or update last_viewed_at).
+    4. Commit the transaction.
+
+    The upsert approach is safe against concurrent requests: if two
+    requests race, the DB-level ``ON DUPLICATE KEY UPDATE`` ensures
+    no IntegrityError.
     """
 
     def __init__(
@@ -77,19 +80,11 @@ class MarkRecordAsViewedUseCase:
             if not record.is_visible_to(input_dto.actor_id):
                 raise RecordNotVisibleError(input_dto.record_id, input_dto.actor_id)
 
-            read_status = await self._read_status_repository.find_by_record_and_user(
+            read_status = ReadStatus.create(
                 record_id=input_dto.record_id,
                 user_id=input_dto.actor_id,
+                now=now,
             )
 
-            if read_status is None:
-                read_status = ReadStatus.create(
-                    record_id=input_dto.record_id,
-                    user_id=input_dto.actor_id,
-                    now=now,
-                )
-            else:
-                read_status.mark_viewed(now=now)
-
-            await self._read_status_repository.save(read_status)
+            await self._read_status_repository.upsert(read_status)
             await self._unit_of_work.commit()

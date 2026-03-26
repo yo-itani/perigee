@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import and_, delete, select
+from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from contexts.record.domain.read_status import ReadStatus
@@ -31,6 +32,19 @@ class SqlAlchemyReadStatusRepository(ReadStatusRepository):
         else:
             self._update(entity, existing)
             await self._session.flush()
+
+    async def upsert(self, entity: ReadStatus) -> None:
+        stmt = mysql_insert(ReadStatusTable).values(
+            id=str(entity.id.value),
+            record_id=str(entity.record_id.value),
+            user_id=str(entity.user_id.value),
+            last_viewed_at=entity.last_viewed_at,
+        )
+        stmt = stmt.on_duplicate_key_update(
+            last_viewed_at=stmt.inserted.last_viewed_at,
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
 
     async def find_by_record_and_user(
         self, record_id: RecordId, user_id: UserId

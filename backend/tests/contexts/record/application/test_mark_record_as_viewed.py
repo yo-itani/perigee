@@ -35,6 +35,17 @@ class InMemoryReadStatusRepository(ReadStatusRepository):
     async def save(self, entity: ReadStatus) -> None:
         self._statuses[entity.id] = entity
 
+    async def upsert(self, entity: ReadStatus) -> None:
+        # Simulate ON DUPLICATE KEY UPDATE by (record_id, user_id)
+        for existing in self._statuses.values():
+            if (
+                existing.record_id == entity.record_id
+                and existing.user_id == entity.user_id
+            ):
+                existing.mark_viewed(now=entity.last_viewed_at)
+                return
+        self._statuses[entity.id] = entity
+
     async def find_by_record_and_user(
         self, record_id: RecordId, user_id: UserId
     ) -> ReadStatus | None:
