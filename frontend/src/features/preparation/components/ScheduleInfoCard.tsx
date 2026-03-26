@@ -56,11 +56,25 @@ export function ScheduleInfoCard({
         <CardTitle>基本情報</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <div className="text-xs text-muted-foreground">日時</div>
             <div className="text-sm font-medium">
               {formatScheduleDateTime(schedule.scheduled_at)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">所要時間</div>
+            <div className="text-sm font-medium">
+              {schedule.duration_minutes != null
+                ? `${schedule.duration_minutes}分`
+                : "-"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">繰り返し</div>
+            <div className="text-sm font-medium">
+              {schedule.recurrence ?? "-"}
             </div>
           </div>
           <div>

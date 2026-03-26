@@ -5,6 +5,12 @@
  * across hooks and components.
  */
 
+// Re-export shared action item types for use within this feature
+export type {
+  PendingActionItem,
+  PendingActionItemsResponse,
+} from "@/types/action-item";
+
 export interface ScheduleDetail {
   schedule_id: string;
   organizer_id: string;
@@ -15,6 +21,11 @@ export interface ScheduleDetail {
   schedule_group_id: string | null;
   created_at: string;
   updated_at: string;
+  // TODO: Backend GET /schedules/{id} (GetScheduleDetailResponse) does not yet
+  // include duration_minutes or recurrence. Add these fields to the backend
+  // schema when the domain model supports them.
+  duration_minutes?: number;
+  recurrence?: string;
 }
 
 export interface AgendaComment {
@@ -43,19 +54,6 @@ export interface AddAgendaResponse {
 
 export interface AddAgendaCommentResponse {
   comment_id: string;
-}
-
-export interface PendingActionItem {
-  action_item_id: string;
-  content: string;
-  created_at: string;
-  record_id: string;
-  organizer_id: string;
-  conducted_at: string;
-}
-
-export interface PendingActionItemsResponse {
-  items: PendingActionItem[];
 }
 
 export interface StartSessionResponse {
