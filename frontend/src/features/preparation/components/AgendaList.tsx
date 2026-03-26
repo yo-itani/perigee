@@ -16,11 +16,14 @@ interface AgendaListProps {
   agendas: AgendaItem[];
   isLoading: boolean;
   error: string | null;
-  onAddAgenda: (topic: string) => Promise<void>;
+  onAddAgenda: (topic: string) => Promise<boolean>;
   onDeleteAgenda: (agendaId: string) => Promise<void>;
-  onAddComment: (agendaId: string, body: string) => Promise<void>;
+  onAddComment: (agendaId: string, body: string) => Promise<boolean>;
   isAddingAgenda: boolean;
   isAddingComment: boolean;
+  addAgendaError?: string | null;
+  deleteAgendaError?: string | null;
+  addCommentError?: string | null;
 }
 
 export function AgendaList({
@@ -32,6 +35,9 @@ export function AgendaList({
   onAddComment,
   isAddingAgenda,
   isAddingComment,
+  addAgendaError,
+  deleteAgendaError,
+  addCommentError,
 }: AgendaListProps) {
   const [newTopic, setNewTopic] = useState("");
   const [expandedAgendaIds, setExpandedAgendaIds] = useState<Set<string>>(
@@ -41,8 +47,10 @@ export function AgendaList({
   const handleAddAgenda = async () => {
     const trimmed = newTopic.trim();
     if (!trimmed) return;
-    await onAddAgenda(trimmed);
-    setNewTopic("");
+    const success = await onAddAgenda(trimmed);
+    if (success) {
+      setNewTopic("");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -122,6 +130,7 @@ export function AgendaList({
                       onAddComment(agenda.agenda_id, body)
                     }
                     isSubmitting={isAddingComment}
+                    error={addCommentError}
                   />
                 )}
               </div>
@@ -129,6 +138,16 @@ export function AgendaList({
             {agendas.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 アジェンダはまだありません
+              </p>
+            )}
+            {deleteAgendaError && (
+              <p className="text-sm text-destructive" role="alert">
+                {deleteAgendaError}
+              </p>
+            )}
+            {addAgendaError && (
+              <p className="text-sm text-destructive" role="alert">
+                {addAgendaError}
               </p>
             )}
             <div className="flex gap-2 pt-2">

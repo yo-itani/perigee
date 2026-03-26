@@ -29,11 +29,21 @@ export function PreparationPage() {
     refetch: refetchAgendas,
   } = useScheduleAgendas(scheduleId!);
 
-  const { addAgenda, isSubmitting: isAddingAgenda } = useAddAgenda(scheduleId!);
+  const {
+    addAgenda,
+    isSubmitting: isAddingAgenda,
+    error: addAgendaError,
+  } = useAddAgenda(scheduleId!);
 
-  const { deleteAgenda } = useDeleteAgenda(scheduleId!);
+  const { deleteAgenda, error: deleteAgendaError } = useDeleteAgenda(
+    scheduleId!,
+  );
 
-  const { addComment, isSubmitting: isAddingComment } = useAddAgendaComment();
+  const {
+    addComment,
+    isSubmitting: isAddingComment,
+    error: addCommentError,
+  } = useAddAgendaComment();
 
   const {
     startSession,
@@ -50,11 +60,13 @@ export function PreparationPage() {
     error: pendingError,
   } = usePendingActionItems(counterpartId);
 
-  const handleAddAgenda = async (topic: string) => {
+  const handleAddAgenda = async (topic: string): Promise<boolean> => {
     const result = await addAgenda(topic);
     if (result) {
       refetchAgendas();
+      return true;
     }
+    return false;
   };
 
   const handleDeleteAgenda = async (agendaId: string) => {
@@ -64,11 +76,16 @@ export function PreparationPage() {
     }
   };
 
-  const handleAddComment = async (agendaId: string, body: string) => {
+  const handleAddComment = async (
+    agendaId: string,
+    body: string,
+  ): Promise<boolean> => {
     const result = await addComment(agendaId, body);
     if (result) {
       refetchAgendas();
+      return true;
     }
+    return false;
   };
 
   const handleAddToAgenda = (content: string) => {
@@ -117,6 +134,9 @@ export function PreparationPage() {
         onAddComment={handleAddComment}
         isAddingAgenda={isAddingAgenda}
         isAddingComment={isAddingComment}
+        addAgendaError={addAgendaError}
+        deleteAgendaError={deleteAgendaError}
+        addCommentError={addCommentError}
       />
 
       {/* Pending action items */}
@@ -137,7 +157,9 @@ export function PreparationPage() {
         <Button
           size="lg"
           onClick={() => void handleStartSession()}
-          disabled={isStarting || scheduleLoading}
+          disabled={
+            isStarting || scheduleLoading || !schedule || !!scheduleError
+          }
         >
           {isStarting ? "開始中..." : "1on1 を開始する"}
         </Button>

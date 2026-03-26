@@ -403,4 +403,125 @@ describe("PreparationPage", () => {
     renderPage();
     expect(screen.getByText("1on1の開始に失敗しました")).toBeInTheDocument();
   });
+
+  // -- Input preserved on error ---------------------------------------------
+
+  it("does not clear agenda input when addAgenda fails", async () => {
+    mockAddAgenda.mockResolvedValueOnce(null);
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = screen.getByPlaceholderText("アジェンダを追加...");
+    await user.type(input, "失敗するアジェンダ");
+    const addButton = screen.getByRole("button", { name: "追加" });
+    await user.click(addButton);
+
+    await waitFor(() => {
+      expect(mockAddAgenda).toHaveBeenCalledWith("失敗するアジェンダ");
+    });
+
+    expect(input).toHaveValue("失敗するアジェンダ");
+  });
+
+  it("clears agenda input when addAgenda succeeds", async () => {
+    mockAddAgenda.mockResolvedValueOnce({ agenda_id: "a-new" });
+    const user = userEvent.setup();
+    renderPage();
+
+    const input = screen.getByPlaceholderText("アジェンダを追加...");
+    await user.type(input, "成功するアジェンダ");
+    const addButton = screen.getByRole("button", { name: "追加" });
+    await user.click(addButton);
+
+    await waitFor(() => {
+      expect(input).toHaveValue("");
+    });
+  });
+
+  it("does not clear comment input when addComment fails", async () => {
+    mockAddComment.mockResolvedValueOnce(null);
+    const user = userEvent.setup();
+    renderPage();
+
+    // Open comment thread for the second agenda (has 1 comment)
+    const commentButtons = screen.getAllByRole("button", {
+      name: /^(\d+|コメント)$/,
+    });
+    const commentToggle = commentButtons.find((btn) => btn.textContent === "1");
+    await user.click(commentToggle!);
+
+    const commentInput = screen.getByPlaceholderText("コメントを追加...");
+    await user.type(commentInput, "失敗するコメント");
+    const submitButton = screen.getByRole("button", { name: "送信" });
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockAddComment).toHaveBeenCalled();
+    });
+
+    expect(commentInput).toHaveValue("失敗するコメント");
+  });
+
+  // -- Mutation error display -----------------------------------------------
+
+  it("shows addAgenda error message", () => {
+    addAgendaReturn = {
+      ...addAgendaReturn,
+      error: "アジェンダの追加に失敗しました (500)",
+    };
+
+    renderPage();
+    expect(
+      screen.getByText("アジェンダの追加に失敗しました (500)"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows deleteAgenda error message", () => {
+    deleteAgendaReturn = {
+      ...deleteAgendaReturn,
+      error: "アジェンダの削除に失敗しました (500)",
+    };
+
+    renderPage();
+    expect(
+      screen.getByText("アジェンダの削除に失敗しました (500)"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows addComment error message in comment thread", async () => {
+    addAgendaCommentReturn = {
+      ...addAgendaCommentReturn,
+      error: "コメントの追加に失敗しました (500)",
+    };
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Open comment thread
+    const commentButtons = screen.getAllByRole("button", {
+      name: /^(\d+|コメント)$/,
+    });
+    const commentToggle = commentButtons.find((btn) => btn.textContent === "1");
+    await user.click(commentToggle!);
+
+    expect(
+      screen.getByText("コメントの追加に失敗しました (500)"),
+    ).toBeInTheDocument();
+  });
+
+  // -- Start button disabled on schedule error ------------------------------
+
+  it("disables start button when schedule fetch fails", () => {
+    scheduleDetailReturn = {
+      ...scheduleDetailReturn,
+      schedule: null,
+      error: "スケジュールの取得に失敗しました",
+    };
+
+    renderPage();
+    const startButton = screen.getByRole("button", {
+      name: "1on1 を開始する",
+    });
+    expect(startButton).toBeDisabled();
+  });
 });

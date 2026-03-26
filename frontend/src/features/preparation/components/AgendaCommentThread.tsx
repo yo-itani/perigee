@@ -6,22 +6,26 @@ import { formatCommentDate } from "../utils";
 
 interface AgendaCommentThreadProps {
   comments: AgendaComment[];
-  onAddComment: (body: string) => Promise<void>;
+  onAddComment: (body: string) => Promise<boolean>;
   isSubmitting: boolean;
+  error?: string | null;
 }
 
 export function AgendaCommentThread({
   comments,
   onAddComment,
   isSubmitting,
+  error,
 }: AgendaCommentThreadProps) {
   const [commentText, setCommentText] = useState("");
 
   const handleSubmit = async () => {
     const trimmed = commentText.trim();
     if (!trimmed) return;
-    await onAddComment(trimmed);
-    setCommentText("");
+    const success = await onAddComment(trimmed);
+    if (success) {
+      setCommentText("");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -47,6 +51,11 @@ export function AgendaCommentThread({
           </div>
         </div>
       ))}
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       <div className="flex gap-2">
         <Input
           value={commentText}
