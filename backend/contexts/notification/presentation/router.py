@@ -36,7 +36,7 @@ from contexts.notification.presentation.schemas import (
     NotificationSettingResponse,
     UpdateNotificationSettingRequest,
 )
-from foundation.auth.dependencies import get_current_user
+from api.dependencies import get_current_user
 from shared.domain.user import User
 
 router = APIRouter(

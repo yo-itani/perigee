@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from foundation.auth.dependencies import get_current_user
+from api.dependencies import get_current_user
 from shared.application.get_my_profile_query_service import GetMyProfileQueryService
 from shared.application.update_my_profile_use_case import (
     EmailAlreadyTakenError,
@@ -49,7 +49,6 @@ async def update_my_profile(
     try:
         output = await use_case.execute(
             input_dto=UpdateMyProfileInput(
-                user_id=current_user.id,
                 name=body.name,
                 email=body.email,
             ),

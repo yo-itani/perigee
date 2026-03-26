@@ -3,13 +3,14 @@ import uuid
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from foundation.auth.dependencies import _parse_user_id_header, get_current_user
+from api.dependencies import get_current_user
+from foundation.auth.dependencies import parse_user_id_header
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
 
 # ---------------------------------------------------------------------------
-# _parse_user_id_header (pure header parsing, no DB)
+# parse_user_id_header (pure header parsing, no DB)
 # ---------------------------------------------------------------------------
 
 _parse_app = FastAPI()
@@ -17,7 +18,7 @@ _parse_app = FastAPI()
 
 @_parse_app.get("/test-parse")
 async def _parse_endpoint(
-    user_id: UserId = Depends(_parse_user_id_header),  # noqa: B008
+    user_id: UserId = Depends(parse_user_id_header),  # noqa: B008
 ) -> dict[str, str]:
     return {"user_id": str(user_id.value)}
 
@@ -107,10 +108,10 @@ def _build_auth_app() -> FastAPI:
     app.dependency_overrides[get_session] = _fake_session
 
     # Override get_current_user with a version that uses the in-memory repo.
-    from foundation.auth.dependencies import _parse_user_id_header
+    from foundation.auth.dependencies import parse_user_id_header
 
     async def _fake_get_current_user(
-        parsed_id: UserId = Depends(_parse_user_id_header),  # noqa: B008
+        parsed_id: UserId = Depends(parse_user_id_header),  # noqa: B008
     ) -> User:
         from fastapi import HTTPException
 

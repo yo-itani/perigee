@@ -167,7 +167,7 @@ from contexts.record.application.get_last_session_summary import (
     GetLastSessionSummaryQueryService,
 )
 from contexts.record.domain.value_objects import ActionItemId, RecordId
-from foundation.auth.dependencies import get_current_user
+from api.dependencies import get_current_user
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 

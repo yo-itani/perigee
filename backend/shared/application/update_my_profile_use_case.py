@@ -9,7 +9,6 @@ from shared.domain.value_objects import UserId
 
 @dataclass(frozen=True)
 class UpdateMyProfileInput:
-    user_id: UserId
     name: str
     email: str
 

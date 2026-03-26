@@ -163,7 +163,7 @@ from contexts.record.application.list_pending_action_items import (
     ListPendingActionItemsInput,
     ListPendingActionItemsQueryService,
 )
-from foundation.auth.dependencies import get_current_user
+from api.dependencies import get_current_user
 from shared.domain.user import User
 from shared.domain.value_objects import UserId
 
