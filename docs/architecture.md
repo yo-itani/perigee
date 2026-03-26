@@ -435,3 +435,24 @@ class PublishRecordService:
         # commit 成功後にイベントをディスパッチ
         await self._event_dispatcher.dispatch(events)
 ```
+
+## フロントエンド: カラートークン規約
+
+### 原則
+
+- ハードコード色（`bg-white`, `text-[#6b6b67]`, `border-black/[0.22]` 等）は使わない
+- `index.css` の `:root` / `.dark` に CSS 変数を定義し、Tailwind トークンクラス（`bg-surface`, `text-text-subtle` 等）で参照する
+- **新しいカラートークンを `:root` に追加したら、必ず `.dark` にも対応値を定義する**
+
+### カスタムトークン一覧
+
+| トークン | ライト | ダーク | Tailwind クラス | 用途 |
+|---|---|---|---|---|
+| `--surface` | `#f0efea` | `oklch(0.205 0 0)` | `bg-surface` | メインコンテンツ背景 |
+| `--surface-secondary` | `#f5f5f3` | `oklch(0.269 0 0)` | `bg-surface-secondary` | アクティブメニュー、Input 背景 |
+| `--surface-tertiary` | `#eeede8` | `oklch(0.235 0 0)` | `bg-surface-tertiary` | 予備 |
+| `--text-subtle` | `#6b6b67` | `oklch(0.708 0 0)` | `text-text-subtle` | メニュー項目、副テキスト |
+| `--text-muted` | `#9e9e9a` | `oklch(0.556 0 0)` | `text-text-muted` | グループラベル、プレースホルダー |
+| `--border-subtle` | `rgba(0,0,0,0.12)` | `oklch(1 0 0 / 10%)` | `border-border-subtle` | サイドバー境界、Input ボーダー |
+
+shadcn/ui 既存トークン（`--background`, `--foreground`, `--muted` 等）も引き続き使用可能。
