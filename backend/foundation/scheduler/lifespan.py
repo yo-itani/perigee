@@ -62,14 +62,14 @@ class _SessionScopedReminderService:
                     session
                 ),
                 reminder_log_repository=SqlAlchemyReminderLogRepository(session),
-                notification_sender=_get_notification_sender(),
+                notification_sender=_get_recording_notification_sender(session),
             )
             await service.execute(now)
             await session.commit()
 
 
-def _get_notification_sender() -> NotificationSender:
-    """Get the NotificationSender implementation.
+def get_base_notification_sender() -> NotificationSender:
+    """Get the base NotificationSender implementation.
 
     Returns a log-only sender until Slack integration is configured.
     """
@@ -89,3 +89,23 @@ def _get_notification_sender() -> NotificationSender:
             )
 
     return LogOnlyNotificationSender()
+
+
+def _get_recording_notification_sender(
+    session: object,
+) -> NotificationSender:
+    """Wrap the base sender with RecordingNotificationSender to persist records."""
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from contexts.notification.application.recording_notification_sender import (
+        RecordingNotificationSender,
+    )
+    from contexts.notification.infrastructure.sqlalchemy_notification_record_repository import (  # noqa: E501
+        SqlAlchemyNotificationRecordRepository,
+    )
+
+    assert isinstance(session, AsyncSession)
+    return RecordingNotificationSender(
+        inner=get_base_notification_sender(),
+        notification_record_repository=SqlAlchemyNotificationRecordRepository(session),
+    )

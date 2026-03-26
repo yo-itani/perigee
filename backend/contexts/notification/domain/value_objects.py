@@ -47,3 +47,18 @@ class ReminderLogId:
     @staticmethod
     def from_str(raw: str) -> ReminderLogId:
         return ReminderLogId(value=uuid.UUID(raw))
+
+
+@dataclass(frozen=True)
+class NotificationRecordId:
+    """Notification record identifier (UUID-based value object)."""
+
+    value: uuid.UUID
+
+    @staticmethod
+    def generate() -> NotificationRecordId:
+        return NotificationRecordId(value=uuid.uuid4())
+
+    @staticmethod
+    def from_str(raw: str) -> NotificationRecordId:
+        return NotificationRecordId(value=uuid.UUID(raw))
