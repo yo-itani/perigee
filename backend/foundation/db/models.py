@@ -23,6 +23,7 @@ from contexts.preparation.infrastructure.tables import (
 from contexts.record.infrastructure.tables import (
     ActionItemTable,  # noqa: F401
     CommentTable,  # noqa: F401
+    ReadStatusTable,  # noqa: F401
     RecordConfirmedAgendaTable,  # noqa: F401
     RecordTable,  # noqa: F401
     RecordViewerTable,  # noqa: F401
@@ -36,6 +37,7 @@ from shared.infrastructure.tables import UserTable  # noqa: F401
 __all__ = [
     "ActionItemTable",
     "AgendaCommentTable",
+    "ReadStatusTable",
     "AgendaTable",
     "NotificationRecordTable",
     "NotificationSettingTable",

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CHAR, TEXT, VARCHAR, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import CHAR, TEXT, VARCHAR, Boolean, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.mysql import DATETIME
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -136,3 +136,38 @@ class ActionItemTable(Base, TimestampMixin):
     )
     title: Mapped[str] = mapped_column(VARCHAR(200), nullable=False)
     is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class ReadStatusTable(Base, TimestampMixin):
+    """ORM model for the record_read_statuses table."""
+
+    __tablename__ = "record_read_statuses"
+    __table_args__ = (
+        UniqueConstraint(
+            "record_id",
+            "user_id",
+            name="uq_record_read_statuses_record_id_user_id",
+        ),
+        Index("idx_record_read_statuses_user_id", "user_id"),
+    )
+
+    id: Mapped[str] = mapped_column(CHAR(36), primary_key=True)
+    record_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "records.id",
+            ondelete="CASCADE",
+            name="fk_record_read_statuses_record_id",
+        ),
+        nullable=False,
+    )
+    user_id: Mapped[str] = mapped_column(
+        CHAR(36),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+            name="fk_record_read_statuses_user_id",
+        ),
+        nullable=False,
+    )
+    last_viewed_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
