@@ -167,10 +167,14 @@ from contexts.record.application.get_last_session_summary import (
     GetLastSessionSummaryQueryService,
 )
 from contexts.record.domain.value_objects import ActionItemId, RecordId
-from foundation.auth.dependencies import get_current_user_id
-from shared.domain.value_objects import UserId
+from api.dependencies import get_current_user
+from shared.domain.user import User
+from shared.domain.value_objects import UserId, UserRole
 
 ACTOR_ID = UserId(value=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+ACTOR_USER = User(
+    id=ACTOR_ID, name="Test User", email="test@example.com", role=UserRole.MEMBER
+)
 COUNTERPART_ID = uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 
 
@@ -184,7 +188,7 @@ def _build_app() -> FastAPI:
 
 def _override_auth(app: FastAPI) -> None:
     """Override the auth dependency to return a fixed user."""
-    app.dependency_overrides[get_current_user_id] = lambda: ACTOR_ID
+    app.dependency_overrides[get_current_user] = lambda: ACTOR_USER
 
 
 # -----------------------------------------------------------------------

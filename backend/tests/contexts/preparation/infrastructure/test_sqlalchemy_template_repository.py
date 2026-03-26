@@ -13,18 +13,11 @@ from contexts.preparation.infrastructure.sqlalchemy_template_repository import (
     SqlAlchemyTemplateRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
 NOW = datetime(2026, 4, 1, 10, 0)
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 def _make_template(
@@ -51,7 +44,7 @@ class TestSaveAndGetById:
         self, session: AsyncSession
     ) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         template = _make_template(organizer_id=org)
         await repo.save(template)
@@ -70,9 +63,9 @@ class TestSaveAndGetById:
         self, session: AsyncSession
     ) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
-        cp1 = await _create_user(session)
-        cp2 = await _create_user(session)
+        org = await create_test_user(session)
+        cp1 = await create_test_user(session)
+        cp2 = await create_test_user(session)
 
         template = _make_template(
             organizer_id=org,
@@ -105,9 +98,9 @@ class TestUpdateTemplate:
 
     async def test_update_name_and_lists(self, session: AsyncSession) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
-        cp1 = await _create_user(session)
-        cp2 = await _create_user(session)
+        org = await create_test_user(session)
+        cp1 = await create_test_user(session)
+        cp2 = await create_test_user(session)
 
         template = _make_template(
             organizer_id=org,
@@ -144,8 +137,8 @@ class TestUpdateTemplate:
 
     async def test_update_removes_all_children(self, session: AsyncSession) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
-        cp1 = await _create_user(session)
+        org = await create_test_user(session)
+        cp1 = await create_test_user(session)
 
         template = _make_template(
             organizer_id=org,
@@ -178,8 +171,8 @@ class TestPositionOrdering:
 
     async def test_counterpart_order_preserved(self, session: AsyncSession) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
-        users = [await _create_user(session) for _ in range(5)]
+        org = await create_test_user(session)
+        users = [await create_test_user(session) for _ in range(5)]
 
         template = _make_template(
             organizer_id=org,
@@ -195,7 +188,7 @@ class TestPositionOrdering:
 
     async def test_agenda_template_order_preserved(self, session: AsyncSession) -> None:
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         topics = [f"Topic {i}" for i in range(5)]
         agenda_templates = [AgendaTemplate(t) for t in topics]
@@ -222,8 +215,8 @@ class TestListByOrganizer:
     ) -> None:
         """Filters templates by organizer_id, excluding other users' templates."""
         repo = SqlAlchemyTemplateRepository(session)
-        org1 = await _create_user(session)
-        org2 = await _create_user(session)
+        org1 = await create_test_user(session)
+        org2 = await create_test_user(session)
 
         t1 = _make_template(organizer_id=org1, name="Org1 A")
         t2 = _make_template(organizer_id=org1, name="Org1 B")
@@ -244,8 +237,8 @@ class TestListByOrganizer:
     ) -> None:
         """Returned templates include counterparts and agenda templates."""
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         t1 = _make_template(
             organizer_id=org,
@@ -269,7 +262,7 @@ class TestListByOrganizer:
     ) -> None:
         """Returns an empty list for an organizer with no templates."""
         repo = SqlAlchemyTemplateRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         result = await repo.list_by_organizer(org)
 

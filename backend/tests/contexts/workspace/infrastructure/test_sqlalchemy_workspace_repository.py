@@ -15,18 +15,9 @@ from contexts.workspace.domain.workspace_name import WorkspaceName
 from contexts.workspace.infrastructure.sqlalchemy_workspace_repository import (
     SqlAlchemyWorkspaceRepository,
 )
-from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    """Insert a user row and return its UserId (needed for FK constraints)."""
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 def _make_workspace(
@@ -49,7 +40,7 @@ class TestSaveAndGetById:
         self, session: AsyncSession
     ) -> None:
         repo = SqlAlchemyWorkspaceRepository(session)
-        user_id = await _create_user(session)
+        user_id = await create_test_user(session)
 
         ws = _make_workspace(name="Team Alpha")
         ws.add_member(

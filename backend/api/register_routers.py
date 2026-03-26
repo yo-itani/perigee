@@ -17,8 +17,10 @@ def register_routers(app: FastAPI) -> None:
         router as preparation_router,
     )
     from contexts.record.presentation.router import router as record_router
+    from shared.presentation.router import router as users_router
 
     app.include_router(notification_router)
     app.include_router(notifications_router)
     app.include_router(preparation_router, tags=["Preparation"])
     app.include_router(record_router, tags=["Record"])
+    app.include_router(users_router)

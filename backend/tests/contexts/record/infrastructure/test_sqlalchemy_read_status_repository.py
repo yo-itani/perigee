@@ -15,17 +15,9 @@ from contexts.record.infrastructure.sqlalchemy_record_repository import (
     SqlAlchemyRecordRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    """Insert a user row and return its UserId (needed for FK constraints)."""
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 async def _create_record(
@@ -48,8 +40,8 @@ class TestSaveAndGetById:
     """save() -> get_by_id() round-trip."""
 
     async def test_save_and_restore_read_status(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)
@@ -81,8 +73,8 @@ class TestSaveUpdate:
     """save() updates an existing ReadStatus."""
 
     async def test_save_updates_last_viewed_at(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)
@@ -107,8 +99,8 @@ class TestFindByRecordAndUser:
     """find_by_record_and_user() queries."""
 
     async def test_find_existing(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)
@@ -136,8 +128,8 @@ class TestUpsert:
     """upsert() inserts or updates by (record_id, user_id)."""
 
     async def test_upsert_inserts_new_row(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)
@@ -156,8 +148,8 @@ class TestUpsert:
         assert found.last_viewed_at == datetime(2026, 3, 20, 15, 0)
 
     async def test_upsert_updates_existing_row(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)
@@ -188,8 +180,8 @@ class TestDeleteByRecordAndUser:
     """delete_by_record_and_user() removes the matching row."""
 
     async def test_delete_existing(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyReadStatusRepository(session)

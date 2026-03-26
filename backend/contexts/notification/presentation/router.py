@@ -36,8 +36,8 @@ from contexts.notification.presentation.schemas import (
     NotificationSettingResponse,
     UpdateNotificationSettingRequest,
 )
-from foundation.auth.dependencies import get_current_user_id
-from shared.domain.value_objects import UserId
+from api.dependencies import get_current_user
+from shared.domain.user import User
 
 router = APIRouter(
     prefix="/notification-settings",
@@ -52,7 +52,7 @@ notifications_router = APIRouter(
 
 @router.get("", response_model=NotificationSettingResponse)
 async def get_notification_setting(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         GetNotificationSettingUseCase,
         Depends(get_get_notification_setting_service),
@@ -61,8 +61,8 @@ async def get_notification_setting(
     """Get the current user's notification setting."""
     output = await service.execute(
         GetNotificationSettingInput(
-            user_id=current_user_id,
-            actor_id=current_user_id,
+            user_id=current_user.id,
+            actor_id=current_user.id,
         )
     )
     return NotificationSettingResponse(
@@ -75,7 +75,7 @@ async def get_notification_setting(
 @router.put("", response_model=NotificationSettingResponse)
 async def update_notification_setting(
     body: UpdateNotificationSettingRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         UpdateNotificationSettingUseCase,
         Depends(get_update_notification_setting_service),
@@ -84,8 +84,8 @@ async def update_notification_setting(
     """Update the current user's notification setting."""
     output = await service.execute(
         UpdateNotificationSettingInput(
-            user_id=current_user_id,
-            actor_id=current_user_id,
+            user_id=current_user.id,
+            actor_id=current_user.id,
             reminder_minutes_before=body.reminder_minutes_before,
             is_enabled=body.is_enabled,
         )
@@ -99,7 +99,7 @@ async def update_notification_setting(
 
 @notifications_router.get("", response_model=NotificationListResponse)
 async def list_notifications(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListNotificationsUseCase,
         Depends(get_list_notifications_service),
@@ -113,7 +113,7 @@ async def list_notifications(
     """
     output = await service.execute(
         ListNotificationsInput(
-            actor_id=current_user_id,
+            actor_id=current_user.id,
             unread_only=unread,
         )
     )
@@ -138,7 +138,7 @@ async def list_notifications(
 @notifications_router.post("/{notification_id}/read", status_code=204)
 async def mark_notification_as_read(
     notification_id: uuid.UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         MarkNotificationAsReadUseCase,
         Depends(get_mark_notification_as_read_service),
@@ -148,7 +148,7 @@ async def mark_notification_as_read(
     await service.execute(
         MarkNotificationAsReadInput(
             notification_id=NotificationRecordId(value=notification_id),
-            actor_id=current_user_id,
+            actor_id=current_user.id,
         )
     )
     return Response(status_code=204)

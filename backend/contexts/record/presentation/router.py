@@ -134,7 +134,8 @@ from contexts.record.presentation.schemas import (
     UpdateMemoRequest,
     UpdateMemoResponse,
 )
-from foundation.auth.dependencies import get_current_user_id
+from api.dependencies import get_current_user
+from shared.domain.user import User
 from shared.domain.value_objects import UserId
 
 router = APIRouter()
@@ -152,15 +153,15 @@ router = APIRouter()
 )
 async def create_post_hoc_record(
     body: CreatePostHocRecordRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         CreatePostHocRecordUseCase, Depends(get_create_post_hoc_record_use_case)
     ],
 ) -> CreatePostHocRecordResponse:
     """Create a post-hoc record (without prior scheduling)."""
     input_dto = CreatePostHocRecordInput(
-        actor_id=current_user_id,
-        organizer_id=current_user_id,
+        actor_id=current_user.id,
+        organizer_id=current_user.id,
         counterpart_id=UserId(value=body.counterpart_id),
         conducted_at=body.conducted_at,
     )
@@ -180,7 +181,7 @@ async def create_post_hoc_record(
 )
 async def create_record_from_schedule(
     body: CreateRecordFromScheduleRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         CreateRecordFromScheduleUseCase,
         Depends(get_create_record_from_schedule_use_case),
@@ -189,7 +190,7 @@ async def create_record_from_schedule(
     """Create a record from a confirmed schedule."""
     input_dto = CreateRecordFromScheduleInput(
         schedule_id=ScheduleId(value=body.schedule_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         conducted_at=body.conducted_at,
     )
     output = await use_case.execute(input_dto)
@@ -208,13 +209,13 @@ async def create_record_from_schedule(
 async def update_memo(
     record_id: UUID,
     body: UpdateMemoRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[UpdateMemoUseCase, Depends(get_update_memo_use_case)],
 ) -> UpdateMemoResponse:
     """Update the memo of a record."""
     input_dto = UpdateMemoInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         memo=Memo(body.memo),
     )
     output = await use_case.execute(input_dto)
@@ -233,14 +234,14 @@ async def update_memo(
 async def confirm_agenda(
     record_id: UUID,
     agenda_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[ConfirmAgendaUseCase, Depends(get_confirm_agenda_use_case)],
 ) -> ConfirmAgendaResponse:
     """Confirm (check) an agenda item during a 1-on-1."""
     input_dto = ConfirmAgendaInput(
         record_id=RecordId(value=record_id),
         agenda_id=AgendaId(value=agenda_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return ConfirmAgendaResponse(
@@ -262,13 +263,13 @@ async def confirm_agenda(
 async def add_action_item(
     record_id: UUID,
     body: AddActionItemRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[AddActionItemUseCase, Depends(get_add_action_item_use_case)],
 ) -> AddActionItemResponse:
     """Add an action item to a record."""
     input_dto = AddActionItemInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         title=ActionItemTitle(body.title),
     )
     output = await use_case.execute(input_dto)
@@ -287,7 +288,7 @@ async def add_action_item(
 async def delete_action_item(
     record_id: UUID,
     action_item_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         DeleteActionItemUseCase, Depends(get_delete_action_item_use_case)
     ],
@@ -296,7 +297,7 @@ async def delete_action_item(
     input_dto = DeleteActionItemInput(
         record_id=RecordId(value=record_id),
         action_item_id=ActionItemId(value=action_item_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return DeleteActionItemResponse(action_item_id=output.action_item_id.value)
@@ -313,13 +314,13 @@ async def delete_action_item(
 )
 async def save_draft(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[SaveDraftUseCase, Depends(get_save_draft_use_case)],
 ) -> SaveDraftResponse:
     """Save a record as draft."""
     input_dto = SaveDraftInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return SaveDraftResponse(record_id=output.record_id.value)
@@ -335,13 +336,13 @@ async def save_draft(
     response_model=ListDraftRecordsResponse,
 )
 async def list_draft_records(
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListDraftRecordsQueryService, Depends(get_list_draft_records_service)
     ],
 ) -> ListDraftRecordsResponse:
     """List draft (unpublished) records for the current user."""
-    output = await service.execute(ListDraftRecordsInput(actor_id=current_user_id))
+    output = await service.execute(ListDraftRecordsInput(actor_id=current_user.id))
     return ListDraftRecordsResponse(
         items=[
             DraftRecordItemSchema(
@@ -364,7 +365,7 @@ async def list_draft_records(
 async def list_oneonone_history(
     organizer_id: Annotated[UUID, Query()],
     counterpart_id: Annotated[UUID, Query()],
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     service: Annotated[
         ListOneOnOneHistoryQueryService, Depends(get_list_oneonone_history_service)
     ],
@@ -373,7 +374,7 @@ async def list_oneonone_history(
 ) -> ListOneOnOneHistoryResponse:
     """List 1-on-1 history for an organizer-counterpart pair."""
     input_dto = ListOneOnOneHistoryInput(
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         organizer_id=UserId(value=organizer_id),
         counterpart_id=UserId(value=counterpart_id),
         offset=offset,
@@ -402,7 +403,7 @@ async def list_oneonone_history(
 )
 async def get_record_detail(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         GetRecordDetailUseCase, Depends(get_get_record_detail_use_case)
     ],
@@ -410,7 +411,7 @@ async def get_record_detail(
     """Get record detail."""
     input_dto = GetRecordDetailInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return GetRecordDetailResponse(
@@ -443,7 +444,7 @@ async def get_record_detail(
 )
 async def list_record_comments(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         ListRecordCommentsUseCase, Depends(get_list_record_comments_use_case)
     ],
@@ -451,7 +452,7 @@ async def list_record_comments(
     """List comments for a published record."""
     input_dto = ListRecordCommentsInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return ListRecordCommentsResponse(
@@ -473,13 +474,13 @@ async def list_record_comments(
 )
 async def get_viewers(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[GetViewersUseCase, Depends(get_get_viewers_use_case)],
 ) -> GetViewersResponse:
     """Get viewers for a record."""
     input_dto = GetViewersInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return GetViewersResponse(
@@ -495,13 +496,13 @@ async def get_viewers(
 async def add_comment(
     record_id: UUID,
     body: AddCommentRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[AddCommentUseCase, Depends(get_add_comment_use_case)],
 ) -> AddCommentResponse:
     """Add a comment to a published record."""
     input_dto = AddCommentInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         body=CommentBody(body.body),
     )
     output = await use_case.execute(input_dto)
@@ -514,7 +515,7 @@ async def add_comment(
 )
 async def complete_action_item(
     action_item_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         CompleteActionItemUseCase, Depends(get_complete_action_item_use_case)
     ],
@@ -522,7 +523,7 @@ async def complete_action_item(
     """Complete an action item."""
     input_dto = CompleteActionItemInput(
         action_item_id=ActionItemId(value=action_item_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return CompleteActionItemResponse(action_item_id=output.action_item_id.value)
@@ -539,7 +540,7 @@ async def complete_action_item(
 )
 async def get_suggested_viewers(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         SuggestDefaultViewersUseCase, Depends(get_suggest_default_viewers_use_case)
     ],
@@ -547,7 +548,7 @@ async def get_suggested_viewers(
     """Suggest default viewers based on the counterpart's Captain hierarchy."""
     input_dto = SuggestDefaultViewersInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     output = await use_case.execute(input_dto)
     return SuggestedViewersResponse(
@@ -562,13 +563,13 @@ async def get_suggested_viewers(
 async def set_viewers(
     record_id: UUID,
     body: SetViewersRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[SetViewersUseCase, Depends(get_set_viewers_use_case)],
 ) -> SetViewersResponse:
     """Set the viewers list for a record."""
     input_dto = SetViewersInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         viewer_ids=[UserId(value=vid) for vid in body.viewer_ids],
     )
     output = await use_case.execute(input_dto)
@@ -582,13 +583,13 @@ async def set_viewers(
 async def publish_record(
     record_id: UUID,
     body: PublishRecordRequest,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[PublishRecordUseCase, Depends(get_publish_record_use_case)],
 ) -> PublishRecordResponse:
     """Publish a record (DRAFT -> PUBLISHED)."""
     input_dto = PublishRecordInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
         viewer_ids=[UserId(value=vid) for vid in body.viewer_ids],
     )
     output = await use_case.execute(input_dto)
@@ -606,7 +607,7 @@ async def publish_record(
 )
 async def mark_record_as_viewed(
     record_id: UUID,
-    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    current_user: Annotated[User, Depends(get_current_user)],
     use_case: Annotated[
         MarkRecordAsViewedUseCase, Depends(get_mark_record_as_viewed_use_case)
     ],
@@ -614,7 +615,7 @@ async def mark_record_as_viewed(
     """Mark a record as viewed by the current user."""
     input_dto = MarkRecordAsViewedInput(
         record_id=RecordId(value=record_id),
-        actor_id=current_user_id,
+        actor_id=current_user.id,
     )
     await use_case.execute(input_dto)
     return MarkRecordAsViewedResponse(record_id=record_id)

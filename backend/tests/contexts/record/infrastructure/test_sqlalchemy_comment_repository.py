@@ -17,17 +17,9 @@ from contexts.record.infrastructure.sqlalchemy_record_repository import (
     SqlAlchemyRecordRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    """Insert a user row and return its UserId (needed for FK constraints)."""
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 async def _create_record(
@@ -50,8 +42,8 @@ class TestSaveAndGetById:
     """save() -> get_by_id() round-trip."""
 
     async def test_save_and_restore_comment(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyCommentRepository(session)
@@ -84,8 +76,8 @@ class TestInsertOnly:
     """Comment is insert-only: save() raises on duplicate."""
 
     async def test_save_existing_comment_raises(self, session: AsyncSession) -> None:
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         record = await _create_record(session, organizer, counterpart)
 
         repo = SqlAlchemyCommentRepository(session)
