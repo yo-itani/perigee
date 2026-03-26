@@ -15,117 +15,117 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from api.exception_handlers import register_exception_handlers
-from contexts.preparation.application.accept_consultation_request_service import (
-    AcceptConsultationRequestService,
+from contexts.preparation.application.accept_consultation_request_use_case import (
+    AcceptConsultationRequestUseCase,
 )
-from contexts.preparation.application.accept_consultation_request_service import (
+from contexts.preparation.application.accept_consultation_request_use_case import (
     ScheduleNotFoundError as AcceptScheduleNotFoundError,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     AddAgendaCommentOutput,
-    AddAgendaCommentService,
+    AddAgendaCommentUseCase,
     UnauthorizedAgendaCommentError,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     AgendaNotFoundError as AgendaCommentAgendaNotFoundError,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     AddAgendaOutput,
-    AddAgendaService,
+    AddAgendaUseCase,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     ScheduleNotFoundError as AddAgendaScheduleNotFoundError,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     UnauthorizedAgendaOperationError as AddAgendaUnauthorizedError,
 )
-from contexts.preparation.application.cancel_schedule_service import (
-    CancelScheduleService,
+from contexts.preparation.application.cancel_schedule_use_case import (
+    CancelScheduleUseCase,
 )
-from contexts.preparation.application.cancel_schedule_service import (
+from contexts.preparation.application.cancel_schedule_use_case import (
     ScheduleNotFoundError as CancelScheduleNotFoundError,
 )
-from contexts.preparation.application.create_schedule_group_from_past_service import (
+from contexts.preparation.application.create_schedule_group_from_past_use_case import (
     CreateScheduleGroupFromPastOutput,
-    CreateScheduleGroupFromPastService,
+    CreateScheduleGroupFromPastUseCase,
 )
-from contexts.preparation.application.create_schedule_group_from_template_service import (  # noqa: E501
+from contexts.preparation.application.create_schedule_group_from_template_use_case import (  # noqa: E501
     CreateScheduleGroupFromTemplateOutput,
-    CreateScheduleGroupFromTemplateService,
+    CreateScheduleGroupFromTemplateUseCase,
 )
-from contexts.preparation.application.create_schedule_group_service import (
+from contexts.preparation.application.create_schedule_group_use_case import (
     CreateScheduleGroupOutput,
-    CreateScheduleGroupService,
+    CreateScheduleGroupUseCase,
 )
-from contexts.preparation.application.create_schedule_service import (
+from contexts.preparation.application.create_schedule_use_case import (
     CreateScheduleOutput,
-    CreateScheduleService,
+    CreateScheduleUseCase,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     AgendaNotFoundError as DeleteAgendaNotFoundError,
 )
-from contexts.preparation.application.delete_agenda_service import (
-    DeleteAgendaService,
+from contexts.preparation.application.delete_agenda_use_case import (
+    DeleteAgendaUseCase,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     UnauthorizedAgendaOperationError as DeleteAgendaUnauthorizedError,
 )
-from contexts.preparation.application.get_schedule_detail_service import (
+from contexts.preparation.application.get_schedule_detail_query_service import (
     GetScheduleDetailOutput,
-    GetScheduleDetailService,
+    GetScheduleDetailQueryService,
 )
-from contexts.preparation.application.get_schedule_detail_service import (
+from contexts.preparation.application.get_schedule_detail_query_service import (
     ScheduleNotFoundError as GetScheduleDetailNotFoundError,
 )
-from contexts.preparation.application.get_template_service import (
+from contexts.preparation.application.get_template_query_service import (
     GetTemplateOutput,
-    GetTemplateService,
+    GetTemplateQueryService,
     TemplateNotFoundError,
     UnauthorizedTemplateAccessError,
 )
-from contexts.preparation.application.list_schedule_agendas_service import (
+from contexts.preparation.application.list_schedule_agendas_query_service import (
     ListScheduleAgendasOutput,
-    ListScheduleAgendasService,
+    ListScheduleAgendasQueryService,
 )
-from contexts.preparation.application.list_schedule_agendas_service import (
+from contexts.preparation.application.list_schedule_agendas_query_service import (
     ScheduleNotFoundError as ListAgendasScheduleNotFoundError,
 )
-from contexts.preparation.application.list_templates_service import (
+from contexts.preparation.application.list_templates_query_service import (
     ListTemplatesOutput,
-    ListTemplatesService,
+    ListTemplatesQueryService,
     TemplateListItem,
 )
-from contexts.preparation.application.list_upcoming_schedules_service import (
+from contexts.preparation.application.list_upcoming_schedules_query_service import (
     ListUpcomingSchedulesOutput,
-    ListUpcomingSchedulesService,
+    ListUpcomingSchedulesQueryService,
     UpcomingScheduleItem,
 )
-from contexts.preparation.application.reject_consultation_request_service import (
-    RejectConsultationRequestService,
+from contexts.preparation.application.reject_consultation_request_use_case import (
+    RejectConsultationRequestUseCase,
 )
-from contexts.preparation.application.reject_consultation_request_service import (
+from contexts.preparation.application.reject_consultation_request_use_case import (
     ScheduleNotFoundError as RejectScheduleNotFoundError,
 )
-from contexts.preparation.application.rename_schedule_service import (
-    RenameScheduleService,
+from contexts.preparation.application.rename_schedule_use_case import (
+    RenameScheduleUseCase,
     UnauthorizedRenameError,
 )
-from contexts.preparation.application.rename_schedule_service import (
+from contexts.preparation.application.rename_schedule_use_case import (
     ScheduleNotFoundError as RenameScheduleNotFoundError,
 )
-from contexts.preparation.application.reschedule_service import (
-    RescheduleService,
+from contexts.preparation.application.reschedule_use_case import (
+    RescheduleUseCase,
 )
-from contexts.preparation.application.reschedule_service import (
+from contexts.preparation.application.reschedule_use_case import (
     ScheduleNotFoundError as RescheduleScheduleNotFoundError,
 )
-from contexts.preparation.application.save_template_service import (
+from contexts.preparation.application.save_template_use_case import (
     SaveTemplateOutput,
-    SaveTemplateService,
+    SaveTemplateUseCase,
 )
-from contexts.preparation.application.send_consultation_request_service import (
+from contexts.preparation.application.send_consultation_request_use_case import (
     SendConsultationRequestOutput,
-    SendConsultationRequestService,
+    SendConsultationRequestUseCase,
 )
 from contexts.preparation.domain.exceptions import (
     UnauthorizedScheduleOperationError,
@@ -139,26 +139,26 @@ from contexts.preparation.domain.value_objects import (
     TemplateId,
 )
 from contexts.preparation.presentation.dependencies import (
-    get_accept_consultation_request_service,
-    get_add_agenda_comment_service,
-    get_add_agenda_service,
-    get_cancel_schedule_service,
-    get_create_schedule_group_from_past_service,
-    get_create_schedule_group_from_template_service,
-    get_create_schedule_group_service,
-    get_create_schedule_service,
-    get_delete_agenda_service,
+    get_accept_consultation_request_use_case,
+    get_add_agenda_comment_use_case,
+    get_add_agenda_use_case,
+    get_cancel_schedule_use_case,
+    get_create_schedule_group_from_past_use_case,
+    get_create_schedule_group_from_template_use_case,
+    get_create_schedule_group_use_case,
+    get_create_schedule_use_case,
+    get_delete_agenda_use_case,
     get_get_last_session_summary_service,
-    get_get_schedule_detail_service,
-    get_get_template_service,
-    get_list_schedule_agendas_service,
-    get_list_templates_service,
-    get_list_upcoming_schedules_service,
-    get_reject_consultation_request_service,
-    get_rename_schedule_service,
-    get_reschedule_service,
-    get_save_template_service,
-    get_send_consultation_request_service,
+    get_get_schedule_detail_query_service,
+    get_get_template_query_service,
+    get_list_schedule_agendas_query_service,
+    get_list_templates_query_service,
+    get_list_upcoming_schedules_query_service,
+    get_reject_consultation_request_use_case,
+    get_rename_schedule_use_case,
+    get_reschedule_use_case,
+    get_save_template_use_case,
+    get_send_consultation_request_use_case,
 )
 from contexts.preparation.presentation.router import router
 from contexts.record.application.get_last_session_summary import (
@@ -197,14 +197,14 @@ class TestCreateScheduleGroup:
 
     async def test_success_returns_201(self) -> None:
         group_id = ScheduleGroupId.generate()
-        mock_service = AsyncMock(spec=CreateScheduleGroupService)
+        mock_service = AsyncMock(spec=CreateScheduleGroupUseCase)
         mock_service.execute.return_value = CreateScheduleGroupOutput(
             schedule_group_id=group_id,
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_create_schedule_group_service] = lambda: (
+        app.dependency_overrides[get_create_schedule_group_use_case] = lambda: (
             mock_service
         )
 
@@ -253,14 +253,14 @@ class TestCreateScheduleGroupFromTemplate:
 
     async def test_success_returns_201(self) -> None:
         group_id = ScheduleGroupId.generate()
-        mock_service = AsyncMock(spec=CreateScheduleGroupFromTemplateService)
+        mock_service = AsyncMock(spec=CreateScheduleGroupFromTemplateUseCase)
         mock_service.execute.return_value = CreateScheduleGroupFromTemplateOutput(
             schedule_group_id=group_id
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_create_schedule_group_from_template_service] = (
+        app.dependency_overrides[get_create_schedule_group_from_template_use_case] = (
             lambda: mock_service
         )
 
@@ -310,14 +310,14 @@ class TestCreateScheduleGroupFromPast:
 
     async def test_success_returns_201(self) -> None:
         group_id = ScheduleGroupId.generate()
-        mock_service = AsyncMock(spec=CreateScheduleGroupFromPastService)
+        mock_service = AsyncMock(spec=CreateScheduleGroupFromPastUseCase)
         mock_service.execute.return_value = CreateScheduleGroupFromPastOutput(
             schedule_group_id=group_id
         )
 
         app = _build_app()
         _override_auth(app)
-        _dep = get_create_schedule_group_from_past_service
+        _dep = get_create_schedule_group_from_past_use_case
         app.dependency_overrides[_dep] = lambda: mock_service
 
         source_id = str(uuid.uuid4())
@@ -366,14 +366,14 @@ class TestCreateSchedule:
 
     async def test_success_returns_201(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=CreateScheduleService)
+        mock_service = AsyncMock(spec=CreateScheduleUseCase)
         mock_service.execute.return_value = CreateScheduleOutput(
             schedule_id=schedule_id,
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_create_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_create_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -415,14 +415,14 @@ class TestSendConsultationRequest:
 
     async def test_success_returns_201(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=SendConsultationRequestService)
+        mock_service = AsyncMock(spec=SendConsultationRequestUseCase)
         mock_service.execute.return_value = SendConsultationRequestOutput(
             schedule_id=schedule_id,
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_send_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_send_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -470,7 +470,7 @@ class TestListUpcomingSchedules:
     async def test_success_returns_200(self) -> None:
         schedule_id = ScheduleId.generate()
         now = datetime.now(UTC)
-        mock_service = AsyncMock(spec=ListUpcomingSchedulesService)
+        mock_service = AsyncMock(spec=ListUpcomingSchedulesQueryService)
         mock_service.execute.return_value = ListUpcomingSchedulesOutput(
             schedules=[
                 UpcomingScheduleItem(
@@ -487,7 +487,7 @@ class TestListUpcomingSchedules:
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_list_upcoming_schedules_service] = lambda: (
+        app.dependency_overrides[get_list_upcoming_schedules_query_service] = lambda: (
             mock_service
         )
 
@@ -522,7 +522,7 @@ class TestGetScheduleDetail:
     async def test_success_returns_200(self) -> None:
         schedule_id = ScheduleId.generate()
         now = datetime.now(UTC)
-        mock_service = AsyncMock(spec=GetScheduleDetailService)
+        mock_service = AsyncMock(spec=GetScheduleDetailQueryService)
         mock_service.execute.return_value = GetScheduleDetailOutput(
             schedule_id=schedule_id,
             organizer_id=ACTOR_ID,
@@ -537,7 +537,9 @@ class TestGetScheduleDetail:
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_schedule_detail_service] = lambda: mock_service
+        app.dependency_overrides[get_get_schedule_detail_query_service] = (
+            lambda: mock_service
+        )
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -551,12 +553,14 @@ class TestGetScheduleDetail:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=GetScheduleDetailService)
+        mock_service = AsyncMock(spec=GetScheduleDetailQueryService)
         mock_service.execute.side_effect = GetScheduleDetailNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_schedule_detail_service] = lambda: mock_service
+        app.dependency_overrides[get_get_schedule_detail_query_service] = (
+            lambda: mock_service
+        )
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -565,14 +569,16 @@ class TestGetScheduleDetail:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=GetScheduleDetailService)
+        mock_service = AsyncMock(spec=GetScheduleDetailQueryService)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer or counterpart can view schedule details."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_schedule_detail_service] = lambda: mock_service
+        app.dependency_overrides[get_get_schedule_detail_query_service] = (
+            lambda: mock_service
+        )
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -598,14 +604,14 @@ class TestListScheduleAgendas:
     """Tests for GET /schedules/{schedule_id}/agendas."""
 
     async def test_success_returns_200(self) -> None:
-        mock_service = AsyncMock(spec=ListScheduleAgendasService)
+        mock_service = AsyncMock(spec=ListScheduleAgendasQueryService)
         mock_service.execute.return_value = ListScheduleAgendasOutput(
             agendas=[],
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_list_schedule_agendas_service] = lambda: (
+        app.dependency_overrides[get_list_schedule_agendas_query_service] = lambda: (
             mock_service
         )
 
@@ -618,12 +624,12 @@ class TestListScheduleAgendas:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=ListScheduleAgendasService)
+        mock_service = AsyncMock(spec=ListScheduleAgendasQueryService)
         mock_service.execute.side_effect = ListAgendasScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_list_schedule_agendas_service] = lambda: (
+        app.dependency_overrides[get_list_schedule_agendas_query_service] = lambda: (
             mock_service
         )
 
@@ -634,14 +640,14 @@ class TestListScheduleAgendas:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=ListScheduleAgendasService)
+        mock_service = AsyncMock(spec=ListScheduleAgendasQueryService)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer or counterpart can view agendas."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_list_schedule_agendas_service] = lambda: (
+        app.dependency_overrides[get_list_schedule_agendas_query_service] = lambda: (
             mock_service
         )
 
@@ -669,12 +675,12 @@ class TestConfirmSchedule:
     """Tests for POST /schedules/{schedule_id}/confirm."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=AcceptConsultationRequestService)
+        mock_service = AsyncMock(spec=AcceptConsultationRequestUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_accept_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_accept_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -687,12 +693,12 @@ class TestConfirmSchedule:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=AcceptConsultationRequestService)
+        mock_service = AsyncMock(spec=AcceptConsultationRequestUseCase)
         mock_service.execute.side_effect = AcceptScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_accept_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_accept_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -703,14 +709,14 @@ class TestConfirmSchedule:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=AcceptConsultationRequestService)
+        mock_service = AsyncMock(spec=AcceptConsultationRequestUseCase)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer can accept a consultation request."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_accept_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_accept_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -738,12 +744,12 @@ class TestRejectSchedule:
     """Tests for POST /schedules/{schedule_id}/reject."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=RejectConsultationRequestService)
+        mock_service = AsyncMock(spec=RejectConsultationRequestUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reject_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_reject_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -755,12 +761,12 @@ class TestRejectSchedule:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=RejectConsultationRequestService)
+        mock_service = AsyncMock(spec=RejectConsultationRequestUseCase)
         mock_service.execute.side_effect = RejectScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reject_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_reject_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -771,14 +777,14 @@ class TestRejectSchedule:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=RejectConsultationRequestService)
+        mock_service = AsyncMock(spec=RejectConsultationRequestUseCase)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer can reject a consultation request."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reject_consultation_request_service] = lambda: (
+        app.dependency_overrides[get_reject_consultation_request_use_case] = lambda: (
             mock_service
         )
 
@@ -806,12 +812,12 @@ class TestReschedule:
     """Tests for POST /schedules/{schedule_id}/reschedule."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=RescheduleService)
+        mock_service = AsyncMock(spec=RescheduleUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reschedule_service] = lambda: mock_service
+        app.dependency_overrides[get_reschedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -824,12 +830,12 @@ class TestReschedule:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=RescheduleService)
+        mock_service = AsyncMock(spec=RescheduleUseCase)
         mock_service.execute.side_effect = RescheduleScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reschedule_service] = lambda: mock_service
+        app.dependency_overrides[get_reschedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -841,14 +847,14 @@ class TestReschedule:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=RescheduleService)
+        mock_service = AsyncMock(spec=RescheduleUseCase)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer or counterpart can reschedule."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_reschedule_service] = lambda: mock_service
+        app.dependency_overrides[get_reschedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -880,12 +886,12 @@ class TestCancelSchedule:
     """Tests for POST /schedules/{schedule_id}/cancel."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=CancelScheduleService)
+        mock_service = AsyncMock(spec=CancelScheduleUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_cancel_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_cancel_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -895,12 +901,12 @@ class TestCancelSchedule:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=CancelScheduleService)
+        mock_service = AsyncMock(spec=CancelScheduleUseCase)
         mock_service.execute.side_effect = CancelScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_cancel_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_cancel_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -909,14 +915,14 @@ class TestCancelSchedule:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=CancelScheduleService)
+        mock_service = AsyncMock(spec=CancelScheduleUseCase)
         mock_service.execute.side_effect = UnauthorizedScheduleOperationError(
             "Only the organizer or counterpart can cancel."
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_cancel_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_cancel_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -942,12 +948,12 @@ class TestRenameSchedule:
     """Tests for PUT /schedules/{schedule_id}/title."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=RenameScheduleService)
+        mock_service = AsyncMock(spec=RenameScheduleUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_rename_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_rename_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -960,12 +966,12 @@ class TestRenameSchedule:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=RenameScheduleService)
+        mock_service = AsyncMock(spec=RenameScheduleUseCase)
         mock_service.execute.side_effect = RenameScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_rename_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_rename_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -977,12 +983,12 @@ class TestRenameSchedule:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=RenameScheduleService)
+        mock_service = AsyncMock(spec=RenameScheduleUseCase)
         mock_service.execute.side_effect = UnauthorizedRenameError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_rename_schedule_service] = lambda: mock_service
+        app.dependency_overrides[get_rename_schedule_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1015,12 +1021,12 @@ class TestAddAgenda:
 
     async def test_success_returns_201(self) -> None:
         agenda_id = AgendaId.generate()
-        mock_service = AsyncMock(spec=AddAgendaService)
+        mock_service = AsyncMock(spec=AddAgendaUseCase)
         mock_service.execute.return_value = AddAgendaOutput(agenda_id=agenda_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1034,12 +1040,12 @@ class TestAddAgenda:
 
     async def test_not_found_returns_404(self) -> None:
         schedule_id = ScheduleId.generate()
-        mock_service = AsyncMock(spec=AddAgendaService)
+        mock_service = AsyncMock(spec=AddAgendaUseCase)
         mock_service.execute.side_effect = AddAgendaScheduleNotFoundError(schedule_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1051,12 +1057,12 @@ class TestAddAgenda:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=AddAgendaService)
+        mock_service = AsyncMock(spec=AddAgendaUseCase)
         mock_service.execute.side_effect = AddAgendaUnauthorizedError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1088,12 +1094,12 @@ class TestDeleteAgenda:
     """Tests for DELETE /schedules/{schedule_id}/agendas/{agenda_id}."""
 
     async def test_success_returns_204(self) -> None:
-        mock_service = AsyncMock(spec=DeleteAgendaService)
+        mock_service = AsyncMock(spec=DeleteAgendaUseCase)
         mock_service.execute.return_value = None
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_delete_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_delete_agenda_use_case] = lambda: mock_service
 
         schedule_id = uuid.uuid4()
         agenda_id = uuid.uuid4()
@@ -1107,12 +1113,12 @@ class TestDeleteAgenda:
 
     async def test_agenda_not_found_returns_404(self) -> None:
         agenda_id = AgendaId.generate()
-        mock_service = AsyncMock(spec=DeleteAgendaService)
+        mock_service = AsyncMock(spec=DeleteAgendaUseCase)
         mock_service.execute.side_effect = DeleteAgendaNotFoundError(agenda_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_delete_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_delete_agenda_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1123,12 +1129,12 @@ class TestDeleteAgenda:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=DeleteAgendaService)
+        mock_service = AsyncMock(spec=DeleteAgendaUseCase)
         mock_service.execute.side_effect = DeleteAgendaUnauthorizedError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_delete_agenda_service] = lambda: mock_service
+        app.dependency_overrides[get_delete_agenda_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1159,14 +1165,14 @@ class TestAddAgendaComment:
 
     async def test_success_returns_201(self) -> None:
         comment_id = CommentId.generate()
-        mock_service = AsyncMock(spec=AddAgendaCommentService)
+        mock_service = AsyncMock(spec=AddAgendaCommentUseCase)
         mock_service.execute.return_value = AddAgendaCommentOutput(
             comment_id=comment_id
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_comment_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_comment_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1180,12 +1186,12 @@ class TestAddAgendaComment:
 
     async def test_agenda_not_found_returns_404(self) -> None:
         agenda_id = AgendaId.generate()
-        mock_service = AsyncMock(spec=AddAgendaCommentService)
+        mock_service = AsyncMock(spec=AddAgendaCommentUseCase)
         mock_service.execute.side_effect = AgendaCommentAgendaNotFoundError(agenda_id)
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_comment_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_comment_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1197,12 +1203,12 @@ class TestAddAgendaComment:
         assert response.status_code == 404
 
     async def test_unauthorized_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=AddAgendaCommentService)
+        mock_service = AsyncMock(spec=AddAgendaCommentUseCase)
         mock_service.execute.side_effect = UnauthorizedAgendaCommentError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_add_agenda_comment_service] = lambda: mock_service
+        app.dependency_overrides[get_add_agenda_comment_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1325,7 +1331,7 @@ class TestListTemplates:
     async def test_success_returns_200(self) -> None:
         template_id = TemplateId.generate()
         now = datetime.now(UTC)
-        mock_service = AsyncMock(spec=ListTemplatesService)
+        mock_service = AsyncMock(spec=ListTemplatesQueryService)
         mock_service.execute.return_value = ListTemplatesOutput(
             templates=[
                 TemplateListItem(
@@ -1343,7 +1349,9 @@ class TestListTemplates:
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_list_templates_service] = lambda: mock_service
+        app.dependency_overrides[get_list_templates_query_service] = (
+            lambda: mock_service
+        )
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1375,7 +1383,7 @@ class TestGetTemplate:
     async def test_success_returns_200(self) -> None:
         template_id = TemplateId.generate()
         now = datetime.now(UTC)
-        mock_service = AsyncMock(spec=GetTemplateService)
+        mock_service = AsyncMock(spec=GetTemplateQueryService)
         mock_service.execute.return_value = GetTemplateOutput(
             template_id=template_id,
             organizer_id=ACTOR_ID,
@@ -1388,7 +1396,7 @@ class TestGetTemplate:
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_template_service] = lambda: mock_service
+        app.dependency_overrides[get_get_template_query_service] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1403,12 +1411,12 @@ class TestGetTemplate:
         assert body["name"] == "My template"
 
     async def test_not_found_returns_404(self) -> None:
-        mock_service = AsyncMock(spec=GetTemplateService)
+        mock_service = AsyncMock(spec=GetTemplateQueryService)
         mock_service.execute.side_effect = TemplateNotFoundError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_template_service] = lambda: mock_service
+        app.dependency_overrides[get_get_template_query_service] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1419,12 +1427,12 @@ class TestGetTemplate:
         assert response.status_code == 404
 
     async def test_unauthorized_access_returns_403(self) -> None:
-        mock_service = AsyncMock(spec=GetTemplateService)
+        mock_service = AsyncMock(spec=GetTemplateQueryService)
         mock_service.execute.side_effect = UnauthorizedTemplateAccessError()
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_get_template_service] = lambda: mock_service
+        app.dependency_overrides[get_get_template_query_service] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -1455,14 +1463,14 @@ class TestSaveTemplate:
 
     async def test_success_returns_201(self) -> None:
         template_id = TemplateId.generate()
-        mock_service = AsyncMock(spec=SaveTemplateService)
+        mock_service = AsyncMock(spec=SaveTemplateUseCase)
         mock_service.execute.return_value = SaveTemplateOutput(
             template_id=template_id,
         )
 
         app = _build_app()
         _override_auth(app)
-        app.dependency_overrides[get_save_template_service] = lambda: mock_service
+        app.dependency_overrides[get_save_template_use_case] = lambda: mock_service
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:

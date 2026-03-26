@@ -7,84 +7,84 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from contexts.preparation.application.accept_consultation_request_service import (
+from contexts.preparation.application.accept_consultation_request_use_case import (
     AcceptConsultationRequestInput,
-    AcceptConsultationRequestService,
+    AcceptConsultationRequestUseCase,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     AddAgendaCommentInput,
-    AddAgendaCommentService,
+    AddAgendaCommentUseCase,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     AddAgendaInput,
-    AddAgendaService,
+    AddAgendaUseCase,
 )
-from contexts.preparation.application.cancel_schedule_service import (
+from contexts.preparation.application.cancel_schedule_use_case import (
     CancelScheduleInput,
-    CancelScheduleService,
+    CancelScheduleUseCase,
 )
-from contexts.preparation.application.create_schedule_group_from_past_service import (
+from contexts.preparation.application.create_schedule_group_from_past_use_case import (
     CreateScheduleGroupFromPastInput,
-    CreateScheduleGroupFromPastService,
+    CreateScheduleGroupFromPastUseCase,
     PastCounterpartSchedule,
 )
-from contexts.preparation.application.create_schedule_group_from_template_service import (  # noqa: E501
+from contexts.preparation.application.create_schedule_group_from_template_use_case import (  # noqa: E501
     CreateScheduleGroupFromTemplateInput,
-    CreateScheduleGroupFromTemplateService,
+    CreateScheduleGroupFromTemplateUseCase,
     TemplateCounterpartSchedule,
 )
-from contexts.preparation.application.create_schedule_group_service import (
+from contexts.preparation.application.create_schedule_group_use_case import (
     CounterpartSchedule,
     CreateScheduleGroupInput,
-    CreateScheduleGroupService,
+    CreateScheduleGroupUseCase,
 )
-from contexts.preparation.application.create_schedule_service import (
+from contexts.preparation.application.create_schedule_use_case import (
     CreateScheduleInput,
-    CreateScheduleService,
+    CreateScheduleUseCase,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     DeleteAgendaInput,
-    DeleteAgendaService,
+    DeleteAgendaUseCase,
 )
-from contexts.preparation.application.get_schedule_detail_service import (
+from contexts.preparation.application.get_schedule_detail_query_service import (
     GetScheduleDetailInput,
-    GetScheduleDetailService,
+    GetScheduleDetailQueryService,
 )
-from contexts.preparation.application.get_template_service import (
+from contexts.preparation.application.get_template_query_service import (
     GetTemplateInput,
-    GetTemplateService,
+    GetTemplateQueryService,
 )
-from contexts.preparation.application.list_schedule_agendas_service import (
+from contexts.preparation.application.list_schedule_agendas_query_service import (
     ListScheduleAgendasInput,
-    ListScheduleAgendasService,
+    ListScheduleAgendasQueryService,
 )
-from contexts.preparation.application.list_templates_service import (
+from contexts.preparation.application.list_templates_query_service import (
     ListTemplatesInput,
-    ListTemplatesService,
+    ListTemplatesQueryService,
 )
-from contexts.preparation.application.list_upcoming_schedules_service import (
+from contexts.preparation.application.list_upcoming_schedules_query_service import (
     ListUpcomingSchedulesInput,
-    ListUpcomingSchedulesService,
+    ListUpcomingSchedulesQueryService,
 )
-from contexts.preparation.application.reject_consultation_request_service import (
+from contexts.preparation.application.reject_consultation_request_use_case import (
     RejectConsultationRequestInput,
-    RejectConsultationRequestService,
+    RejectConsultationRequestUseCase,
 )
-from contexts.preparation.application.rename_schedule_service import (
+from contexts.preparation.application.rename_schedule_use_case import (
     RenameScheduleInput,
-    RenameScheduleService,
+    RenameScheduleUseCase,
 )
-from contexts.preparation.application.reschedule_service import (
+from contexts.preparation.application.reschedule_use_case import (
     RescheduleInput,
-    RescheduleService,
+    RescheduleUseCase,
 )
-from contexts.preparation.application.save_template_service import (
+from contexts.preparation.application.save_template_use_case import (
     SaveTemplateInput,
-    SaveTemplateService,
+    SaveTemplateUseCase,
 )
-from contexts.preparation.application.send_consultation_request_service import (
+from contexts.preparation.application.send_consultation_request_use_case import (
     SendConsultationRequestInput,
-    SendConsultationRequestService,
+    SendConsultationRequestUseCase,
 )
 from contexts.preparation.domain.value_objects import (
     AgendaId,
@@ -93,28 +93,28 @@ from contexts.preparation.domain.value_objects import (
     TemplateId,
 )
 from contexts.preparation.presentation.dependencies import (
-    get_accept_consultation_request_service,
-    get_add_agenda_comment_service,
-    get_add_agenda_service,
-    get_cancel_schedule_service,
-    get_create_schedule_group_from_past_service,
-    get_create_schedule_group_from_template_service,
-    get_create_schedule_group_service,
-    get_create_schedule_service,
-    get_delete_agenda_service,
+    get_accept_consultation_request_use_case,
+    get_add_agenda_comment_use_case,
+    get_add_agenda_use_case,
+    get_cancel_schedule_use_case,
+    get_create_schedule_group_from_past_use_case,
+    get_create_schedule_group_from_template_use_case,
+    get_create_schedule_group_use_case,
+    get_create_schedule_use_case,
+    get_delete_agenda_use_case,
     get_get_last_session_summary_service,
-    get_get_schedule_detail_service,
-    get_get_template_service,
+    get_get_schedule_detail_query_service,
+    get_get_template_query_service,
     get_list_all_pending_action_items_service,
     get_list_pending_action_items_service,
-    get_list_schedule_agendas_service,
-    get_list_templates_service,
-    get_list_upcoming_schedules_service,
-    get_reject_consultation_request_service,
-    get_rename_schedule_service,
-    get_reschedule_service,
-    get_save_template_service,
-    get_send_consultation_request_service,
+    get_list_schedule_agendas_query_service,
+    get_list_templates_query_service,
+    get_list_upcoming_schedules_query_service,
+    get_reject_consultation_request_use_case,
+    get_rename_schedule_use_case,
+    get_reschedule_use_case,
+    get_save_template_use_case,
+    get_send_consultation_request_use_case,
 )
 from contexts.preparation.presentation.schemas import (
     ActionItemSummarySchema,
@@ -181,7 +181,7 @@ async def create_schedule_group(
     body: CreateScheduleGroupRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        CreateScheduleGroupService, Depends(get_create_schedule_group_service)
+        CreateScheduleGroupUseCase, Depends(get_create_schedule_group_use_case)
     ],
 ) -> CreateScheduleGroupResponse:
     output = await service.execute(
@@ -211,8 +211,8 @@ async def create_schedule_group_from_template(
     body: CreateScheduleGroupFromTemplateRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        CreateScheduleGroupFromTemplateService,
-        Depends(get_create_schedule_group_from_template_service),
+        CreateScheduleGroupFromTemplateUseCase,
+        Depends(get_create_schedule_group_from_template_use_case),
     ],
 ) -> CreateScheduleGroupFromTemplateResponse:
     output = await service.execute(
@@ -243,8 +243,8 @@ async def create_schedule_group_from_past(
     body: CreateScheduleGroupFromPastRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        CreateScheduleGroupFromPastService,
-        Depends(get_create_schedule_group_from_past_service),
+        CreateScheduleGroupFromPastUseCase,
+        Depends(get_create_schedule_group_from_past_use_case),
     ],
 ) -> CreateScheduleGroupFromPastResponse:
     output = await service.execute(
@@ -279,7 +279,7 @@ async def create_schedule_group_from_past(
 async def create_schedule(
     body: CreateScheduleRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[CreateScheduleService, Depends(get_create_schedule_service)],
+    service: Annotated[CreateScheduleUseCase, Depends(get_create_schedule_use_case)],
 ) -> CreateScheduleResponse:
     output = await service.execute(
         CreateScheduleInput(
@@ -301,7 +301,7 @@ async def send_consultation_request(
     body: SendConsultationRequestRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        SendConsultationRequestService, Depends(get_send_consultation_request_service)
+        SendConsultationRequestUseCase, Depends(get_send_consultation_request_use_case)
     ],
 ) -> SendConsultationRequestResponse:
     output = await service.execute(
@@ -321,7 +321,7 @@ async def send_consultation_request(
 async def list_upcoming_schedules(
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListUpcomingSchedulesService, Depends(get_list_upcoming_schedules_service)
+        ListUpcomingSchedulesQueryService, Depends(get_list_upcoming_schedules_query_service)
     ],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> ListUpcomingSchedulesResponse:
@@ -354,7 +354,7 @@ async def get_schedule_detail(
     schedule_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        GetScheduleDetailService, Depends(get_get_schedule_detail_service)
+        GetScheduleDetailQueryService, Depends(get_get_schedule_detail_query_service)
     ],
 ) -> GetScheduleDetailResponse:
     output = await service.execute(
@@ -384,7 +384,7 @@ async def list_schedule_agendas(
     schedule_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListScheduleAgendasService, Depends(get_list_schedule_agendas_service)
+        ListScheduleAgendasQueryService, Depends(get_list_schedule_agendas_query_service)
     ],
 ) -> ListScheduleAgendasResponse:
     output = await service.execute(
@@ -420,8 +420,8 @@ async def confirm_schedule(
     schedule_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        AcceptConsultationRequestService,
-        Depends(get_accept_consultation_request_service),
+        AcceptConsultationRequestUseCase,
+        Depends(get_accept_consultation_request_use_case),
     ],
 ) -> None:
     await service.execute(
@@ -436,8 +436,8 @@ async def reject_schedule(
     schedule_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        RejectConsultationRequestService,
-        Depends(get_reject_consultation_request_service),
+        RejectConsultationRequestUseCase,
+        Depends(get_reject_consultation_request_use_case),
     ],
 ) -> None:
     await service.execute(
@@ -454,7 +454,7 @@ async def reschedule(
     schedule_id: UUID,
     body: RescheduleRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[RescheduleService, Depends(get_reschedule_service)],
+    service: Annotated[RescheduleUseCase, Depends(get_reschedule_use_case)],
 ) -> None:
     await service.execute(
         RescheduleInput(
@@ -469,7 +469,7 @@ async def reschedule(
 async def cancel_schedule(
     schedule_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[CancelScheduleService, Depends(get_cancel_schedule_service)],
+    service: Annotated[CancelScheduleUseCase, Depends(get_cancel_schedule_use_case)],
 ) -> None:
     await service.execute(
         CancelScheduleInput(
@@ -483,7 +483,7 @@ async def rename_schedule(
     schedule_id: UUID,
     body: RenameScheduleRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[RenameScheduleService, Depends(get_rename_schedule_service)],
+    service: Annotated[RenameScheduleUseCase, Depends(get_rename_schedule_use_case)],
 ) -> None:
     await service.execute(
         RenameScheduleInput(
@@ -506,7 +506,7 @@ async def add_agenda(
     schedule_id: UUID,
     body: AddAgendaRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[AddAgendaService, Depends(get_add_agenda_service)],
+    service: Annotated[AddAgendaUseCase, Depends(get_add_agenda_use_case)],
 ) -> AddAgendaResponse:
     output = await service.execute(
         AddAgendaInput(
@@ -526,7 +526,7 @@ async def delete_agenda(
     schedule_id: UUID,
     agenda_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[DeleteAgendaService, Depends(get_delete_agenda_service)],
+    service: Annotated[DeleteAgendaUseCase, Depends(get_delete_agenda_use_case)],
 ) -> None:
     await service.execute(
         DeleteAgendaInput(
@@ -550,7 +550,7 @@ async def add_agenda_comment(
     body: AddAgendaCommentRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        AddAgendaCommentService, Depends(get_add_agenda_comment_service)
+        AddAgendaCommentUseCase, Depends(get_add_agenda_comment_use_case)
     ],
 ) -> AddAgendaCommentResponse:
     output = await service.execute(
@@ -679,7 +679,7 @@ async def get_last_session_summary(
 @router.get("/templates", response_model=ListTemplatesResponse)
 async def list_templates(
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[ListTemplatesService, Depends(get_list_templates_service)],
+    service: Annotated[ListTemplatesQueryService, Depends(get_list_templates_query_service)],
 ) -> ListTemplatesResponse:
     output = await service.execute(ListTemplatesInput(actor_id=current_user_id))
     return ListTemplatesResponse(
@@ -703,7 +703,7 @@ async def list_templates(
 async def get_template(
     template_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[GetTemplateService, Depends(get_get_template_service)],
+    service: Annotated[GetTemplateQueryService, Depends(get_get_template_query_service)],
 ) -> GetTemplateResponse:
     output = await service.execute(
         GetTemplateInput(
@@ -729,7 +729,7 @@ async def get_template(
 async def save_template(
     body: SaveTemplateRequest,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
-    service: Annotated[SaveTemplateService, Depends(get_save_template_service)],
+    service: Annotated[SaveTemplateUseCase, Depends(get_save_template_use_case)],
 ) -> SaveTemplateResponse:
     output = await service.execute(
         SaveTemplateInput(

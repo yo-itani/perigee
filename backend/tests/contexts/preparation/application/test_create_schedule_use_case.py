@@ -1,0 +1,159 @@
+"""Tests for CreateScheduleUseCase."""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+import pytest
+
+from contexts.preparation.application.create_schedule_use_case import (
+    CreateScheduleInput,
+    CreateScheduleOutput,
+    CreateScheduleUseCase,
+)
+from contexts.preparation.domain.events import ScheduleCreated
+from contexts.preparation.domain.exceptions import InvalidScheduleOperationError
+from contexts.preparation.domain.value_objects import ScheduleStatus
+from foundation.infrastructure.in_memory_event_dispatcher import InMemoryEventDispatcher
+from shared.domain.value_objects import UserId
+from tests.contexts.preparation.application.conftest import (
+    InMemoryScheduleRepository,
+    StubUnitOfWork,
+)
+
+
+class TestCreateSchedule:
+    """Create a single Schedule (individual 1-on-1)."""
+
+    @pytest.fixture
+    def service(
+        self,
+        uow: StubUnitOfWork,
+        schedule_repo: InMemoryScheduleRepository,
+        dispatcher: InMemoryEventDispatcher,
+    ) -> CreateScheduleUseCase:
+        return CreateScheduleUseCase(
+            uow=uow,
+            schedule_repo=schedule_repo,
+            event_dispatcher=dispatcher,
+        )
+
+    async def test_creates_requested_schedule(
+        self,
+        service: CreateScheduleUseCase,
+        schedule_repo: InMemoryScheduleRepository,
+    ) -> None:
+        """Schedule is created in REQUESTED status."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        scheduled_at = datetime.now(UTC) + timedelta(days=1)
+
+        output = await service.execute(
+            CreateScheduleInput(
+                organizer_id=organizer,
+                counterpart_id=counterpart,
+                scheduled_at=scheduled_at,
+                title="Weekly 1-on-1",
+            )
+        )
+
+        assert isinstance(output, CreateScheduleOutput)
+        schedule = await schedule_repo.get_by_id(output.schedule_id)
+        assert schedule is not None
+        assert schedule.status == ScheduleStatus.REQUESTED
+        assert schedule.organizer_id == organizer
+        assert schedule.counterpart_id == counterpart
+        assert schedule.title.value == "Weekly 1-on-1"
+
+    async def test_dispatches_created_event_only(
+        self,
+        uow: StubUnitOfWork,
+        schedule_repo: InMemoryScheduleRepository,
+    ) -> None:
+        """Dispatches only ScheduleCreated event (no auto-confirm)."""
+        dispatched: list[object] = []
+
+        async def capture(event: object) -> None:
+            dispatched.append(event)
+
+        dispatcher = InMemoryEventDispatcher()
+        dispatcher.register(ScheduleCreated, capture)  # type: ignore[arg-type]
+
+        service = CreateScheduleUseCase(
+            uow=uow,
+            schedule_repo=schedule_repo,
+            event_dispatcher=dispatcher,
+        )
+
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        scheduled_at = datetime.now(UTC) + timedelta(days=1)
+
+        await service.execute(
+            CreateScheduleInput(
+                organizer_id=organizer,
+                counterpart_id=counterpart,
+                scheduled_at=scheduled_at,
+                title="Weekly 1-on-1",
+            )
+        )
+
+        assert len(dispatched) == 1
+        assert isinstance(dispatched[0], ScheduleCreated)
+
+    async def test_rejects_same_organizer_and_counterpart(
+        self,
+        service: CreateScheduleUseCase,
+    ) -> None:
+        """Raises InvalidScheduleOperationError when organizer == counterpart."""
+        user = UserId.generate()
+        scheduled_at = datetime.now(UTC) + timedelta(days=1)
+
+        with pytest.raises(InvalidScheduleOperationError):
+            await service.execute(
+                CreateScheduleInput(
+                    organizer_id=user,
+                    counterpart_id=user,
+                    scheduled_at=scheduled_at,
+                    title="Self 1-on-1",
+                )
+            )
+
+    async def test_rejects_past_datetime(
+        self,
+        service: CreateScheduleUseCase,
+    ) -> None:
+        """Raises InvalidScheduleOperationError for past scheduled_at."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        past_time = datetime.now(UTC) - timedelta(days=1)
+
+        with pytest.raises(InvalidScheduleOperationError):
+            await service.execute(
+                CreateScheduleInput(
+                    organizer_id=organizer,
+                    counterpart_id=counterpart,
+                    scheduled_at=past_time,
+                    title="Past 1-on-1",
+                )
+            )
+
+    async def test_commits_via_uow(
+        self,
+        service: CreateScheduleUseCase,
+        uow: StubUnitOfWork,
+    ) -> None:
+        """Verifies that the service commits the transaction."""
+        organizer = UserId.generate()
+        counterpart = UserId.generate()
+        scheduled_at = datetime.now(UTC) + timedelta(days=1)
+
+        await service.execute(
+            CreateScheduleInput(
+                organizer_id=organizer,
+                counterpart_id=counterpart,
+                scheduled_at=scheduled_at,
+                title="Weekly 1-on-1",
+            )
+        )
+        assert uow.committed is True

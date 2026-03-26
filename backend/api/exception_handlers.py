@@ -21,80 +21,80 @@ from contexts.notification.domain.exceptions import (
 )
 
 # --- Preparation context: application exceptions ---
-from contexts.preparation.application.accept_consultation_request_service import (
+from contexts.preparation.application.accept_consultation_request_use_case import (
     ScheduleNotFoundError as AcceptConsultationScheduleNotFoundError,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     AgendaNotFoundError as AgendaCommentAgendaNotFoundError,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     ScheduleNotFoundError as AgendaCommentScheduleNotFoundError,
 )
-from contexts.preparation.application.add_agenda_comment_service import (
+from contexts.preparation.application.add_agenda_comment_use_case import (
     UnauthorizedAgendaCommentError,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     ScheduleNotFoundError as AddAgendaScheduleNotFoundError,
 )
-from contexts.preparation.application.add_agenda_service import (
+from contexts.preparation.application.add_agenda_use_case import (
     UnauthorizedAgendaOperationError as AddAgendaUnauthorizedError,
 )
-from contexts.preparation.application.add_agenda_to_group_service import (
+from contexts.preparation.application.add_agenda_to_group_use_case import (
     ScheduleGroupNotFoundError as AddAgendaToGroupScheduleGroupNotFoundError,
 )
-from contexts.preparation.application.cancel_schedule_group_service import (
+from contexts.preparation.application.cancel_schedule_group_use_case import (
     ScheduleGroupNotFoundError as CancelGroupScheduleGroupNotFoundError,
 )
-from contexts.preparation.application.cancel_schedule_service import (
+from contexts.preparation.application.cancel_schedule_use_case import (
     ScheduleNotFoundError as CancelScheduleNotFoundError,
 )
-from contexts.preparation.application.create_schedule_group_from_past_service import (
+from contexts.preparation.application.create_schedule_group_from_past_use_case import (
     SourceScheduleGroupNotFoundError,
     UnauthorizedCopyError,
 )
-from contexts.preparation.application.create_schedule_group_from_template_service import (  # noqa: E501
+from contexts.preparation.application.create_schedule_group_from_template_use_case import (  # noqa: E501
     TemplateNotFoundError as CreateFromTemplateTemplateNotFoundError,
 )
-from contexts.preparation.application.create_schedule_group_from_template_service import (  # noqa: E501
+from contexts.preparation.application.create_schedule_group_from_template_use_case import (  # noqa: E501
     UnauthorizedTemplateUseError,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     AgendaNotFoundError as DeleteAgendaNotFoundError,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     ScheduleNotFoundError as DeleteAgendaScheduleNotFoundError,
 )
-from contexts.preparation.application.delete_agenda_service import (
+from contexts.preparation.application.delete_agenda_use_case import (
     UnauthorizedAgendaOperationError as DeleteAgendaUnauthorizedError,
 )
-from contexts.preparation.application.get_schedule_detail_service import (
+from contexts.preparation.application.get_schedule_detail_query_service import (
     ScheduleNotFoundError as GetScheduleDetailScheduleNotFoundError,
 )
-from contexts.preparation.application.get_template_service import (
+from contexts.preparation.application.get_template_query_service import (
     TemplateNotFoundError as GetTemplateNotFoundError,
 )
-from contexts.preparation.application.get_template_service import (
+from contexts.preparation.application.get_template_query_service import (
     UnauthorizedTemplateAccessError,
 )
-from contexts.preparation.application.list_schedule_agendas_service import (
+from contexts.preparation.application.list_schedule_agendas_query_service import (
     ScheduleNotFoundError as ListAgendasScheduleNotFoundError,
 )
-from contexts.preparation.application.reject_consultation_request_service import (
+from contexts.preparation.application.reject_consultation_request_use_case import (
     ScheduleNotFoundError as RejectConsultationScheduleNotFoundError,
 )
-from contexts.preparation.application.remove_agenda_from_group_service import (
+from contexts.preparation.application.remove_agenda_from_group_use_case import (
     ScheduleGroupNotFoundError as RemoveAgendaFromGroupScheduleGroupNotFoundError,
 )
-from contexts.preparation.application.rename_schedule_group_service import (
+from contexts.preparation.application.rename_schedule_group_use_case import (
     ScheduleGroupNotFoundError as RenameGroupScheduleGroupNotFoundError,
 )
-from contexts.preparation.application.rename_schedule_service import (
+from contexts.preparation.application.rename_schedule_use_case import (
     ScheduleNotFoundError as RenameScheduleNotFoundError,
 )
-from contexts.preparation.application.rename_schedule_service import (
+from contexts.preparation.application.rename_schedule_use_case import (
     UnauthorizedRenameError,
 )
-from contexts.preparation.application.reschedule_service import (
+from contexts.preparation.application.reschedule_use_case import (
     ScheduleNotFoundError as RescheduleScheduleNotFoundError,
 )
 

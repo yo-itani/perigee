@@ -17,12 +17,12 @@ pytestmark = pytest.mark.integration
 from httpx import ASGITransport, AsyncClient
 
 from api.event_setup import create_event_dispatcher
-from contexts.preparation.application.create_schedule_service import (
-    CreateScheduleService,
+from contexts.preparation.application.create_schedule_use_case import (
+    CreateScheduleUseCase,
 )
 from contexts.preparation.domain.schedule_repository import ScheduleRepository
 from contexts.preparation.presentation.dependencies import (
-    get_create_schedule_service,
+    get_create_schedule_use_case,
     get_schedule_repository,
 )
 
@@ -40,8 +40,10 @@ def di_test_app() -> FastAPI:
         return {"type": type(repo).__name__}
 
     @app.get("/test/create-schedule-service")
-    async def check_create_schedule_service(
-        service: Annotated[CreateScheduleService, Depends(get_create_schedule_service)],
+    async def check_create_schedule_use_case(
+        service: Annotated[
+            CreateScheduleUseCase, Depends(get_create_schedule_use_case)
+        ],
     ) -> dict[str, str]:
         return {"type": type(service).__name__}
 
@@ -67,11 +69,13 @@ class TestPreparationDependencyChain:
         assert response.status_code == 200
         assert response.json()["type"] == "SqlAlchemyScheduleRepository"
 
-    async def test_create_schedule_service_resolves(self, di_test_app: FastAPI) -> None:
-        """The create schedule service provider yields a CreateScheduleService."""
+    async def test_create_schedule_use_case_resolves(
+        self, di_test_app: FastAPI
+    ) -> None:
+        """The create schedule service provider yields a CreateScheduleUseCase."""
         transport = ASGITransport(app=di_test_app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             response = await client.get("/test/create-schedule-service")
 
         assert response.status_code == 200
-        assert response.json()["type"] == "CreateScheduleService"
+        assert response.json()["type"] == "CreateScheduleUseCase"
