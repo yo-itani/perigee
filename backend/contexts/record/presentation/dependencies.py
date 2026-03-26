@@ -34,6 +34,9 @@ from contexts.record.application.list_oneonone_history import (
 from contexts.record.application.list_record_comments import (
     ListRecordCommentsUseCase,
 )
+from contexts.record.application.mark_record_as_viewed import (
+    MarkRecordAsViewedUseCase,
+)
 from contexts.record.application.publish_record import (
     PublishRecordUseCase,
 )
@@ -48,12 +51,16 @@ from contexts.record.application.update_memo import UpdateMemoUseCase
 from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.captain_query_service import CaptainQueryService
 from contexts.record.domain.comment_repository import CommentRepository
+from contexts.record.domain.read_status_repository import ReadStatusRepository
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.infrastructure.sqlalchemy_action_item_repository import (
     SqlAlchemyActionItemRepository,
 )
 from contexts.record.infrastructure.sqlalchemy_comment_repository import (
     SqlAlchemyCommentRepository,
+)
+from contexts.record.infrastructure.sqlalchemy_read_status_repository import (
+    SqlAlchemyReadStatusRepository,
 )
 from contexts.record.infrastructure.sqlalchemy_record_repository import (
     SqlAlchemyRecordRepository,
@@ -85,6 +92,13 @@ def get_action_item_repository(
 ) -> ActionItemRepository:
     """Provide an ActionItemRepository backed by the current DB session."""
     return SqlAlchemyActionItemRepository(session)
+
+
+def get_read_status_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ReadStatusRepository:
+    """Provide a ReadStatusRepository backed by the current DB session."""
+    return SqlAlchemyReadStatusRepository(session)
 
 
 def get_schedule_repository(
@@ -332,4 +346,19 @@ def get_publish_record_use_case(
         record_repository=record_repo,
         unit_of_work=uow,
         event_dispatcher=event_dispatcher,
+    )
+
+
+def get_mark_record_as_viewed_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
+    record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
+    read_status_repo: Annotated[
+        ReadStatusRepository, Depends(get_read_status_repository)
+    ],
+) -> MarkRecordAsViewedUseCase:
+    """Provide a MarkRecordAsViewedUseCase with all dependencies injected."""
+    return MarkRecordAsViewedUseCase(
+        record_repository=record_repo,
+        read_status_repository=read_status_repo,
+        unit_of_work=uow,
     )

@@ -20,6 +20,15 @@ class ReadStatusRepository(BaseRepository[ReadStatus, ReadStatusId]):
         """Find the ReadStatus for a specific Record and user combination."""
 
     @abstractmethod
+    async def upsert(self, entity: ReadStatus) -> None:
+        """Insert or update a ReadStatus by (record_id, user_id).
+
+        If a row with the same (record_id, user_id) already exists,
+        update last_viewed_at. Otherwise insert a new row.
+        This is safe against concurrent requests.
+        """
+
+    @abstractmethod
     async def delete_by_record_and_user(
         self, record_id: RecordId, user_id: UserId
     ) -> None:

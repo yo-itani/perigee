@@ -154,6 +154,12 @@ from contexts.record.application.list_pending_action_items import (
 from contexts.record.application.list_record_comments import (
     RecordNotFoundError as ListRecordCommentsRecordNotFoundError,
 )
+from contexts.record.application.mark_record_as_viewed import (
+    RecordNotFoundError as MarkRecordAsViewedRecordNotFoundError,
+)
+from contexts.record.application.mark_record_as_viewed import (
+    RecordNotVisibleError,
+)
 from contexts.record.application.publish_record import (
     RecordNotFoundError as PublishRecordNotFoundError,
 )
@@ -234,6 +240,7 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     AddAgendaUnauthorizedError: 403,
     DeleteAgendaUnauthorizedError: 403,
     UnauthorizedRenameError: 403,
+    RecordNotVisibleError: 403,
     # -------------------------------------------------------
     # 404 Not Found
     # -------------------------------------------------------
@@ -272,6 +279,7 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     SetViewersRecordNotFoundError: 404,
     SuggestViewersRecordNotFoundError: 404,
     UpdateMemoRecordNotFoundError: 404,
+    MarkRecordAsViewedRecordNotFoundError: 404,
     CreateRecordScheduleNotFoundError: 404,
     # Record -- ActionItem
     ActionItemNotFoundError: 404,

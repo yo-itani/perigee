@@ -132,6 +132,58 @@ class TestFindByRecordAndUser:
         assert result is None
 
 
+class TestUpsert:
+    """upsert() inserts or updates by (record_id, user_id)."""
+
+    async def test_upsert_inserts_new_row(self, session: AsyncSession) -> None:
+        organizer = await _create_user(session)
+        counterpart = await _create_user(session)
+        record = await _create_record(session, organizer, counterpart)
+
+        repo = SqlAlchemyReadStatusRepository(session)
+        rs = ReadStatus.create(
+            record_id=record.id,
+            user_id=organizer,
+            now=datetime(2026, 3, 20, 15, 0),
+        )
+        await repo.upsert(rs)
+        await session.commit()
+
+        found = await repo.find_by_record_and_user(record.id, organizer)
+        assert found is not None
+        assert found.record_id == record.id
+        assert found.user_id == organizer
+        assert found.last_viewed_at == datetime(2026, 3, 20, 15, 0)
+
+    async def test_upsert_updates_existing_row(self, session: AsyncSession) -> None:
+        organizer = await _create_user(session)
+        counterpart = await _create_user(session)
+        record = await _create_record(session, organizer, counterpart)
+
+        repo = SqlAlchemyReadStatusRepository(session)
+        rs1 = ReadStatus.create(
+            record_id=record.id,
+            user_id=organizer,
+            now=datetime(2026, 3, 20, 15, 0),
+        )
+        await repo.upsert(rs1)
+        await session.commit()
+
+        # Upsert again with a later timestamp
+        # (different ReadStatusId but same record+user)
+        rs2 = ReadStatus.create(
+            record_id=record.id,
+            user_id=organizer,
+            now=datetime(2026, 3, 20, 18, 0),
+        )
+        await repo.upsert(rs2)
+        await session.commit()
+
+        found = await repo.find_by_record_and_user(record.id, organizer)
+        assert found is not None
+        assert found.last_viewed_at == datetime(2026, 3, 20, 18, 0)
+
+
 class TestDeleteByRecordAndUser:
     """delete_by_record_and_user() removes the matching row."""
 
