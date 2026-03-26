@@ -134,21 +134,7 @@ class Record:
 
 ### datetime の扱い
 
-- **ファクトリメソッド（`create()`）**: `now: datetime | None = None` で受け取り、省略時は `datetime.now(UTC)` をフォールバックとして使用する
-- **操作メソッド（`update_memo()`, `publish()` 等）**: `now: datetime` を必須引数にする
-
-```python
-class Record:
-    @staticmethod
-    def create(..., now: datetime | None = None) -> "Record":
-        now = now or datetime.now(UTC)
-        ...
-
-    def publish(self, now: datetime) -> None:  # 必須
-        ...
-```
-
-ファクトリメソッドでフォールバックを許容するのは、生成時のタイムスタンプが厳密でなくても実害が少ないため。操作メソッドで必須にするのは、テストでの再現性と、ユースケース層が時刻の責任を持つことを明確にするため。
+datetime の規約は `docs/coding-standards.md` を参照。
 
 ## 境界コンテキストの対応
 
@@ -359,7 +345,7 @@ from contexts.preparation.infrastructure.tables import ScheduleTable  # noqa: F4
 
 ```python
 # アプリケーションサービスでの使用例
-class PublishRecordService:
+class PublishRecordUseCase:
     def __init__(
         self,
         uow: UnitOfWork,
@@ -382,4 +368,3 @@ class PublishRecordService:
         await self._event_dispatcher.dispatch(events)
 ```
 
-フロントエンドのカラートークン規約・react-refresh 対策は `docs/coding-standards.md` を参照。

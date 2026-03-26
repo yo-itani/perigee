@@ -46,6 +46,15 @@
 
 ### datetime の扱い
 
+#### ドメイン層
+
+- **ファクトリメソッド（`create()`）**: `now: datetime | None = None` で受け取り、省略時は `datetime.now(UTC)` をフォールバック
+- **操作メソッド（`update_memo()`, `publish()` 等）**: `now: datetime` を必須引数にする
+- ファクトリで省略を許容するのは、生成時のタイムスタンプが厳密でなくても実害が少ないため
+- 操作メソッドで必須にするのは、テストでの再現性と、ユースケース層が時刻の責任を持つことを明確にするため
+
+#### インフラ層
+
 - DB セッションは `connect_args={"init_command": "SET time_zone='+00:00'"}` で UTC 固定
 - `NOW()` / `CURRENT_TIMESTAMP` は常に UTC を返す
 - アプリ層で datetime を生成する場合は `datetime.now(UTC)` を使用する
