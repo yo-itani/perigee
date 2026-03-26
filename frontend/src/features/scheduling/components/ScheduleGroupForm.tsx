@@ -55,8 +55,6 @@ export function ScheduleGroupForm({
         startDate: getDefaultDate(),
         startTime: "10:00",
         durationMinutes: 60,
-        recurrenceType: "weekly",
-        recurrenceDayOfWeek: "friday",
       },
     ]);
     setNewCounterpartId("");
