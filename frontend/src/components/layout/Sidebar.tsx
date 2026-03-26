@@ -39,36 +39,34 @@ const navGroups: NavGroup[] = [
 
 export function Sidebar() {
   return (
-    <aside className="flex h-full w-60 flex-col border-r border-border bg-sidebar">
-      <div className="flex h-14 items-center border-b border-sidebar-border px-4">
-        <span className="text-lg font-bold text-sidebar-foreground">
+    <aside className="flex h-full w-[220px] flex-col border-r border-border-subtle bg-white overflow-y-auto px-4 pt-6">
+      <div className="mb-5 border-b border-border-subtle pb-2.5">
+        <span className="text-[13px] font-medium text-foreground">
           perigee
         </span>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2">
+      <nav>
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-3">
-            <div className="mb-1 px-3 text-xs tracking-wider text-muted-foreground">
+          <div key={group.label} className="mb-5">
+            <div className="mb-1.5 text-[11px] tracking-[0.05em] text-text-muted">
               {group.label}
             </div>
-            <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/"}
-                  className={({ isActive }) =>
-                    `block rounded-md px-3 py-2 text-sm transition-colors ${
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
+            {group.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `block rounded-lg px-2.5 py-[7px] text-[13px] transition-colors duration-100 ${
+                    isActive
+                      ? "bg-surface-secondary font-medium text-foreground"
+                      : "text-text-subtle hover:bg-surface-secondary hover:text-foreground"
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </div>
         ))}
       </nav>
