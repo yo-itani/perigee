@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useScheduleAgendas } from "@/features/preparation/hooks/useScheduleAgendas";
@@ -80,6 +80,11 @@ export function RecordingPage() {
     await updateMemo(currentMemo);
   };
 
+  // Suppress blur save before button action (mousedown fires before blur)
+  const handleButtonInteraction = () => {
+    isSavingRef.current = true;
+  };
+
   const handleConfirmAgenda = async (agendaId: string) => {
     const result = await confirmAgenda(agendaId);
     if (result) {
@@ -117,13 +122,9 @@ export function RecordingPage() {
     }
   };
 
-  const handleCompleteMouseDown = () => {
-    isSavingRef.current = true;
-  };
-
   const handleSaveAndComplete = async () => {
+    isSavingRef.current = true;
     try {
-      // Save memo first, then save draft, then navigate to publish
       const memoResult = await updateMemo(currentMemo);
       if (!memoResult) return;
       const result = await saveDraft();
@@ -172,7 +173,8 @@ export function RecordingPage() {
         </div>
         <Button
           size="lg"
-          onMouseDown={handleCompleteMouseDown}
+          onMouseDown={handleButtonInteraction}
+          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
@@ -229,7 +231,8 @@ export function RecordingPage() {
         )}
         <Button
           size="lg"
-          onMouseDown={handleCompleteMouseDown}
+          onMouseDown={handleButtonInteraction}
+          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >

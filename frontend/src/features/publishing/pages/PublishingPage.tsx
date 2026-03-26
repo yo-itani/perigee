@@ -68,11 +68,13 @@ export function PublishingPage() {
     await updateMemo(currentMemo);
   };
 
-  const handleSaveDraftMouseDown = () => {
+  // Suppress blur save before button action (mousedown/keydown fires before blur)
+  const handleButtonInteraction = () => {
     isSavingRef.current = true;
   };
 
   const handleSaveDraft = async () => {
+    isSavingRef.current = true;
     try {
       const memoResult = await updateMemo(currentMemo);
       if (!memoResult) return;
@@ -208,7 +210,8 @@ export function PublishingPage() {
         )}
         <Button
           variant="ghost"
-          onMouseDown={handleSaveDraftMouseDown}
+          onMouseDown={handleButtonInteraction}
+          onKeyDown={handleButtonInteraction}
           onClick={() => void handleSaveDraft()}
           disabled={isSavingDraft || isSavingMemo}
         >

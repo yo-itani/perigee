@@ -539,7 +539,7 @@ describe("PublishingPage", () => {
     });
 
     // updateMemo should be called exactly once (from handleSaveDraft),
-    // not twice (blur should be suppressed by isSavingRef)
+    // blur is skipped because dirty check sees memo was already marked as saved
     expect(mockUpdateMemo).toHaveBeenCalledTimes(1);
   });
 });

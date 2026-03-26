@@ -407,7 +407,7 @@ describe("RecordingPage", () => {
   });
 
   it("does not double-fire updateMemo when blur and complete button overlap", async () => {
-    // Simulate updateMemo taking time so blur and click overlap
+    // Dirty check: handleSaveAndComplete marks memo as saved, so blur skips
     mockUpdateMemo.mockImplementation(
       () =>
         new Promise((resolve) =>
@@ -431,7 +431,7 @@ describe("RecordingPage", () => {
     });
 
     // updateMemo should be called exactly once (from handleSaveAndComplete),
-    // not twice (blur should be suppressed)
+    // blur is skipped because dirty check sees memo was already marked as saved
     expect(mockUpdateMemo).toHaveBeenCalledTimes(1);
   });
 
