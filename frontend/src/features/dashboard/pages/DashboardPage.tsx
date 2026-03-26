@@ -12,7 +12,7 @@ import { UnreadRecordList } from "../components/UnreadRecordList";
 import { countThisWeekSchedules, formatDateJa } from "../utils";
 
 export function DashboardPage() {
-  const { name: userName, userId } = useCurrentUser();
+  const { name: userName } = useCurrentUser();
   const {
     schedules,
     isLoading: schedulesLoading,
@@ -27,7 +27,7 @@ export function DashboardPage() {
     items: pendingItems,
     isLoading: pendingLoading,
     error: pendingError,
-  } = usePendingActionItems(userId);
+  } = usePendingActionItems();
   const {
     notifications,
     isLoading: notificationsLoading,

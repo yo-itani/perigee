@@ -37,7 +37,7 @@ export interface PendingActionItem {
   content: string;
   created_at: string;
   record_id: string;
-  organizer_id: string;
+  counterpart_id: string;
   conducted_at: string;
 }
 

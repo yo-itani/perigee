@@ -105,6 +105,7 @@ from contexts.preparation.presentation.dependencies import (
     get_get_last_session_summary_service,
     get_get_schedule_detail_service,
     get_get_template_service,
+    get_list_all_pending_action_items_service,
     get_list_pending_action_items_service,
     get_list_schedule_agendas_service,
     get_list_templates_service,
@@ -123,6 +124,7 @@ from contexts.preparation.presentation.schemas import (
     AddAgendaResponse,
     AgendaCommentSchema,
     AgendaItemSchema,
+    AllPendingActionItemSchema,
     CreateScheduleGroupFromPastRequest,
     CreateScheduleGroupFromPastResponse,
     CreateScheduleGroupFromTemplateRequest,
@@ -134,6 +136,7 @@ from contexts.preparation.presentation.schemas import (
     GetLastSessionSummaryResponse,
     GetScheduleDetailResponse,
     GetTemplateResponse,
+    ListAllPendingActionItemsResponse,
     ListPendingActionItemsResponse,
     ListScheduleAgendasResponse,
     ListTemplatesResponse,
@@ -151,6 +154,10 @@ from contexts.preparation.presentation.schemas import (
 from contexts.record.application.get_last_session_summary import (
     GetLastSessionSummaryInput,
     GetLastSessionSummaryService,
+)
+from contexts.record.application.list_all_pending_action_items import (
+    ListAllPendingActionItemsInput,
+    ListAllPendingActionItemsService,
 )
 from contexts.record.application.list_pending_action_items import (
     ListPendingActionItemsInput,
@@ -557,6 +564,39 @@ async def add_agenda_comment(
 
 
 # -- Action items (cross-context read) --------------------------------------
+
+
+@router.get(
+    "/action-items/pending",
+    response_model=ListAllPendingActionItemsResponse,
+)
+async def list_all_pending_action_items(
+    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    service: Annotated[
+        ListAllPendingActionItemsService,
+        Depends(get_list_all_pending_action_items_service),
+    ],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> ListAllPendingActionItemsResponse:
+    output = await service.execute(
+        ListAllPendingActionItemsInput(
+            actor_id=current_user_id,
+            limit=limit,
+        )
+    )
+    return ListAllPendingActionItemsResponse(
+        items=[
+            AllPendingActionItemSchema(
+                action_item_id=item.action_item_id.value,
+                content=item.content,
+                created_at=item.created_at,
+                record_id=item.record_id.value,
+                counterpart_id=item.counterpart_id.value,
+                conducted_at=item.conducted_at,
+            )
+            for item in output.items
+        ]
+    )
 
 
 @router.get(

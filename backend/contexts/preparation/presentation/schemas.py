@@ -314,3 +314,20 @@ class ListPendingActionItemsResponse(BaseModel):
     """Response body for GET /action-items/pending/{counterpart_id}."""
 
     items: list[PendingActionItemSchema]
+
+
+class AllPendingActionItemSchema(BaseModel):
+    """A single pending action item in the all-counterpart overview."""
+
+    action_item_id: UUID
+    content: str
+    created_at: datetime
+    record_id: UUID
+    counterpart_id: UUID
+    conducted_at: datetime
+
+
+class ListAllPendingActionItemsResponse(BaseModel):
+    """Response body for GET /action-items/pending."""
+
+    items: list[AllPendingActionItemSchema]

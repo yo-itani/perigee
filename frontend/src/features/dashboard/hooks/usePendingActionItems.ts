@@ -10,25 +10,18 @@ interface UsePendingActionItemsResult {
   refetch: () => void;
 }
 
-export function usePendingActionItems(
-  counterpartId: string,
-): UsePendingActionItemsResult {
+export function usePendingActionItems(): UsePendingActionItemsResult {
   const { userId } = useCurrentUser();
   const [items, setItems] = useState<PendingActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchItems = useCallback(async () => {
-    if (!counterpartId) {
-      setItems([]);
-      setIsLoading(false);
-      return;
-    }
     setIsLoading(true);
     setError(null);
     try {
       const data = await apiClient.get<PendingActionItemsResponse>(
-        `/action-items/pending/${counterpartId}`,
+        `/action-items/pending`,
         userId,
       );
       setItems(data.items);
@@ -41,7 +34,7 @@ export function usePendingActionItems(
     } finally {
       setIsLoading(false);
     }
-  }, [counterpartId, userId]);
+  }, [userId]);
 
   useEffect(() => {
     void fetchItems();

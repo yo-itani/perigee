@@ -277,9 +277,9 @@ class DraftRecordItemSchema(BaseModel):
 
     record_id: UUID
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
     memo_excerpt: str
-    created_at: datetime
+    created_at: AwareDatetime
     schedule_id: UUID | None
 
 

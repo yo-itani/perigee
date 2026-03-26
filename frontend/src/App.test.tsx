@@ -38,7 +38,7 @@ describe("App", () => {
   it("renders the dashboard page", () => {
     renderWithProviders();
     expect(
-      screen.getByRole("heading", { name: "Dashboard" }),
+      screen.getByRole("heading", { name: /Dev User/ }),
     ).toBeInTheDocument();
   });
 });

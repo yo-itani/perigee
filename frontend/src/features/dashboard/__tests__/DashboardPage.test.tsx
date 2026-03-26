@@ -34,7 +34,7 @@ const mockPendingItems = [
     content: "Send progress report",
     created_at: "2026-03-20T10:00:00Z",
     record_id: "r2",
-    organizer_id: "u1",
+    counterpart_id: "u2",
     conducted_at: "2026-03-20T10:00:00Z",
   },
 ];
@@ -267,9 +267,8 @@ describe("DashboardPage", () => {
     };
 
     renderDashboard();
-    const noScheduleMessages = screen.getAllByText(
-      "予定されている1on1はありません",
-    );
+    const noScheduleMessages =
+      screen.getAllByText("予定されている1on1はありません");
     expect(noScheduleMessages.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("下書きの記録はありません")).toBeInTheDocument();
     expect(
