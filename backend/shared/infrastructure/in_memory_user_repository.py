@@ -1,6 +1,6 @@
 from shared.domain.user import User
 from shared.domain.user_repository import UserRepository
-from shared.domain.value_objects import UserId
+from shared.domain.value_objects import UserId, UserRole
 
 
 class InMemoryUserRepository(UserRepository):
@@ -30,3 +30,11 @@ class InMemoryUserRepository(UserRepository):
 
     async def save(self, user: User) -> None:
         self._users[user.id] = user
+
+    async def list_all(self) -> list[User]:
+        return sorted(self._users.values(), key=lambda u: u.name)
+
+    async def count_active_admins(self) -> int:
+        return sum(
+            1 for u in self._users.values() if u.role == UserRole.ADMIN and u.is_active
+        )

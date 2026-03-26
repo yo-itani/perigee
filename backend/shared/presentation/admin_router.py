@@ -1,0 +1,253 @@
+"""FastAPI router for user management endpoints (admin only)."""
+
+from __future__ import annotations
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from api.dependencies import require_admin
+from shared.application.activate_user_use_case import (
+    ActivateUserInput,
+    ActivateUserUseCase,
+)
+from shared.application.activate_user_use_case import (
+    UserNotFoundError as ActivateUserNotFoundError,
+)
+from shared.application.create_user_use_case import (
+    CreateUserInput,
+    CreateUserUseCase,
+    EmailAlreadyTakenError,
+)
+from shared.application.deactivate_user_use_case import (
+    DeactivateUserInput,
+    DeactivateUserUseCase,
+)
+from shared.application.deactivate_user_use_case import (
+    LastAdminError as DeactivateLastAdminError,
+)
+from shared.application.deactivate_user_use_case import (
+    UserNotFoundError as DeactivateUserNotFoundError,
+)
+from shared.application.get_user_detail_query_service import (
+    GetUserDetailInput,
+    GetUserDetailQueryService,
+)
+from shared.application.get_user_detail_query_service import (
+    UserNotFoundError as GetUserNotFoundError,
+)
+from shared.application.list_users_query_service import ListUsersQueryService
+from shared.application.update_user_use_case import (
+    EmailAlreadyTakenError as UpdateEmailAlreadyTakenError,
+)
+from shared.application.update_user_use_case import (
+    LastAdminError as UpdateLastAdminError,
+)
+from shared.application.update_user_use_case import (
+    UpdateUserInput,
+    UpdateUserUseCase,
+)
+from shared.application.update_user_use_case import (
+    UserNotFoundError as UpdateUserNotFoundError,
+)
+from shared.domain.user import User
+from shared.domain.value_objects import UserId
+from shared.presentation.dependencies import (
+    get_activate_user_use_case,
+    get_create_user_use_case,
+    get_deactivate_user_use_case,
+    get_get_user_detail_query_service,
+    get_list_users_query_service,
+    get_update_user_use_case,
+)
+from shared.presentation.schemas import (
+    CreateUserRequest,
+    UpdateUserRequest,
+    UserListResponse,
+    UserProfileResponse,
+)
+
+admin_router = APIRouter(prefix="/users", tags=["User Management"])
+
+
+@admin_router.get("", response_model=UserListResponse)
+async def list_users(
+    _admin: Annotated[User, Depends(require_admin)],
+    query_service: Annotated[
+        ListUsersQueryService, Depends(get_list_users_query_service)
+    ],
+) -> UserListResponse:
+    """Return all users in the system."""
+    output = await query_service.execute()
+    return UserListResponse(
+        users=[
+            UserProfileResponse(
+                id=str(u.id.value),
+                name=u.name,
+                email=u.email,
+                role=u.role,
+                is_active=u.is_active,
+                slack_user_id=u.slack_user_id,
+            )
+            for u in output.users
+        ]
+    )
+
+
+@admin_router.post(
+    "", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_user(
+    body: CreateUserRequest,
+    _admin: Annotated[User, Depends(require_admin)],
+    use_case: Annotated[CreateUserUseCase, Depends(get_create_user_use_case)],
+) -> UserProfileResponse:
+    """Create a new user."""
+    try:
+        output = await use_case.execute(
+            input_dto=CreateUserInput(
+                name=body.name,
+                email=body.email,
+                role=body.role,
+            )
+        )
+    except EmailAlreadyTakenError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email address is already in use",
+        ) from None
+    return UserProfileResponse(
+        id=str(output.id.value),
+        name=output.name,
+        email=output.email,
+        role=output.role,
+        is_active=output.is_active,
+        slack_user_id=output.slack_user_id,
+    )
+
+
+@admin_router.get("/{user_id}", response_model=UserProfileResponse)
+async def get_user_detail(
+    user_id: str,
+    _admin: Annotated[User, Depends(require_admin)],
+    query_service: Annotated[
+        GetUserDetailQueryService, Depends(get_get_user_detail_query_service)
+    ],
+) -> UserProfileResponse:
+    """Return a single user's detail."""
+    try:
+        output = await query_service.execute(
+            input_dto=GetUserDetailInput(user_id=UserId.from_str(user_id))
+        )
+    except GetUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    return UserProfileResponse(
+        id=str(output.id.value),
+        name=output.name,
+        email=output.email,
+        role=output.role,
+        is_active=output.is_active,
+        slack_user_id=output.slack_user_id,
+    )
+
+
+@admin_router.put("/{user_id}", response_model=UserProfileResponse)
+async def update_user(
+    user_id: str,
+    body: UpdateUserRequest,
+    _admin: Annotated[User, Depends(require_admin)],
+    use_case: Annotated[UpdateUserUseCase, Depends(get_update_user_use_case)],
+) -> UserProfileResponse:
+    """Update a user's name, email, and role."""
+    try:
+        output = await use_case.execute(
+            input_dto=UpdateUserInput(
+                user_id=UserId.from_str(user_id),
+                name=body.name,
+                email=body.email,
+                role=body.role,
+            )
+        )
+    except UpdateUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    except UpdateEmailAlreadyTakenError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email address is already in use",
+        ) from None
+    except UpdateLastAdminError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot remove admin role from the last active admin",
+        ) from None
+    return UserProfileResponse(
+        id=str(output.id.value),
+        name=output.name,
+        email=output.email,
+        role=output.role,
+        is_active=output.is_active,
+        slack_user_id=output.slack_user_id,
+    )
+
+
+@admin_router.put("/{user_id}/deactivate", response_model=UserProfileResponse)
+async def deactivate_user(
+    user_id: str,
+    _admin: Annotated[User, Depends(require_admin)],
+    use_case: Annotated[DeactivateUserUseCase, Depends(get_deactivate_user_use_case)],
+) -> UserProfileResponse:
+    """Deactivate a user."""
+    try:
+        output = await use_case.execute(
+            input_dto=DeactivateUserInput(user_id=UserId.from_str(user_id))
+        )
+    except DeactivateUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    except DeactivateLastAdminError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot deactivate the last active admin",
+        ) from None
+    return UserProfileResponse(
+        id=str(output.id.value),
+        name=output.name,
+        email=output.email,
+        role=output.role,
+        is_active=output.is_active,
+        slack_user_id=output.slack_user_id,
+    )
+
+
+@admin_router.put("/{user_id}/activate", response_model=UserProfileResponse)
+async def activate_user(
+    user_id: str,
+    _admin: Annotated[User, Depends(require_admin)],
+    use_case: Annotated[ActivateUserUseCase, Depends(get_activate_user_use_case)],
+) -> UserProfileResponse:
+    """Activate a deactivated user."""
+    try:
+        output = await use_case.execute(
+            input_dto=ActivateUserInput(user_id=UserId.from_str(user_id))
+        )
+    except ActivateUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+    return UserProfileResponse(
+        id=str(output.id.value),
+        name=output.name,
+        email=output.email,
+        role=output.role,
+        is_active=output.is_active,
+        slack_user_id=output.slack_user_id,
+    )

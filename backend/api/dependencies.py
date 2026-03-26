@@ -70,7 +70,8 @@ async def get_current_user(
     user = await user_repo.get_by_id(parsed_id)
     if user is None:
         raise HTTPException(
-            status_code=403, detail="User not found",
+            status_code=403,
+            detail="User not found",
         )
     if not user.is_active:
         raise HTTPException(
@@ -86,6 +87,7 @@ async def require_admin(
     """Ensure the current user has admin role."""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=403, detail="Admin access required",
+            status_code=403,
+            detail="Admin access required",
         )
     return current_user
