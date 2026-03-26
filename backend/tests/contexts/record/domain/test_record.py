@@ -14,6 +14,7 @@ from contexts.record.domain.events import (
 from contexts.record.domain.exceptions import (
     AgendaAlreadyConfirmedError,
     RecordAlreadyPublishedError,
+    RecordNotPublishedError,
     UnauthorizedOperationError,
 )
 from contexts.record.domain.memo import Memo
@@ -44,6 +45,10 @@ class TestRecordCreate:
         record = _make_record()
         assert record.status == RecordStatus.DRAFT
         assert record.memo == Memo("")
+
+    def test_latest_activity_at_is_none_on_creation(self) -> None:
+        record = _make_record()
+        assert record.latest_activity_at is None
 
     def test_creates_without_schedule_id(self) -> None:
         record = _make_record()
@@ -175,6 +180,15 @@ class TestRecordPublish:
         assert record.status == RecordStatus.PUBLISHED
         assert record.updated_at == now
 
+    def test_publish_sets_latest_activity_at(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        now = datetime(2026, 3, 20, 11, 0)
+
+        record.publish(actor_id=organizer, now=now)
+
+        assert record.latest_activity_at == now
+
     def test_non_organizer_cannot_publish(self) -> None:
         organizer = UserId.generate()
         other = UserId.generate()
@@ -203,6 +217,50 @@ class TestRecordPublish:
         pub_events = [e for e in events if isinstance(e, RecordPublished)]
         assert len(pub_events) == 1
         assert pub_events[0].occurred_at == now
+
+
+class TestRecordNotifyCommentAdded:
+    def test_updates_latest_activity_at(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        publish_time = datetime(2026, 3, 20, 11, 0)
+        record.publish(actor_id=organizer, now=publish_time)
+
+        comment_time = datetime(2026, 3, 20, 12, 0)
+        record.notify_comment_added(now=comment_time)
+
+        assert record.latest_activity_at == comment_time
+
+    def test_updates_updated_at(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        publish_time = datetime(2026, 3, 20, 11, 0)
+        record.publish(actor_id=organizer, now=publish_time)
+
+        comment_time = datetime(2026, 3, 20, 12, 0)
+        record.notify_comment_added(now=comment_time)
+
+        assert record.updated_at == comment_time
+
+    def test_rejects_comment_on_draft_record(self) -> None:
+        """DRAFT status record should reject notify_comment_added."""
+        record = _make_record()
+
+        with pytest.raises(RecordNotPublishedError):
+            record.notify_comment_added(now=datetime(2026, 3, 20, 12, 0))
+
+    def test_successive_comments_update_latest_activity_at(self) -> None:
+        organizer = UserId.generate()
+        record = _make_record(organizer_id=organizer)
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 11, 0))
+
+        first_comment = datetime(2026, 3, 20, 12, 0)
+        record.notify_comment_added(now=first_comment)
+
+        second_comment = datetime(2026, 3, 20, 13, 0)
+        record.notify_comment_added(now=second_comment)
+
+        assert record.latest_activity_at == second_comment
 
 
 class TestRecordConfirmAgenda:

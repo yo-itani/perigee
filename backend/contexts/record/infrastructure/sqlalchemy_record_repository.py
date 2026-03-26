@@ -161,6 +161,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
             memo=entity.memo.value,
             status=entity.status.value,
             conducted_at=entity.conducted_at,
+            latest_activity_at=entity.latest_activity_at,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
@@ -193,6 +194,7 @@ class SqlAlchemyRecordRepository(RecordRepository):
         existing.schedule_id = (
             str(entity.schedule_id.value) if entity.schedule_id else None
         )
+        existing.latest_activity_at = entity.latest_activity_at
         existing.updated_at = entity.updated_at
 
         # Replace viewers: delete all, then re-insert
@@ -245,4 +247,5 @@ class SqlAlchemyRecordRepository(RecordRepository):
             conducted_at=row.conducted_at,
             created_at=row.created_at,
             _updated_at=row.updated_at,
+            _latest_activity_at=row.latest_activity_at,
         )

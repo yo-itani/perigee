@@ -27,6 +27,9 @@ class RecordTable(Base, TimestampMixin):
     memo: Mapped[str] = mapped_column(TEXT, nullable=False)
     status: Mapped[str] = mapped_column(VARCHAR(20), nullable=False)
     conducted_at: Mapped[datetime] = mapped_column(DATETIME(fsp=6), nullable=False)
+    latest_activity_at: Mapped[datetime | None] = mapped_column(
+        DATETIME(fsp=6), nullable=True
+    )
 
     viewers: Mapped[list["RecordViewerTable"]] = relationship(
         back_populates="record",
