@@ -95,6 +95,7 @@ shadcn/ui 既存トークン（`--background`, `--foreground`, `--muted` 等）�
 
 ### react-refresh 警告の回避
 
-- コンポーネントファイル（`.tsx`）から非コンポーネント export（ユーティリティ関数、定数等）を分離する
-- ユーティリティは `utils.ts`、型定義は `types.ts` に配置する
-- 共通ユーティリティは `src/utils/` に配置し、feature の `utils.ts` から re-export する
+- **自分で書くコード**: コンポーネントファイル（`.tsx`）から非コンポーネント export（ユーティリティ関数、定数等）を分離する
+  - ユーティリティは `utils.ts`、型定義は `types.ts` に配置する
+  - 共通ユーティリティは `src/utils/` に配置し、feature の `utils.ts` から re-export する
+- **shadcn/ui の生成コード**: `buttonVariants` 等の非コンポーネント export が同居するパターンがある。これらは分離せず、export 行に `// eslint-disable-next-line react-refresh/only-export-components` を付与して抑制する
