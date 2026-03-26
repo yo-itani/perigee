@@ -345,11 +345,12 @@ class TestAddCommentLatestActivityAndAutoRead:
         assert read_status.last_viewed_at == record.latest_activity_at
 
     async def test_record_is_re_saved_in_same_transaction(self) -> None:
-        """Record should be saved after notify_comment_added to persist latest_activity_at."""
+        """Record.save() must be called after notify_comment_added."""
         organizer = UserId.generate()
         record = _make_published_record(organizer=organizer)
         uc, rr, _cr, _rs, uow, _ed = _build_use_case()
         await rr.save(record)
+        save_count_before = rr.save_count
 
         await uc.execute(
             AddCommentInput(
@@ -360,6 +361,5 @@ class TestAddCommentLatestActivityAndAutoRead:
         )
 
         assert uow.committed is True
-        saved_record = await rr.get_by_id(record.id)
-        assert saved_record is not None
-        assert saved_record.latest_activity_at is not None
+        # Verify save was called again (not just relying on object reference)
+        assert rr.save_count == save_count_before + 1

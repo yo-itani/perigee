@@ -37,12 +37,14 @@ class InMemoryRecordRepository(RecordRepository):
 
     def __init__(self) -> None:
         self._records: dict[RecordId, Record] = {}
+        self.save_count: int = 0
 
     async def get_by_id(self, entity_id: RecordId) -> Record | None:
         return self._records.get(entity_id)
 
     async def save(self, entity: Record) -> None:
         self._records[entity.id] = entity
+        self.save_count += 1
 
     async def exists_by_participant(
         self, user_id: UserId, counterpart_id: UserId
