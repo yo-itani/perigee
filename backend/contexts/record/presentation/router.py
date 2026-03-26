@@ -44,6 +44,10 @@ from contexts.record.application.get_viewers import (
     GetViewersInput,
     GetViewersUseCase,
 )
+from contexts.record.application.list_draft_records import (
+    ListDraftRecordsInput,
+    ListDraftRecordsService,
+)
 from contexts.record.application.list_oneonone_history import (
     ListOneOnOneHistoryInput,
     ListOneOnOneHistoryService,
@@ -85,6 +89,7 @@ from contexts.record.presentation.dependencies import (
     get_delete_action_item_use_case,
     get_get_record_detail_use_case,
     get_get_viewers_use_case,
+    get_list_draft_records_service,
     get_list_oneonone_history_service,
     get_list_record_comments_use_case,
     get_publish_record_use_case,
@@ -107,8 +112,10 @@ from contexts.record.presentation.schemas import (
     CreateRecordFromScheduleRequest,
     CreateRecordFromScheduleResponse,
     DeleteActionItemResponse,
+    DraftRecordItemSchema,
     GetRecordDetailResponse,
     GetViewersResponse,
+    ListDraftRecordsResponse,
     ListOneOnOneHistoryResponse,
     ListRecordCommentsResponse,
     OneOnOneHistoryItemSchema,
@@ -315,6 +322,33 @@ async def save_draft(
 # ---------------------------------------------------------------------------
 # Record viewer endpoints
 # ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/records/drafts",
+    response_model=ListDraftRecordsResponse,
+)
+async def list_draft_records(
+    current_user_id: Annotated[UserId, Depends(get_current_user_id)],
+    service: Annotated[
+        ListDraftRecordsService, Depends(get_list_draft_records_service)
+    ],
+) -> ListDraftRecordsResponse:
+    """List draft (unpublished) records for the current user."""
+    output = await service.execute(ListDraftRecordsInput(actor_id=current_user_id))
+    return ListDraftRecordsResponse(
+        items=[
+            DraftRecordItemSchema(
+                record_id=item.record_id.value,
+                counterpart_id=item.counterpart_id.value,
+                conducted_at=item.conducted_at,
+                memo_excerpt=item.memo_excerpt,
+                created_at=item.created_at,
+                schedule_id=item.schedule_id.value if item.schedule_id else None,
+            )
+            for item in output.items
+        ]
+    )
 
 
 @router.get(
