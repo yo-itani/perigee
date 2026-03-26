@@ -14,6 +14,7 @@ from contexts.record.domain.events import (
 from contexts.record.domain.exceptions import (
     AgendaAlreadyConfirmedError,
     RecordAlreadyPublishedError,
+    RecordNotPublishedError,
     UnauthorizedOperationError,
 )
 from contexts.record.domain.memo import Memo
@@ -240,6 +241,13 @@ class TestRecordNotifyCommentAdded:
         record.notify_comment_added(now=comment_time)
 
         assert record.updated_at == comment_time
+
+    def test_rejects_comment_on_draft_record(self) -> None:
+        """DRAFT status record should reject notify_comment_added."""
+        record = _make_record()
+
+        with pytest.raises(RecordNotPublishedError):
+            record.notify_comment_added(now=datetime(2026, 3, 20, 12, 0))
 
     def test_successive_comments_update_latest_activity_at(self) -> None:
         organizer = UserId.generate()

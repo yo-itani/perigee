@@ -15,6 +15,7 @@ from contexts.record.domain.events import (
 from contexts.record.domain.exceptions import (
     AgendaAlreadyConfirmedError,
     RecordAlreadyPublishedError,
+    RecordNotPublishedError,
     UnauthorizedOperationError,
 )
 from contexts.record.domain.memo import Memo
@@ -213,6 +214,7 @@ class Record:
 
     def notify_comment_added(self, now: datetime) -> None:
         """Update content timestamp when a comment is added."""
+        self._assert_published()
         self._latest_activity_at = now
         self._updated_at = now
 
@@ -249,3 +251,7 @@ class Record:
     def _assert_draft(self) -> None:
         if self._status != RecordStatus.DRAFT:
             raise RecordAlreadyPublishedError("Record is already published.")
+
+    def _assert_published(self) -> None:
+        if self._status != RecordStatus.PUBLISHED:
+            raise RecordNotPublishedError("Record is not published.")
