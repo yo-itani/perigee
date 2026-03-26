@@ -1,12 +1,12 @@
-"""Tests for ChangeWorkspaceParentService."""
+"""Tests for ChangeWorkspaceParentUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.change_workspace_parent_service import (
+from contexts.workspace.application.change_workspace_parent_use_case import (
     ChangeWorkspaceParentInput,
-    ChangeWorkspaceParentService,
+    ChangeWorkspaceParentUseCase,
     ParentWorkspaceNotFoundError,
     WorkspaceNotFoundError,
 )
@@ -43,8 +43,8 @@ class TestChangeWorkspaceParent:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> ChangeWorkspaceParentService:
-        return ChangeWorkspaceParentService(
+    ) -> ChangeWorkspaceParentUseCase:
+        return ChangeWorkspaceParentUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -67,7 +67,7 @@ class TestChangeWorkspaceParent:
 
     async def test_changes_parent(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Workspace is moved under a new parent."""
@@ -87,7 +87,7 @@ class TestChangeWorkspaceParent:
 
     async def test_moves_to_root(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Workspace can be moved to root (parent_id=None)."""
@@ -107,7 +107,7 @@ class TestChangeWorkspaceParent:
 
     async def test_commits_via_uow(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
@@ -137,7 +137,7 @@ class TestChangeWorkspaceParent:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(WorkspaceHierarchyChanged, capture_handler)  # type: ignore[arg-type]
-        service = ChangeWorkspaceParentService(
+        service = ChangeWorkspaceParentUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -162,7 +162,7 @@ class TestChangeWorkspaceParent:
 
     async def test_raises_when_workspace_not_found(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
     ) -> None:
         """WorkspaceNotFoundError is raised for a non-existent workspace."""
         with pytest.raises(WorkspaceNotFoundError):
@@ -175,7 +175,7 @@ class TestChangeWorkspaceParent:
 
     async def test_rejects_self_referencing_parent(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """CircularHierarchyError is raised when setting parent to self."""
@@ -191,7 +191,7 @@ class TestChangeWorkspaceParent:
 
     async def test_rejects_direct_cycle(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """CircularHierarchyError when A->B, then B tries to move under A."""
@@ -208,7 +208,7 @@ class TestChangeWorkspaceParent:
 
     async def test_rejects_indirect_cycle(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """CircularHierarchyError when A->B->C, then A tries to move under C."""
@@ -239,7 +239,7 @@ class TestChangeWorkspaceParent:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(WorkspaceHierarchyChanged, capture_handler)  # type: ignore[arg-type]
-        service = ChangeWorkspaceParentService(
+        service = ChangeWorkspaceParentUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -259,7 +259,7 @@ class TestChangeWorkspaceParent:
 
     async def test_raises_when_parent_workspace_not_found(
         self,
-        service: ChangeWorkspaceParentService,
+        service: ChangeWorkspaceParentUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """ParentWorkspaceNotFoundError is raised when new_parent_id does not exist."""

@@ -13,7 +13,7 @@ from contexts.workspace.application.captain_query_service import (
     CaptainQueryInput,
 )
 from contexts.workspace.application.captain_query_service import (
-    CaptainQueryService as WorkspaceCaptainQueryService,
+    CaptainQueryService as WorkspaceCaptainQueryServiceImpl,
 )
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from shared.domain.value_objects import UserId
@@ -28,7 +28,7 @@ class WorkspaceCaptainQueryService(CaptainQueryService):
     """
 
     def __init__(self, *, workspace_repo: WorkspaceRepository) -> None:
-        self._workspace_captain_query = WorkspaceCaptainQueryService(workspace_repo)
+        self._workspace_captain_query = WorkspaceCaptainQueryServiceImpl(workspace_repo)
 
     async def get_captains_for_user(self, user_id: UserId) -> list[UserId]:
         output = await self._workspace_captain_query.execute(

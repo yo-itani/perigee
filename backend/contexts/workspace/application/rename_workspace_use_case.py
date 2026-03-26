@@ -28,7 +28,7 @@ class RenameWorkspaceInput:
     new_name: WorkspaceName
 
 
-class RenameWorkspaceService:
+class RenameWorkspaceUseCase:
     """Application service that renames an existing workspace."""
 
     def __init__(

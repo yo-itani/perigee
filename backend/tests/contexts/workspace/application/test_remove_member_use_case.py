@@ -1,12 +1,12 @@
-"""Tests for RemoveMemberService."""
+"""Tests for RemoveMemberUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.remove_member_service import (
+from contexts.workspace.application.remove_member_use_case import (
     RemoveMemberInput,
-    RemoveMemberService,
+    RemoveMemberUseCase,
     WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import MemberRemoved
@@ -46,8 +46,8 @@ class TestRemoveMember:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> RemoveMemberService:
-        return RemoveMemberService(
+    ) -> RemoveMemberUseCase:
+        return RemoveMemberUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -67,7 +67,7 @@ class TestRemoveMember:
 
     async def test_removes_member(
         self,
-        service: RemoveMemberService,
+        service: RemoveMemberUseCase,
         repo: InMemoryWorkspaceRepository,
         workspace_with_member: tuple[Workspace, UserId],
     ) -> None:
@@ -82,7 +82,7 @@ class TestRemoveMember:
 
     async def test_commits_via_uow(
         self,
-        service: RemoveMemberService,
+        service: RemoveMemberUseCase,
         uow: StubUnitOfWork,
         workspace_with_member: tuple[Workspace, UserId],
     ) -> None:
@@ -108,7 +108,7 @@ class TestRemoveMember:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(MemberRemoved, capture_handler)  # type: ignore[arg-type]
-        service = RemoveMemberService(
+        service = RemoveMemberUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -124,7 +124,7 @@ class TestRemoveMember:
 
     async def test_raises_when_workspace_not_found(
         self,
-        service: RemoveMemberService,
+        service: RemoveMemberUseCase,
     ) -> None:
         """WorkspaceNotFoundError is raised when workspace does not exist."""
         with pytest.raises(WorkspaceNotFoundError):
@@ -137,7 +137,7 @@ class TestRemoveMember:
 
     async def test_raises_when_membership_not_found(
         self,
-        service: RemoveMemberService,
+        service: RemoveMemberUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """MembershipNotFoundError is raised when user is not a member."""

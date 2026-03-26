@@ -1,4 +1,4 @@
-"""Tests for GetCaptainsForUserUseCase."""
+"""Tests for GetCaptainsForUserQueryService."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import datetime
 from contexts.workspace.application.get_captains_for_user import (
     GetCaptainsForUserInput,
     GetCaptainsForUserOutput,
-    GetCaptainsForUserUseCase,
+    GetCaptainsForUserQueryService,
 )
 from contexts.workspace.domain.value_objects import MembershipRole
 from contexts.workspace.domain.workspace import Workspace
@@ -18,9 +18,9 @@ from tests.contexts.workspace.application.conftest import InMemoryWorkspaceRepos
 
 def _build_use_case(
     repo: InMemoryWorkspaceRepository | None = None,
-) -> tuple[GetCaptainsForUserUseCase, InMemoryWorkspaceRepository]:
+) -> tuple[GetCaptainsForUserQueryService, InMemoryWorkspaceRepository]:
     r = repo or InMemoryWorkspaceRepository()
-    uc = GetCaptainsForUserUseCase(workspace_repository=r)
+    uc = GetCaptainsForUserQueryService(workspace_repository=r)
     return uc, r
 
 

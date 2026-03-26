@@ -1,13 +1,13 @@
-"""Tests for AddMemberService."""
+"""Tests for AddMemberUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.add_member_service import (
+from contexts.workspace.application.add_member_use_case import (
     AddMemberInput,
     AddMemberOutput,
-    AddMemberService,
+    AddMemberUseCase,
     WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import MemberAdded
@@ -47,8 +47,8 @@ class TestAddMember:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> AddMemberService:
-        return AddMemberService(
+    ) -> AddMemberUseCase:
+        return AddMemberUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -64,7 +64,7 @@ class TestAddMember:
 
     async def test_adds_member_with_default_role(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
         repo: InMemoryWorkspaceRepository,
         workspace: Workspace,
     ) -> None:
@@ -84,7 +84,7 @@ class TestAddMember:
 
     async def test_adds_member_as_captain(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
         repo: InMemoryWorkspaceRepository,
         workspace: Workspace,
     ) -> None:
@@ -106,7 +106,7 @@ class TestAddMember:
 
     async def test_commits_via_uow(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
         uow: StubUnitOfWork,
         workspace: Workspace,
     ) -> None:
@@ -131,7 +131,7 @@ class TestAddMember:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(MemberAdded, capture_handler)  # type: ignore[arg-type]
-        service = AddMemberService(
+        service = AddMemberUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -151,7 +151,7 @@ class TestAddMember:
 
     async def test_raises_when_workspace_not_found(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
     ) -> None:
         """WorkspaceNotFoundError is raised when workspace does not exist."""
         with pytest.raises(WorkspaceNotFoundError):
@@ -164,7 +164,7 @@ class TestAddMember:
 
     async def test_raises_when_duplicate_membership(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
         workspace: Workspace,
     ) -> None:
         """DuplicateMembershipError is raised when user is already a member."""
@@ -180,7 +180,7 @@ class TestAddMember:
 
     async def test_user_can_join_multiple_workspaces(
         self,
-        service: AddMemberService,
+        service: AddMemberUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """A user can belong to multiple workspaces."""

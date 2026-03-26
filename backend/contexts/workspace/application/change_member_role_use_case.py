@@ -29,7 +29,7 @@ class ChangeMemberRoleInput:
     new_role: MembershipRole
 
 
-class ChangeMemberRoleService:
+class ChangeMemberRoleUseCase:
     """Application service that changes a member's role in a workspace.
 
     Domain layer raises MembershipNotFoundError if the user is not a member.

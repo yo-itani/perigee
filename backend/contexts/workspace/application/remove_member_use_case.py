@@ -1,15 +1,11 @@
-"""Use case: Add a member to a workspace."""
+"""Use case: Remove a member from a workspace."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.workspace.domain.value_objects import (
-    MembershipId,
-    MembershipRole,
-    WorkspaceId,
-)
+from contexts.workspace.domain.value_objects import WorkspaceId
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
@@ -25,26 +21,17 @@ class WorkspaceNotFoundError(Exception):
 
 
 @dataclass(frozen=True)
-class AddMemberInput:
-    """Input DTO for adding a member to a workspace."""
+class RemoveMemberInput:
+    """Input DTO for removing a member from a workspace."""
 
     workspace_id: WorkspaceId
     user_id: UserId
-    role: MembershipRole = MembershipRole.MEMBER
 
 
-@dataclass(frozen=True)
-class AddMemberOutput:
-    """Output DTO for adding a member to a workspace."""
+class RemoveMemberUseCase:
+    """Application service that removes a member from a workspace.
 
-    membership_id: MembershipId
-
-
-class AddMemberService:
-    """Application service that adds a member to a workspace.
-
-    The user is added with the specified role (defaults to Member).
-    Domain layer prevents duplicate memberships.
+    Domain layer raises MembershipNotFoundError if the user is not a member.
     """
 
     def __init__(
@@ -59,19 +46,16 @@ class AddMemberService:
 
     async def execute(
         self,
-        input_dto: AddMemberInput,
-    ) -> AddMemberOutput:
-        """Add a member to the workspace and return the membership id.
+        input_dto: RemoveMemberInput,
+    ) -> None:
+        """Remove a member from the workspace.
 
         Args:
-            input_dto: The input containing workspace id, user id, and role.
-
-        Returns:
-            Output containing the id of the newly created membership.
+            input_dto: The input containing workspace id and user id.
 
         Raises:
             WorkspaceNotFoundError: If the workspace does not exist.
-            DuplicateMembershipError: If the user is already a member.
+            MembershipNotFoundError: If the user is not a member.
         """
         now = datetime.now(UTC)
 
@@ -80,15 +64,9 @@ class AddMemberService:
             if workspace is None:
                 raise WorkspaceNotFoundError()
 
-            membership = workspace.add_member(
-                user_id=input_dto.user_id,
-                role=input_dto.role,
-                now=now,
-            )
+            workspace.remove_member(user_id=input_dto.user_id, now=now)
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
             await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)
-
-        return AddMemberOutput(membership_id=membership.id)

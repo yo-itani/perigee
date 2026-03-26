@@ -36,7 +36,7 @@ class CreateWorkspaceOutput:
     workspace_id: WorkspaceId
 
 
-class CreateWorkspaceService:
+class CreateWorkspaceUseCase:
     """Application service that creates a new workspace.
 
     The workspace is optionally placed under a parent workspace.
