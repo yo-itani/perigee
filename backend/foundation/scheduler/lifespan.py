@@ -68,7 +68,7 @@ class _SessionScopedReminderService:
             await session.commit()
 
 
-def _get_notification_sender() -> NotificationSender:
+def get_base_notification_sender() -> NotificationSender:
     """Get the base NotificationSender implementation.
 
     Returns a log-only sender until Slack integration is configured.
@@ -106,6 +106,6 @@ def _get_recording_notification_sender(
 
     assert isinstance(session, AsyncSession)
     return RecordingNotificationSender(
-        inner=_get_notification_sender(),
+        inner=get_base_notification_sender(),
         notification_record_repository=SqlAlchemyNotificationRecordRepository(session),
     )
