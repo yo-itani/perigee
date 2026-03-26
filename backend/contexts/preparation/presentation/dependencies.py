@@ -8,29 +8,29 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_event_dispatcher, get_session, get_unit_of_work
-from contexts.preparation.application.create_schedule_group_from_past_service import (
-    CreateScheduleGroupFromPastService,
+from contexts.preparation.application.create_schedule_group_from_past_use_case import (
+    CreateScheduleGroupFromPastUseCase,
 )
-from contexts.preparation.application.create_schedule_group_from_template_service import (  # noqa: E501
-    CreateScheduleGroupFromTemplateService,
+from contexts.preparation.application.create_schedule_group_from_template_use_case import (  # noqa: E501
+    CreateScheduleGroupFromTemplateUseCase,
 )
-from contexts.preparation.application.create_schedule_group_service import (
-    CreateScheduleGroupService,
+from contexts.preparation.application.create_schedule_group_use_case import (
+    CreateScheduleGroupUseCase,
 )
-from contexts.preparation.application.create_schedule_service import (
-    CreateScheduleService,
+from contexts.preparation.application.create_schedule_use_case import (
+    CreateScheduleUseCase,
 )
-from contexts.preparation.application.get_template_service import (
-    GetTemplateService,
+from contexts.preparation.application.get_template_query_service import (
+    GetTemplateQueryService,
 )
-from contexts.preparation.application.list_templates_service import (
-    ListTemplatesService,
+from contexts.preparation.application.list_templates_query_service import (
+    ListTemplatesQueryService,
 )
-from contexts.preparation.application.save_template_service import (
-    SaveTemplateService,
+from contexts.preparation.application.save_template_use_case import (
+    SaveTemplateUseCase,
 )
-from contexts.preparation.application.send_consultation_request_service import (
-    SendConsultationRequestService,
+from contexts.preparation.application.send_consultation_request_use_case import (
+    SendConsultationRequestUseCase,
 )
 from contexts.preparation.domain.agenda_repository import AgendaRepository
 from contexts.preparation.domain.schedule_group_repository import (
@@ -54,38 +54,38 @@ from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 
 if TYPE_CHECKING:
-    from contexts.preparation.application.accept_consultation_request_service import (
-        AcceptConsultationRequestService,
+    from contexts.preparation.application.accept_consultation_request_use_case import (
+        AcceptConsultationRequestUseCase,
     )
-    from contexts.preparation.application.add_agenda_comment_service import (
-        AddAgendaCommentService,
+    from contexts.preparation.application.add_agenda_comment_use_case import (
+        AddAgendaCommentUseCase,
     )
-    from contexts.preparation.application.add_agenda_service import (
-        AddAgendaService,
+    from contexts.preparation.application.add_agenda_use_case import (
+        AddAgendaUseCase,
     )
-    from contexts.preparation.application.cancel_schedule_service import (
-        CancelScheduleService,
+    from contexts.preparation.application.cancel_schedule_use_case import (
+        CancelScheduleUseCase,
     )
-    from contexts.preparation.application.delete_agenda_service import (
-        DeleteAgendaService,
+    from contexts.preparation.application.delete_agenda_use_case import (
+        DeleteAgendaUseCase,
     )
-    from contexts.preparation.application.get_schedule_detail_service import (
-        GetScheduleDetailService,
+    from contexts.preparation.application.get_schedule_detail_query_service import (
+        GetScheduleDetailQueryService,
     )
-    from contexts.preparation.application.list_schedule_agendas_service import (
-        ListScheduleAgendasService,
+    from contexts.preparation.application.list_schedule_agendas_query_service import (
+        ListScheduleAgendasQueryService,
     )
-    from contexts.preparation.application.list_upcoming_schedules_service import (
-        ListUpcomingSchedulesService,
+    from contexts.preparation.application.list_upcoming_schedules_query_service import (
+        ListUpcomingSchedulesQueryService,
     )
-    from contexts.preparation.application.reject_consultation_request_service import (
-        RejectConsultationRequestService,
+    from contexts.preparation.application.reject_consultation_request_use_case import (
+        RejectConsultationRequestUseCase,
     )
-    from contexts.preparation.application.rename_schedule_service import (
-        RenameScheduleService,
+    from contexts.preparation.application.rename_schedule_use_case import (
+        RenameScheduleUseCase,
     )
-    from contexts.preparation.application.reschedule_service import (
-        RescheduleService,
+    from contexts.preparation.application.reschedule_use_case import (
+        RescheduleUseCase,
     )
     from contexts.record.application.get_last_session_summary import (
         GetLastSessionSummaryQueryService,
@@ -155,20 +155,20 @@ def _get_action_item_repository(
 # ---------------------------------------------------------------------------
 
 
-def get_create_schedule_service(
+def get_create_schedule_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> CreateScheduleService:
-    """Provide a CreateScheduleService with all dependencies injected."""
-    return CreateScheduleService(
+) -> CreateScheduleUseCase:
+    """Provide a CreateScheduleUseCase with all dependencies injected."""
+    return CreateScheduleUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_create_schedule_group_service(
+def get_create_schedule_group_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_group_repo: Annotated[
         ScheduleGroupRepository, Depends(get_schedule_group_repository)
@@ -176,9 +176,9 @@ def get_create_schedule_group_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> CreateScheduleGroupService:
-    """Provide a CreateScheduleGroupService with all dependencies injected."""
-    return CreateScheduleGroupService(
+) -> CreateScheduleGroupUseCase:
+    """Provide a CreateScheduleGroupUseCase with all dependencies injected."""
+    return CreateScheduleGroupUseCase(
         uow=uow,
         schedule_group_repo=schedule_group_repo,
         schedule_repo=schedule_repo,
@@ -187,7 +187,7 @@ def get_create_schedule_group_service(
     )
 
 
-def get_create_schedule_group_from_template_service(
+def get_create_schedule_group_from_template_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     template_repo: Annotated[TemplateRepository, Depends(get_template_repository)],
     schedule_group_repo: Annotated[
@@ -196,9 +196,9 @@ def get_create_schedule_group_from_template_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> CreateScheduleGroupFromTemplateService:
-    """Provide a CreateScheduleGroupFromTemplateService."""
-    return CreateScheduleGroupFromTemplateService(
+) -> CreateScheduleGroupFromTemplateUseCase:
+    """Provide a CreateScheduleGroupFromTemplateUseCase."""
+    return CreateScheduleGroupFromTemplateUseCase(
         uow=uow,
         template_repo=template_repo,
         schedule_group_repo=schedule_group_repo,
@@ -208,7 +208,7 @@ def get_create_schedule_group_from_template_service(
     )
 
 
-def get_create_schedule_group_from_past_service(
+def get_create_schedule_group_from_past_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_group_repo: Annotated[
         ScheduleGroupRepository, Depends(get_schedule_group_repository)
@@ -216,9 +216,9 @@ def get_create_schedule_group_from_past_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> CreateScheduleGroupFromPastService:
-    """Provide a CreateScheduleGroupFromPastService."""
-    return CreateScheduleGroupFromPastService(
+) -> CreateScheduleGroupFromPastUseCase:
+    """Provide a CreateScheduleGroupFromPastUseCase."""
+    return CreateScheduleGroupFromPastUseCase(
         uow=uow,
         schedule_group_repo=schedule_group_repo,
         schedule_repo=schedule_repo,
@@ -227,14 +227,14 @@ def get_create_schedule_group_from_past_service(
     )
 
 
-def get_send_consultation_request_service(
+def get_send_consultation_request_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> SendConsultationRequestService:
-    """Provide a SendConsultationRequestService."""
-    return SendConsultationRequestService(
+) -> SendConsultationRequestUseCase:
+    """Provide a SendConsultationRequestUseCase."""
+    return SendConsultationRequestUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         agenda_repo=agenda_repo,
@@ -242,27 +242,27 @@ def get_send_consultation_request_service(
     )
 
 
-def get_list_templates_service(
+def get_list_templates_query_service(
     template_repo: Annotated[TemplateRepository, Depends(get_template_repository)],
-) -> ListTemplatesService:
-    """Provide a ListTemplatesService."""
-    return ListTemplatesService(template_repo=template_repo)
+) -> ListTemplatesQueryService:
+    """Provide a ListTemplatesQueryService."""
+    return ListTemplatesQueryService(template_repo=template_repo)
 
 
-def get_get_template_service(
+def get_get_template_query_service(
     template_repo: Annotated[TemplateRepository, Depends(get_template_repository)],
-) -> GetTemplateService:
-    """Provide a GetTemplateService."""
-    return GetTemplateService(template_repo=template_repo)
+) -> GetTemplateQueryService:
+    """Provide a GetTemplateQueryService."""
+    return GetTemplateQueryService(template_repo=template_repo)
 
 
-def get_save_template_service(
+def get_save_template_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     template_repo: Annotated[TemplateRepository, Depends(get_template_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> SaveTemplateService:
-    """Provide a SaveTemplateService."""
-    return SaveTemplateService(
+) -> SaveTemplateUseCase:
+    """Provide a SaveTemplateUseCase."""
+    return SaveTemplateUseCase(
         uow=uow,
         template_repo=template_repo,
         event_dispatcher=event_dispatcher,
@@ -274,155 +274,136 @@ def get_save_template_service(
 # ---------------------------------------------------------------------------
 
 
-def get_get_schedule_detail_service(
+def get_get_schedule_detail_query_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
-) -> GetScheduleDetailService:
-    """Provide a GetScheduleDetailService."""
-    from contexts.preparation.application.get_schedule_detail_service import (
-        GetScheduleDetailService,
+) -> GetScheduleDetailQueryService:
+    """Provide a GetScheduleDetailQueryService."""
+    from contexts.preparation.application.get_schedule_detail_query_service import (
+        GetScheduleDetailQueryService,
     )
 
-    return GetScheduleDetailService(schedule_repo=schedule_repo)
+    return GetScheduleDetailQueryService(schedule_repo=schedule_repo)
 
 
-def get_list_schedule_agendas_service(
+def get_list_schedule_agendas_query_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
-) -> ListScheduleAgendasService:
-    """Provide a ListScheduleAgendasService."""
-    from contexts.preparation.application.list_schedule_agendas_service import (
-        ListScheduleAgendasService,
+) -> ListScheduleAgendasQueryService:
+    """Provide a ListScheduleAgendasQueryService."""
+    from contexts.preparation.application.list_schedule_agendas_query_service import (
+        ListScheduleAgendasQueryService,
     )
 
-    return ListScheduleAgendasService(
+    return ListScheduleAgendasQueryService(
         schedule_repo=schedule_repo,
         agenda_repo=agenda_repo,
     )
 
 
-def get_list_upcoming_schedules_service(
+def get_list_upcoming_schedules_query_service(
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
-) -> ListUpcomingSchedulesService:
-    """Provide a ListUpcomingSchedulesService."""
-    from contexts.preparation.application.list_upcoming_schedules_service import (
-        ListUpcomingSchedulesService,
+) -> ListUpcomingSchedulesQueryService:
+    """Provide a ListUpcomingSchedulesQueryService."""
+    from contexts.preparation.application.list_upcoming_schedules_query_service import (
+        ListUpcomingSchedulesQueryService,
     )
 
-    return ListUpcomingSchedulesService(schedule_repo=schedule_repo)
+    return ListUpcomingSchedulesQueryService(schedule_repo=schedule_repo)
 
 
-def get_accept_consultation_request_service(
+def get_accept_consultation_request_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> AcceptConsultationRequestService:
-    """Provide an AcceptConsultationRequestService."""
-    from contexts.preparation.application.accept_consultation_request_service import (
-        AcceptConsultationRequestService,
+) -> AcceptConsultationRequestUseCase:
+    """Provide an AcceptConsultationRequestUseCase."""
+    from contexts.preparation.application.accept_consultation_request_use_case import (
+        AcceptConsultationRequestUseCase,
     )
 
-    return AcceptConsultationRequestService(
+    return AcceptConsultationRequestUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_reject_consultation_request_service(
+def get_reject_consultation_request_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> RejectConsultationRequestService:
-    """Provide a RejectConsultationRequestService."""
-    from contexts.preparation.application.reject_consultation_request_service import (
-        RejectConsultationRequestService,
+) -> RejectConsultationRequestUseCase:
+    """Provide a RejectConsultationRequestUseCase."""
+    from contexts.preparation.application.reject_consultation_request_use_case import (
+        RejectConsultationRequestUseCase,
     )
 
-    return RejectConsultationRequestService(
+    return RejectConsultationRequestUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_reschedule_service(
+def get_reschedule_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> RescheduleService:
-    """Provide a RescheduleService."""
-    from contexts.preparation.application.reschedule_service import RescheduleService
+) -> RescheduleUseCase:
+    """Provide a RescheduleUseCase."""
+    from contexts.preparation.application.reschedule_use_case import RescheduleUseCase
 
-    return RescheduleService(
+    return RescheduleUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_cancel_schedule_service(
+def get_cancel_schedule_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> CancelScheduleService:
-    """Provide a CancelScheduleService."""
-    from contexts.preparation.application.cancel_schedule_service import (
-        CancelScheduleService,
+) -> CancelScheduleUseCase:
+    """Provide a CancelScheduleUseCase."""
+    from contexts.preparation.application.cancel_schedule_use_case import (
+        CancelScheduleUseCase,
     )
 
-    return CancelScheduleService(
+    return CancelScheduleUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_rename_schedule_service(
+def get_rename_schedule_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> RenameScheduleService:
-    """Provide a RenameScheduleService."""
-    from contexts.preparation.application.rename_schedule_service import (
-        RenameScheduleService,
+) -> RenameScheduleUseCase:
+    """Provide a RenameScheduleUseCase."""
+    from contexts.preparation.application.rename_schedule_use_case import (
+        RenameScheduleUseCase,
     )
 
-    return RenameScheduleService(
+    return RenameScheduleUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         event_dispatcher=event_dispatcher,
     )
 
 
-def get_add_agenda_service(
+def get_add_agenda_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> AddAgendaService:
-    """Provide an AddAgendaService."""
-    from contexts.preparation.application.add_agenda_service import AddAgendaService
+) -> AddAgendaUseCase:
+    """Provide an AddAgendaUseCase."""
+    from contexts.preparation.application.add_agenda_use_case import AddAgendaUseCase
 
-    return AddAgendaService(
-        uow=uow,
-        schedule_repo=schedule_repo,
-        agenda_repo=agenda_repo,
-        event_dispatcher=event_dispatcher,
-    )
-
-
-def get_delete_agenda_service(
-    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
-    schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
-    agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
-    event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> DeleteAgendaService:
-    """Provide a DeleteAgendaService."""
-    from contexts.preparation.application.delete_agenda_service import (
-        DeleteAgendaService,
-    )
-
-    return DeleteAgendaService(
+    return AddAgendaUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         agenda_repo=agenda_repo,
@@ -430,18 +411,37 @@ def get_delete_agenda_service(
     )
 
 
-def get_add_agenda_comment_service(
+def get_delete_agenda_use_case(
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
     agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
     event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
-) -> AddAgendaCommentService:
-    """Provide an AddAgendaCommentService."""
-    from contexts.preparation.application.add_agenda_comment_service import (
-        AddAgendaCommentService,
+) -> DeleteAgendaUseCase:
+    """Provide a DeleteAgendaUseCase."""
+    from contexts.preparation.application.delete_agenda_use_case import (
+        DeleteAgendaUseCase,
     )
 
-    return AddAgendaCommentService(
+    return DeleteAgendaUseCase(
+        uow=uow,
+        schedule_repo=schedule_repo,
+        agenda_repo=agenda_repo,
+        event_dispatcher=event_dispatcher,
+    )
+
+
+def get_add_agenda_comment_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
+    schedule_repo: Annotated[ScheduleRepository, Depends(get_schedule_repository)],
+    agenda_repo: Annotated[AgendaRepository, Depends(get_agenda_repository)],
+    event_dispatcher: Annotated[EventDispatcher, Depends(get_event_dispatcher)],
+) -> AddAgendaCommentUseCase:
+    """Provide an AddAgendaCommentUseCase."""
+    from contexts.preparation.application.add_agenda_comment_use_case import (
+        AddAgendaCommentUseCase,
+    )
+
+    return AddAgendaCommentUseCase(
         uow=uow,
         schedule_repo=schedule_repo,
         agenda_repo=agenda_repo,

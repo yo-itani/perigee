@@ -12,7 +12,7 @@ from contexts.notification.domain.exceptions import (
 from contexts.notification.domain.exceptions import (
     UnauthorizedOperationError as NotificationUnauthorizedOperationError,
 )
-from contexts.preparation.application.cancel_schedule_service import (
+from contexts.preparation.application.cancel_schedule_use_case import (
     ScheduleNotFoundError,
 )
 from contexts.preparation.domain.exceptions import (

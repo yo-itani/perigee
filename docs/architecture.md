@@ -200,6 +200,26 @@ Workspace コンテキストは組織・グループの階層と所属を管理�
 
 ## アプリケーション層の設計規約
 
+### クラス命名規則
+
+| 分類 | 命名 | 例 |
+|---|---|---|
+| コマンド（状態変更を伴う操作） | `*UseCase` | `CreateScheduleUseCase`, `PublishRecordUseCase` |
+| クエリ（読み取り専用） | `*QueryService` | `GetTemplateQueryService`, `ListUpcomingSchedulesQueryService` |
+
+- **UseCase**: 状態変更を伴うアプリケーション操作は `*UseCase`（UoW やイベント発行の有無は結果であり、判定基準ではない）
+- **QueryService**: リポジトリから読み取るだけで状態を変更しないものは `*QueryService`
+
+#### ファイル名規則
+
+| 分類 | ファイル名 | 例 |
+|---|---|---|
+| コマンド | `*_use_case.py` | `create_schedule_use_case.py` |
+| クエリ | `*_query_service.py` | `get_template_query_service.py` |
+
+- `*_usecase.py` は採用しない（`*_use_case.py` に統一）
+- 既存の動詞ベースファイル名（例: `get_captains_for_user.py`）はそのまま維持し、クラス名のみリネーム
+
 ### ユースケースの Input / Output DTO
 
 - ユースケースの入出力には `@dataclass(frozen=True)` の DTO を使用する
