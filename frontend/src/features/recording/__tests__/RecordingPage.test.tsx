@@ -406,6 +406,35 @@ describe("RecordingPage", () => {
     });
   });
 
+  it("does not double-fire updateMemo when blur and complete button overlap", async () => {
+    // Simulate updateMemo taking time so blur and click overlap
+    mockUpdateMemo.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ record_id: "r1" }), 50),
+        ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const textarea = screen.getByRole("textbox", { name: "メモ" });
+    await user.type(textarea, "追記");
+
+    // Click the complete button while textarea has focus (triggers blur + click)
+    const completeButtons = screen.getAllByRole("button", {
+      name: "完了として保存",
+    });
+    await user.click(completeButtons[0]);
+
+    await waitFor(() => {
+      expect(mockSaveDraft).toHaveBeenCalled();
+    });
+
+    // updateMemo should be called exactly once (from handleSaveAndComplete),
+    // not twice (blur should be suppressed)
+    expect(mockUpdateMemo).toHaveBeenCalledTimes(1);
+  });
+
   it("does not call saveDraft when updateMemo fails", async () => {
     mockUpdateMemo.mockResolvedValueOnce(null);
     const user = userEvent.setup();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useScheduleAgendas } from "@/features/preparation/hooks/useScheduleAgendas";
@@ -66,6 +66,7 @@ export function RecordingPage() {
   } = useSaveDraft(recordId!);
 
   const [memo, setMemo] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
 
   // Initialize memo from record once loaded
   const currentMemo = memo ?? record?.memo ?? "";
@@ -75,6 +76,7 @@ export function RecordingPage() {
   };
 
   const handleSaveMemo = async () => {
+    if (isSavingRef.current) return;
     await updateMemo(currentMemo);
   };
 
@@ -115,13 +117,21 @@ export function RecordingPage() {
     }
   };
 
+  const handleCompleteMouseDown = () => {
+    isSavingRef.current = true;
+  };
+
   const handleSaveAndComplete = async () => {
-    // Save memo first, then save draft, then navigate to publish
-    const memoResult = await updateMemo(currentMemo);
-    if (!memoResult) return;
-    const result = await saveDraft();
-    if (result) {
-      void navigate(`/records/${recordId}/publish`);
+    try {
+      // Save memo first, then save draft, then navigate to publish
+      const memoResult = await updateMemo(currentMemo);
+      if (!memoResult) return;
+      const result = await saveDraft();
+      if (result) {
+        void navigate(`/records/${recordId}/publish`);
+      }
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
@@ -162,6 +172,7 @@ export function RecordingPage() {
         </div>
         <Button
           size="lg"
+          onMouseDown={handleCompleteMouseDown}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
@@ -218,6 +229,7 @@ export function RecordingPage() {
         )}
         <Button
           size="lg"
+          onMouseDown={handleCompleteMouseDown}
           onClick={() => void handleSaveAndComplete()}
           disabled={isSavingDraft || isSavingMemo}
         >
