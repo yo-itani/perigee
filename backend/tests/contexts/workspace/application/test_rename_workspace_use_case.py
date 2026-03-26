@@ -1,12 +1,12 @@
-"""Tests for RenameWorkspaceService."""
+"""Tests for RenameWorkspaceUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.rename_workspace_service import (
+from contexts.workspace.application.rename_workspace_use_case import (
     RenameWorkspaceInput,
-    RenameWorkspaceService,
+    RenameWorkspaceUseCase,
     WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import WorkspaceRenamed
@@ -41,8 +41,8 @@ class TestRenameWorkspace:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> RenameWorkspaceService:
-        return RenameWorkspaceService(
+    ) -> RenameWorkspaceUseCase:
+        return RenameWorkspaceUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -61,7 +61,7 @@ class TestRenameWorkspace:
 
     async def test_renames_workspace(
         self,
-        service: RenameWorkspaceService,
+        service: RenameWorkspaceUseCase,
         repo: InMemoryWorkspaceRepository,
         existing_workspace: Workspace,
     ) -> None:
@@ -81,7 +81,7 @@ class TestRenameWorkspace:
 
     async def test_commits_via_uow(
         self,
-        service: RenameWorkspaceService,
+        service: RenameWorkspaceUseCase,
         uow: StubUnitOfWork,
         existing_workspace: Workspace,
     ) -> None:
@@ -109,7 +109,7 @@ class TestRenameWorkspace:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(WorkspaceRenamed, capture_handler)  # type: ignore[arg-type]
-        service = RenameWorkspaceService(
+        service = RenameWorkspaceUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -142,7 +142,7 @@ class TestRenameWorkspace:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(WorkspaceRenamed, capture_handler)  # type: ignore[arg-type]
-        service = RenameWorkspaceService(
+        service = RenameWorkspaceUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -159,7 +159,7 @@ class TestRenameWorkspace:
 
     async def test_raises_when_workspace_not_found(
         self,
-        service: RenameWorkspaceService,
+        service: RenameWorkspaceUseCase,
     ) -> None:
         """WorkspaceNotFoundError is raised for a non-existent workspace."""
         with pytest.raises(WorkspaceNotFoundError):

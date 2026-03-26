@@ -1,4 +1,4 @@
-"""Use case: Get Captain user IDs for a given user.
+"""Query service: Get Captain user IDs for a given user.
 
 Looks up all Workspaces where the user has a Membership, walks up the
 ancestor chain for each, and returns deduplicated Captain UserIds.
@@ -16,19 +16,19 @@ from shared.domain.value_objects import UserId
 
 @dataclass(frozen=True)
 class GetCaptainsForUserInput:
-    """Input DTO for GetCaptainsForUserUseCase."""
+    """Input DTO for GetCaptainsForUserQueryService."""
 
     user_id: UserId
 
 
 @dataclass(frozen=True)
 class GetCaptainsForUserOutput:
-    """Output DTO for GetCaptainsForUserUseCase."""
+    """Output DTO for GetCaptainsForUserQueryService."""
 
     captain_ids: list[UserId]
 
 
-class GetCaptainsForUserUseCase:
+class GetCaptainsForUserQueryService:
     """Return deduplicated Captain UserIds from all Workspaces the user
     belongs to, including ancestor Workspaces.
 

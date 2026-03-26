@@ -1,13 +1,13 @@
-"""Tests for CreateWorkspaceService."""
+"""Tests for CreateWorkspaceUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.create_workspace_service import (
+from contexts.workspace.application.create_workspace_use_case import (
     CreateWorkspaceInput,
     CreateWorkspaceOutput,
-    CreateWorkspaceService,
+    CreateWorkspaceUseCase,
     ParentWorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import WorkspaceCreated
@@ -41,8 +41,8 @@ class TestCreateWorkspace:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> CreateWorkspaceService:
-        return CreateWorkspaceService(
+    ) -> CreateWorkspaceUseCase:
+        return CreateWorkspaceUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -50,7 +50,7 @@ class TestCreateWorkspace:
 
     async def test_creates_root_workspace(
         self,
-        service: CreateWorkspaceService,
+        service: CreateWorkspaceUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Root workspace (no parent) is persisted correctly."""
@@ -66,7 +66,7 @@ class TestCreateWorkspace:
 
     async def test_creates_child_workspace(
         self,
-        service: CreateWorkspaceService,
+        service: CreateWorkspaceUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Child workspace is linked to the specified parent."""
@@ -87,7 +87,7 @@ class TestCreateWorkspace:
 
     async def test_commits_via_uow(
         self,
-        service: CreateWorkspaceService,
+        service: CreateWorkspaceUseCase,
         uow: StubUnitOfWork,
     ) -> None:
         """UoW commit is called after save."""
@@ -108,7 +108,7 @@ class TestCreateWorkspace:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(WorkspaceCreated, capture_handler)  # type: ignore[arg-type]
-        service = CreateWorkspaceService(
+        service = CreateWorkspaceUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -124,7 +124,7 @@ class TestCreateWorkspace:
 
     async def test_raises_when_parent_workspace_not_found(
         self,
-        service: CreateWorkspaceService,
+        service: CreateWorkspaceUseCase,
     ) -> None:
         """ParentWorkspaceNotFoundError is raised when parent_id does not exist."""
         with pytest.raises(ParentWorkspaceNotFoundError):

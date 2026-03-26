@@ -194,25 +194,25 @@ from contexts.record.domain.exceptions import (
 )
 
 # --- Workspace context: application exceptions ---
-from contexts.workspace.application.add_member_service import (
+from contexts.workspace.application.add_member_use_case import (
     WorkspaceNotFoundError as AddMemberWorkspaceNotFoundError,
 )
-from contexts.workspace.application.change_member_role_service import (
+from contexts.workspace.application.change_member_role_use_case import (
     WorkspaceNotFoundError as ChangeMemberRoleWorkspaceNotFoundError,
 )
-from contexts.workspace.application.change_workspace_parent_service import (
+from contexts.workspace.application.change_workspace_parent_use_case import (
     ParentWorkspaceNotFoundError as ChangeParentParentNotFoundError,
 )
-from contexts.workspace.application.change_workspace_parent_service import (
+from contexts.workspace.application.change_workspace_parent_use_case import (
     WorkspaceNotFoundError as ChangeParentWorkspaceNotFoundError,
 )
-from contexts.workspace.application.create_workspace_service import (
+from contexts.workspace.application.create_workspace_use_case import (
     ParentWorkspaceNotFoundError as CreateWorkspaceParentNotFoundError,
 )
-from contexts.workspace.application.remove_member_service import (
+from contexts.workspace.application.remove_member_use_case import (
     WorkspaceNotFoundError as RemoveMemberWorkspaceNotFoundError,
 )
-from contexts.workspace.application.rename_workspace_service import (
+from contexts.workspace.application.rename_workspace_use_case import (
     WorkspaceNotFoundError as RenameWorkspaceNotFoundError,
 )
 

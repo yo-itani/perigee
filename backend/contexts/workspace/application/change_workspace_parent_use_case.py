@@ -35,7 +35,7 @@ class ChangeWorkspaceParentInput:
     new_parent_id: WorkspaceId | None
 
 
-class ChangeWorkspaceParentService:
+class ChangeWorkspaceParentUseCase:
     """Application service that changes a workspace's parent.
 
     Performs full ancestor-chain cycle detection using

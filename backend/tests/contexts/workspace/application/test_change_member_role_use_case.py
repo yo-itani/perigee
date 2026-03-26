@@ -1,12 +1,12 @@
-"""Tests for ChangeMemberRoleService."""
+"""Tests for ChangeMemberRoleUseCase."""
 
 from __future__ import annotations
 
 import pytest
 
-from contexts.workspace.application.change_member_role_service import (
+from contexts.workspace.application.change_member_role_use_case import (
     ChangeMemberRoleInput,
-    ChangeMemberRoleService,
+    ChangeMemberRoleUseCase,
     WorkspaceNotFoundError,
 )
 from contexts.workspace.domain.events import MemberRoleChanged
@@ -46,8 +46,8 @@ class TestChangeMemberRole:
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         dispatcher: InMemoryEventDispatcher,
-    ) -> ChangeMemberRoleService:
-        return ChangeMemberRoleService(
+    ) -> ChangeMemberRoleUseCase:
+        return ChangeMemberRoleUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -67,7 +67,7 @@ class TestChangeMemberRole:
 
     async def test_changes_role_to_captain(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
         repo: InMemoryWorkspaceRepository,
         workspace_with_member: tuple[Workspace, UserId],
     ) -> None:
@@ -99,7 +99,7 @@ class TestChangeMemberRole:
         ws.collect_events()
         await repo.save(ws)
 
-        service = ChangeMemberRoleService(
+        service = ChangeMemberRoleUseCase(
             uow=uow, workspace_repo=repo, event_dispatcher=dispatcher
         )
 
@@ -117,7 +117,7 @@ class TestChangeMemberRole:
 
     async def test_noop_when_same_role(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
         uow: StubUnitOfWork,
         repo: InMemoryWorkspaceRepository,
         workspace_with_member: tuple[Workspace, UserId],
@@ -144,7 +144,7 @@ class TestChangeMemberRole:
 
     async def test_commits_via_uow(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
         uow: StubUnitOfWork,
         workspace_with_member: tuple[Workspace, UserId],
     ) -> None:
@@ -176,7 +176,7 @@ class TestChangeMemberRole:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(MemberRoleChanged, capture_handler)  # type: ignore[arg-type]
-        service = ChangeMemberRoleService(
+        service = ChangeMemberRoleUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -213,7 +213,7 @@ class TestChangeMemberRole:
 
         dispatcher = InMemoryEventDispatcher()
         dispatcher.register(MemberRoleChanged, capture_handler)  # type: ignore[arg-type]
-        service = ChangeMemberRoleService(
+        service = ChangeMemberRoleUseCase(
             uow=uow,
             workspace_repo=repo,
             event_dispatcher=dispatcher,
@@ -231,7 +231,7 @@ class TestChangeMemberRole:
 
     async def test_raises_when_workspace_not_found(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
     ) -> None:
         """WorkspaceNotFoundError is raised when workspace does not exist."""
         with pytest.raises(WorkspaceNotFoundError):
@@ -245,7 +245,7 @@ class TestChangeMemberRole:
 
     async def test_raises_when_membership_not_found(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """MembershipNotFoundError is raised when user is not a member."""
@@ -264,7 +264,7 @@ class TestChangeMemberRole:
 
     async def test_multiple_captains_allowed(
         self,
-        service: ChangeMemberRoleService,
+        service: ChangeMemberRoleUseCase,
         repo: InMemoryWorkspaceRepository,
     ) -> None:
         """Multiple members can be promoted to Captain in the same workspace."""
