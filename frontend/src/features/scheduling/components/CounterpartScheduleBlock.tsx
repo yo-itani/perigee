@@ -7,8 +7,6 @@ export interface CounterpartScheduleData {
   startDate: string;
   startTime: string;
   durationMinutes: number;
-  recurrenceType: string;
-  recurrenceDayOfWeek: string;
 }
 
 interface CounterpartScheduleBlockProps {
@@ -23,21 +21,6 @@ const DURATION_OPTIONS = [
   { value: 90, label: "90分" },
 ];
 
-const RECURRENCE_OPTIONS = [
-  { value: "weekly", label: "毎週" },
-  { value: "biweekly", label: "隔週" },
-  { value: "monthly", label: "毎月" },
-];
-
-const DAY_OF_WEEK_OPTIONS = [
-  { value: "monday", label: "月曜" },
-  { value: "tuesday", label: "火曜" },
-  { value: "wednesday", label: "水曜" },
-  { value: "thursday", label: "木曜" },
-  { value: "friday", label: "金曜" },
-  { value: "saturday", label: "土曜" },
-  { value: "sunday", label: "日曜" },
-];
 
 export function CounterpartScheduleBlock({
   data,
@@ -103,37 +86,6 @@ export function CounterpartScheduleBlock({
               </option>
             ))}
           </select>
-        </div>
-        <div className="flex min-w-[200px] flex-[2] flex-col gap-1">
-          <label className="text-xs text-muted-foreground">繰り返し</label>
-          <div className="flex gap-2">
-            <select
-              className="h-8 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              value={data.recurrenceType}
-              onChange={(e) =>
-                handleFieldChange("recurrenceType", e.target.value)
-              }
-            >
-              {RECURRENCE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <select
-              className="h-8 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              value={data.recurrenceDayOfWeek}
-              onChange={(e) =>
-                handleFieldChange("recurrenceDayOfWeek", e.target.value)
-              }
-            >
-              {DAY_OF_WEEK_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
     </div>
