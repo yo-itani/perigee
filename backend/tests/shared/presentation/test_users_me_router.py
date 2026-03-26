@@ -18,6 +18,7 @@ from shared.presentation.router import router
 
 _ADMIN_ID = str(uuid.uuid4())
 _MEMBER_ID = str(uuid.uuid4())
+_INACTIVE_ID = str(uuid.uuid4())
 
 _admin_user = User(
     id=UserId.from_str(_ADMIN_ID),
@@ -36,10 +37,15 @@ _member_user = User(
     is_active=True,
 )
 
-_repo = InMemoryUserRepository(users=[_admin_user, _member_user])
+_inactive_user = User(
+    id=UserId.from_str(_INACTIVE_ID),
+    name="Inactive User",
+    email="inactive@example.com",
+    role=UserRole.MEMBER,
+    is_active=False,
+)
 
-# Track which user is "current" per test
-_current_user: User | None = None
+_repo = InMemoryUserRepository(users=[_admin_user, _member_user, _inactive_user])
 
 
 def _build_app() -> FastAPI:
@@ -165,3 +171,34 @@ class TestUpdateMyProfile:
                 json={"name": "Test", "email": "not-an-email"},
             )
         assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_with_same_email_succeeds(self) -> None:
+        """User can update their profile while keeping the same email."""
+        # First read the current email
+        async with await _client() as client:
+            get_resp = await client.get(
+                "/users/me", headers={"X-User-Id": _ADMIN_ID}
+            )
+        current_email = get_resp.json()["email"]
+
+        # Update name but keep the same email
+        async with await _client() as client:
+            resp = await client.put(
+                "/users/me",
+                headers={"X-User-Id": _ADMIN_ID},
+                json={"name": "Admin Same Email", "email": current_email},
+            )
+        assert resp.status_code == 200
+        assert resp.json()["email"] == current_email
+        assert resp.json()["name"] == "Admin Same Email"
+
+    @pytest.mark.asyncio
+    async def test_deactivated_user_returns_403(self) -> None:
+        """Deactivated user cannot access API endpoints."""
+        async with await _client() as client:
+            resp = await client.get(
+                "/users/me", headers={"X-User-Id": _INACTIVE_ID}
+            )
+        assert resp.status_code == 403
+        assert resp.json()["detail"] == "User account is deactivated"

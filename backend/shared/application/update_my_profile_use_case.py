@@ -44,7 +44,7 @@ class UpdateMyProfileUseCase:
         # Check email uniqueness if changed
         if current_user.email != input_dto.email:
             existing = await self._user_repo.get_by_email(input_dto.email)
-            if existing is not None:
+            if existing is not None and existing.id != current_user.id:
                 raise EmailAlreadyTakenError(
                     f"Email {input_dto.email} is already taken"
                 )
