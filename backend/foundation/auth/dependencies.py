@@ -4,14 +4,13 @@ import uuid
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_session
 from shared.domain.user import User
+from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId
+from shared.presentation.dependencies import get_user_repository
 
 _ERROR_DETAIL = "X-User-Id header is missing or invalid"
-_REQUEST_USER_KEY = "_current_user"
 
 
 def _parse_user_id_header(
@@ -32,7 +31,7 @@ def _parse_user_id_header(
 async def get_current_user_id(
     request: Request,
     parsed_id: Annotated[UserId, Depends(_parse_user_id_header)],
-    session: Annotated[AsyncSession, Depends(get_session)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> UserId:
     """Extract and verify UserId from X-User-Id header.
 
@@ -40,12 +39,7 @@ async def get_current_user_id(
     Replace the implementation body with JWT validation (or
     similar) for production use -- router signatures unchanged.
     """
-    from shared.infrastructure.sqlalchemy_user_repository import (
-        SqlAlchemyUserRepository,
-    )
-
-    repo = SqlAlchemyUserRepository(session)
-    user = await repo.get_by_id(parsed_id)
+    user = await user_repo.get_by_id(parsed_id)
     if user is None:
         raise HTTPException(
             status_code=403, detail="User not found",
@@ -62,7 +56,7 @@ async def get_current_user_id(
 
 async def get_current_user(
     request: Request,
-    user_id: Annotated[UserId, Depends(get_current_user_id)],
+    _: Annotated[UserId, Depends(get_current_user_id)],
 ) -> User:
     """Return the current User, cached by get_current_user_id."""
     return request.state._current_user  # noqa: SLF001
