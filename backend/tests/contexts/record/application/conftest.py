@@ -16,11 +16,14 @@ from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.comment import Comment
 from contexts.record.domain.comment_repository import CommentRepository
+from contexts.record.domain.read_status import ReadStatus
+from contexts.record.domain.read_status_repository import ReadStatusRepository
 from contexts.record.domain.record import Record
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import (
     ActionItemId,
     CommentId,
+    ReadStatusId,
     RecordId,
 )
 from foundation.application.unit_of_work import UnitOfWork
@@ -34,12 +37,14 @@ class InMemoryRecordRepository(RecordRepository):
 
     def __init__(self) -> None:
         self._records: dict[RecordId, Record] = {}
+        self.save_count: int = 0
 
     async def get_by_id(self, entity_id: RecordId) -> Record | None:
         return self._records.get(entity_id)
 
     async def save(self, entity: Record) -> None:
         self._records[entity.id] = entity
+        self.save_count += 1
 
     async def exists_by_participant(
         self, user_id: UserId, counterpart_id: UserId
@@ -200,6 +205,50 @@ class InMemoryCommentRepository(CommentRepository):
     @property
     def saved_comments(self) -> list[Comment]:
         return list(self._comments.values())
+
+
+class InMemoryReadStatusRepository(ReadStatusRepository):
+    """In-memory stub for ReadStatusRepository."""
+
+    def __init__(self) -> None:
+        self._statuses: dict[ReadStatusId, ReadStatus] = {}
+
+    async def get_by_id(self, entity_id: ReadStatusId) -> ReadStatus | None:
+        return self._statuses.get(entity_id)
+
+    async def save(self, entity: ReadStatus) -> None:
+        self._statuses[entity.id] = entity
+
+    async def find_by_record_and_user(
+        self, record_id: RecordId, user_id: UserId
+    ) -> ReadStatus | None:
+        for rs in self._statuses.values():
+            if rs.record_id == record_id and rs.user_id == user_id:
+                return rs
+        return None
+
+    async def upsert(self, entity: ReadStatus) -> None:
+        # Mimic ON DUPLICATE KEY UPDATE: match by (record_id, user_id)
+        for _rs_id, rs in self._statuses.items():
+            if rs.record_id == entity.record_id and rs.user_id == entity.user_id:
+                rs.mark_viewed(entity.last_viewed_at)
+                return
+        self._statuses[entity.id] = entity
+
+    async def delete_by_record_and_user(
+        self, record_id: RecordId, user_id: UserId
+    ) -> None:
+        to_delete = [
+            rs_id
+            for rs_id, rs in self._statuses.items()
+            if rs.record_id == record_id and rs.user_id == user_id
+        ]
+        for rs_id in to_delete:
+            del self._statuses[rs_id]
+
+    @property
+    def saved_statuses(self) -> list[ReadStatus]:
+        return list(self._statuses.values())
 
 
 class InMemoryScheduleRepository(ScheduleRepository):

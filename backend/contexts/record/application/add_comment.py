@@ -18,6 +18,8 @@ from contexts.record.domain.exceptions import (
     RecordNotPublishedError,
     UnauthorizedOperationError,
 )
+from contexts.record.domain.read_status import ReadStatus
+from contexts.record.domain.read_status_repository import ReadStatusRepository
 from contexts.record.domain.record_repository import RecordRepository
 from contexts.record.domain.value_objects import CommentId, RecordId, RecordStatus
 from foundation.application.unit_of_work import UnitOfWork
@@ -67,11 +69,13 @@ class AddCommentUseCase:
         *,
         record_repository: RecordRepository,
         comment_repository: CommentRepository,
+        read_status_repository: ReadStatusRepository,
         unit_of_work: UnitOfWork,
         event_dispatcher: EventDispatcher,
     ) -> None:
         self._record_repository = record_repository
         self._comment_repository = comment_repository
+        self._read_status_repository = read_status_repository
         self._unit_of_work = unit_of_work
         self._event_dispatcher = event_dispatcher
 
@@ -100,7 +104,19 @@ class AddCommentUseCase:
                 now=now,
             )
 
+            # Update latest_activity_at on the record
+            record.notify_comment_added(now)
+
+            # Auto-mark commenter as read (upsert for concurrency safety)
+            read_status = ReadStatus.create(
+                record_id=record.id,
+                user_id=input_dto.actor_id,
+                now=now,
+            )
+            await self._read_status_repository.upsert(read_status)
+
             await self._comment_repository.save(comment)
+            await self._record_repository.save(record)
             await self._unit_of_work.commit()
 
         # Dispatch events after successful commit
