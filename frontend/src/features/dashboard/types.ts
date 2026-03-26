@@ -5,6 +5,14 @@
  * across hooks and components.
  */
 
+// Re-export shared action item types for use within this feature.
+// Dashboard uses AllPendingActionItem (all-counterpart endpoint) but
+// aliases it as PendingActionItem for backward compatibility within this feature.
+export type {
+  AllPendingActionItem as PendingActionItem,
+  AllPendingActionItemsResponse as PendingActionItemsResponse,
+} from "@/types/action-item";
+
 export interface UpcomingScheduleItem {
   schedule_id: string;
   organizer_id: string;
@@ -30,19 +38,6 @@ export interface DraftRecordItem {
 
 export interface DraftRecordsResponse {
   items: DraftRecordItem[];
-}
-
-export interface PendingActionItem {
-  action_item_id: string;
-  content: string;
-  created_at: string;
-  record_id: string;
-  counterpart_id: string;
-  conducted_at: string;
-}
-
-export interface PendingActionItemsResponse {
-  items: PendingActionItem[];
 }
 
 export interface NotificationRecord {
