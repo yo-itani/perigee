@@ -17,18 +17,11 @@ from contexts.preparation.infrastructure.sqlalchemy_schedule_repository import (
     SqlAlchemyScheduleRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
 NOW = datetime(2026, 4, 1, 10, 0)
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 def _make_schedule_group(
@@ -51,7 +44,7 @@ class TestSaveAndGetById:
 
     async def test_save_and_restore_empty_group(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleGroupRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         group = _make_schedule_group(organizer_id=org)
         await repo.save(group)
@@ -69,7 +62,7 @@ class TestSaveAndGetById:
 
     async def test_save_with_agenda_templates(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleGroupRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         templates = [AgendaTemplate("Progress"), AgendaTemplate("Blockers")]
         group = _make_schedule_group(organizer_id=org, agenda_templates=templates)
@@ -97,8 +90,8 @@ class TestScheduleIdsRestoration:
     async def test_schedule_ids_restored_in_order(self, session: AsyncSession) -> None:
         group_repo = SqlAlchemyScheduleGroupRepository(session)
         schedule_repo = SqlAlchemyScheduleRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         group = _make_schedule_group(organizer_id=org)
         await group_repo.save(group)
@@ -139,7 +132,7 @@ class TestUpdateAgendaTemplates:
 
     async def test_add_agenda_template(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleGroupRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         group = _make_schedule_group(
             organizer_id=org,
@@ -162,7 +155,7 @@ class TestUpdateAgendaTemplates:
 
     async def test_remove_agenda_template(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleGroupRepository(session)
-        org = await _create_user(session)
+        org = await create_test_user(session)
 
         group = _make_schedule_group(
             organizer_id=org,

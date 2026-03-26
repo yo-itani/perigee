@@ -16,8 +16,17 @@ class InMemoryUserRepository(UserRepository):
 
     # -- UserRepository interface --------------------------------------------
 
-    def get_by_id(self, user_id: UserId) -> User | None:
+    async def get_by_id(self, user_id: UserId) -> User | None:
         return self._users.get(user_id)
 
-    def exists(self, user_id: UserId) -> bool:
+    async def get_by_email(self, email: str) -> User | None:
+        for user in self._users.values():
+            if user.email == email:
+                return user
+        return None
+
+    async def exists(self, user_id: UserId) -> bool:
         return user_id in self._users
+
+    async def save(self, user: User) -> None:
+        self._users[user.id] = user

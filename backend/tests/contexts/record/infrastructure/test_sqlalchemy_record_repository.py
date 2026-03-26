@@ -13,17 +13,9 @@ from contexts.record.infrastructure.sqlalchemy_record_repository import (
     SqlAlchemyRecordRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    """Insert a user row and return its UserId (needed for FK constraints)."""
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 def _make_record(
@@ -47,8 +39,8 @@ class TestSaveAndGetById:
 
     async def test_save_and_restore_record(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
 
         record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
         await repo.save(record)
@@ -79,8 +71,8 @@ class TestRecordUpdate:
 
     async def test_update_memo_and_status(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
 
         record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
         await repo.save(record)
@@ -104,10 +96,10 @@ class TestRecordUpdate:
 
     async def test_save_with_viewers(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
-        viewer1 = await _create_user(session)
-        viewer2 = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
+        viewer1 = await create_test_user(session)
+        viewer2 = await create_test_user(session)
 
         record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
         record.set_viewers(
@@ -125,11 +117,11 @@ class TestRecordUpdate:
 
     async def test_update_viewers_replace(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
-        viewer1 = await _create_user(session)
-        viewer2 = await _create_user(session)
-        viewer3 = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
+        viewer1 = await create_test_user(session)
+        viewer2 = await create_test_user(session)
+        viewer3 = await create_test_user(session)
 
         record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
         record.set_viewers(
@@ -156,9 +148,9 @@ class TestRecordUpdate:
 
     async def test_update_viewers_to_empty(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
-        viewer1 = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
+        viewer1 = await create_test_user(session)
 
         record = _make_record(organizer_id=organizer, counterpart_id=counterpart)
         record.set_viewers(
@@ -184,8 +176,8 @@ class TestRecordUpdate:
 
     async def test_save_with_schedule_id(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
         schedule_id = ScheduleId.generate()
 
         record = _make_record(
@@ -202,8 +194,8 @@ class TestRecordUpdate:
 
     async def test_save_without_schedule_id(self, session: AsyncSession) -> None:
         repo = SqlAlchemyRecordRepository(session)
-        organizer = await _create_user(session)
-        counterpart = await _create_user(session)
+        organizer = await create_test_user(session)
+        counterpart = await create_test_user(session)
 
         record = _make_record(
             organizer_id=organizer,

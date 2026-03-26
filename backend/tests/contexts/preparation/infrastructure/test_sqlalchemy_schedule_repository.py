@@ -16,20 +16,12 @@ from contexts.preparation.infrastructure.sqlalchemy_schedule_repository import (
     SqlAlchemyScheduleRepository,
 )
 from shared.domain.value_objects import UserId
-from shared.infrastructure.tables import UserTable
+from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
 NOW = datetime(2026, 4, 1, 10, 0)
 SCHEDULED_AT = datetime(2026, 4, 10, 14, 0)
-
-
-async def _create_user(session: AsyncSession) -> UserId:
-    """Insert a user row and return its UserId (needed for FK constraints)."""
-    user_id = UserId.generate()
-    session.add(UserTable(id=str(user_id.value)))
-    await session.flush()
-    return user_id
 
 
 def _make_schedule(
@@ -55,8 +47,8 @@ class TestSaveAndGetById:
 
     async def test_save_and_restore_new_schedule(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
         await repo.save(schedule)
@@ -92,8 +84,8 @@ class TestUpdateScalarFields:
 
     async def test_update_title_and_status(self, session: AsyncSession) -> None:
         repo = SqlAlchemyScheduleRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
         await repo.save(schedule)
@@ -120,8 +112,8 @@ class TestConfirmationRequestReconciliation:
         self, session: AsyncSession
     ) -> None:
         repo = SqlAlchemyScheduleRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
         await repo.save(schedule)
@@ -148,8 +140,8 @@ class TestConfirmationRequestReconciliation:
         self, session: AsyncSession
     ) -> None:
         repo = SqlAlchemyScheduleRepository(session)
-        org = await _create_user(session)
-        cp = await _create_user(session)
+        org = await create_test_user(session)
+        cp = await create_test_user(session)
 
         schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
         # Confirm
