@@ -225,6 +225,14 @@ class InMemoryReadStatusRepository(ReadStatusRepository):
                 return rs
         return None
 
+    async def upsert(self, entity: ReadStatus) -> None:
+        # Mimic ON DUPLICATE KEY UPDATE: match by (record_id, user_id)
+        for _rs_id, rs in self._statuses.items():
+            if rs.record_id == entity.record_id and rs.user_id == entity.user_id:
+                rs.mark_viewed(entity.last_viewed_at)
+                return
+        self._statuses[entity.id] = entity
+
     async def delete_by_record_and_user(
         self, record_id: RecordId, user_id: UserId
     ) -> None:

@@ -107,19 +107,13 @@ class AddCommentUseCase:
             # Update latest_activity_at on the record
             record.notify_comment_added(now)
 
-            # Auto-mark the commenter as having read the record
-            read_status = await self._read_status_repository.find_by_record_and_user(
-                record.id, input_dto.actor_id
+            # Auto-mark commenter as read (upsert for concurrency safety)
+            read_status = ReadStatus.create(
+                record_id=record.id,
+                user_id=input_dto.actor_id,
+                now=now,
             )
-            if read_status is None:
-                read_status = ReadStatus.create(
-                    record_id=record.id,
-                    user_id=input_dto.actor_id,
-                    now=now,
-                )
-            else:
-                read_status.mark_viewed(now)
-            await self._read_status_repository.save(read_status)
+            await self._read_status_repository.upsert(read_status)
 
             await self._comment_repository.save(comment)
             await self._record_repository.save(record)
