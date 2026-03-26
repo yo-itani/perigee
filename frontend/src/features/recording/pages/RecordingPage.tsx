@@ -94,7 +94,12 @@ export function RecordingPage() {
     return false;
   };
 
-  const handleAddActionItem = async (title: string): Promise<boolean> => {
+  // TODO: API未対応。バックエンドにdue_dateフィールドが追加されたらdueDateを送信する
+  const handleAddActionItem = async (
+    title: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _dueDate?: string,
+  ): Promise<boolean> => {
     const result = await addActionItem(title);
     if (result) {
       refetchRecord();
@@ -112,7 +117,8 @@ export function RecordingPage() {
 
   const handleSaveAndComplete = async () => {
     // Save memo first, then save draft, then navigate to publish
-    await updateMemo(currentMemo);
+    const memoResult = await updateMemo(currentMemo);
+    if (!memoResult) return;
     const result = await saveDraft();
     if (result) {
       void navigate(`/records/${recordId}/publish`);

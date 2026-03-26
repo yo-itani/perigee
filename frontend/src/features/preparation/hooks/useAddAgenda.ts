@@ -16,6 +16,10 @@ export function useAddAgenda(scheduleId: string): UseAddAgendaResult {
 
   const addAgenda = useCallback(
     async (topic: string): Promise<AddAgendaResponse | null> => {
+      if (!scheduleId) {
+        setError("スケジュールが指定されていません");
+        return null;
+      }
       setIsSubmitting(true);
       setError(null);
       try {

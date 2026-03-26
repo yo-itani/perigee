@@ -6,7 +6,7 @@ import type { RecordActionItem } from "../types";
 
 interface ActionItemFormProps {
   actionItems: RecordActionItem[];
-  onAddActionItem: (title: string) => Promise<boolean>;
+  onAddActionItem: (title: string, dueDate?: string) => Promise<boolean>;
   onDeleteActionItem: (actionItemId: string) => Promise<void>;
   isAdding: boolean;
   addError: string | null;
@@ -22,13 +22,15 @@ export function ActionItemForm({
   deleteError,
 }: ActionItemFormProps) {
   const [newTitle, setNewTitle] = useState("");
+  const [newDueDate, setNewDueDate] = useState("");
 
   const handleAdd = async () => {
     const trimmed = newTitle.trim();
     if (!trimmed) return;
-    const success = await onAddActionItem(trimmed);
+    const success = await onAddActionItem(trimmed, newDueDate || undefined);
     if (success) {
       setNewTitle("");
+      setNewDueDate("");
     }
   };
 
@@ -53,6 +55,11 @@ export function ActionItemForm({
             >
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium">{item.title}</span>
+                {item.due_date && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    期限: {item.due_date}
+                  </span>
+                )}
               </div>
               <Button
                 variant="ghost"
@@ -87,6 +94,15 @@ export function ActionItemForm({
               placeholder="アクションアイテムを追加..."
               className="flex-1"
               disabled={isAdding}
+            />
+            {/* TODO: API未対応。バックエンドにdue_dateが追加されたら送信値として連携する */}
+            <Input
+              type="date"
+              value={newDueDate}
+              onChange={(e) => setNewDueDate(e.target.value)}
+              className="w-40"
+              disabled={isAdding}
+              aria-label="期限"
             />
             <Button
               variant="outline"

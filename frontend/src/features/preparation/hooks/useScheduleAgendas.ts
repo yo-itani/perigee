@@ -39,8 +39,12 @@ export function useScheduleAgendas(
   }, [scheduleId, userId]);
 
   useEffect(() => {
+    if (!scheduleId) {
+      setIsLoading(false);
+      return;
+    }
     void fetchAgendas();
-  }, [fetchAgendas]);
+  }, [fetchAgendas, scheduleId]);
 
   return { agendas, isLoading, error, refetch: fetchAgendas };
 }

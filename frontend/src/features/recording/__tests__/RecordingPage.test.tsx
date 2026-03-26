@@ -360,10 +360,11 @@ describe("RecordingPage", () => {
 
     const input = screen.getByPlaceholderText("アクションアイテムを追加...");
     await user.type(input, "新しいアクション");
-    // Get the add button in the action item section (second "追加" button)
+    // Get the add button in the action item section (last "追加" button)
     const addButtons = screen.getAllByRole("button", { name: "追加" });
     await user.click(addButtons[addButtons.length - 1]);
 
+    // handleAddActionItem receives (title, dueDate?) but forwards only title to hook
     expect(mockAddActionItem).toHaveBeenCalledWith("新しいアクション");
   });
 
@@ -403,6 +404,24 @@ describe("RecordingPage", () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/records/r1/publish");
     });
+  });
+
+  it("does not call saveDraft when updateMemo fails", async () => {
+    mockUpdateMemo.mockResolvedValueOnce(null);
+    const user = userEvent.setup();
+    renderPage();
+
+    const completeButtons = screen.getAllByRole("button", {
+      name: "完了として保存",
+    });
+    await user.click(completeButtons[0]);
+
+    await waitFor(() => {
+      expect(mockUpdateMemo).toHaveBeenCalled();
+    });
+
+    expect(mockSaveDraft).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   // -- Input preserved on error ---------------------------------------------

@@ -10,6 +10,8 @@ export interface RecordActionItem {
   is_completed: boolean;
   counterpart_id: string;
   created_at: string;
+  /** TODO: API未対応。バックエンドにdue_dateフィールドが追加されたら連携する */
+  due_date?: string;
 }
 
 export interface RecordDetail {
@@ -32,9 +34,5 @@ export interface ConfirmAgendaResponse {
 }
 
 export interface AddActionItemResponse {
-  action_item_id: string;
-}
-
-export interface DeleteActionItemResponse {
   action_item_id: string;
 }
