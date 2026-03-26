@@ -6,10 +6,12 @@ export function AppLayout() {
   return (
     <div className="flex h-screen">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden bg-surface">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-auto p-8">
+          <div className="max-w-[680px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
