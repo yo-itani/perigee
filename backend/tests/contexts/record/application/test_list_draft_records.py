@@ -1,4 +1,4 @@
-"""Tests for ListDraftRecordsService."""
+"""Tests for ListDraftRecordsQueryService."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from contexts.preparation.domain.value_objects import ScheduleId
 from contexts.record.application.list_draft_records import (
     ListDraftRecordsInput,
     ListDraftRecordsOutput,
-    ListDraftRecordsService,
+    ListDraftRecordsQueryService,
 )
 from contexts.record.domain.memo import Memo
 from contexts.record.domain.record import Record
@@ -62,9 +62,9 @@ def _make_published_record(
 def _build_service(
     *,
     record_repo: InMemoryRecordRepository | None = None,
-) -> tuple[ListDraftRecordsService, InMemoryRecordRepository]:
+) -> tuple[ListDraftRecordsQueryService, InMemoryRecordRepository]:
     rr = record_repo or InMemoryRecordRepository()
-    svc = ListDraftRecordsService(record_repository=rr)
+    svc = ListDraftRecordsQueryService(record_repository=rr)
     return svc, rr
 
 

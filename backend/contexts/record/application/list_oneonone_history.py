@@ -35,7 +35,7 @@ class OneOnOneHistoryItemDTO:
 
 @dataclass(frozen=True)
 class ListOneOnOneHistoryInput:
-    """Input DTO for ListOneOnOneHistoryService."""
+    """Input DTO for ListOneOnOneHistoryQueryService."""
 
     actor_id: UserId
     organizer_id: UserId
@@ -46,7 +46,7 @@ class ListOneOnOneHistoryInput:
 
 @dataclass(frozen=True)
 class ListOneOnOneHistoryOutput:
-    """Output DTO for ListOneOnOneHistoryService."""
+    """Output DTO for ListOneOnOneHistoryQueryService."""
 
     items: list[OneOnOneHistoryItemDTO]
     total_count: int
@@ -56,7 +56,7 @@ class InvalidPaginationError(Exception):
     """offset or limit is out of valid range."""
 
 
-class ListOneOnOneHistoryService:
+class ListOneOnOneHistoryQueryService:
     """Query published 1-on-1 history for a pair, visible to actor.
 
     Authorization:

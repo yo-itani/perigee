@@ -33,7 +33,7 @@ class PendingActionItemDTO:
 
 @dataclass(frozen=True)
 class ListPendingActionItemsInput:
-    """Input DTO for ListPendingActionItemsService."""
+    """Input DTO for ListPendingActionItemsQueryService."""
 
     actor_id: UserId
     counterpart_id: UserId
@@ -42,7 +42,7 @@ class ListPendingActionItemsInput:
 
 @dataclass(frozen=True)
 class ListPendingActionItemsOutput:
-    """Output DTO for ListPendingActionItemsService."""
+    """Output DTO for ListPendingActionItemsQueryService."""
 
     items: list[PendingActionItemDTO]
 
@@ -57,7 +57,7 @@ class InvalidLimitError(Exception):
         super().__init__(f"limit must be between 1 and {MAX_LIMIT}, got {limit}")
 
 
-class ListPendingActionItemsService:
+class ListPendingActionItemsQueryService:
     """Query pending (not completed) action items for a counterpart.
 
     Authorization: the actor must have participated in at least one

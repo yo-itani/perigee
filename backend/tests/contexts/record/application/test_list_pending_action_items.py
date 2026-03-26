@@ -1,4 +1,4 @@
-"""Tests for ListPendingActionItemsService."""
+"""Tests for ListPendingActionItemsQueryService."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from contexts.record.application.list_pending_action_items import (
     InvalidLimitError,
     ListPendingActionItemsInput,
     ListPendingActionItemsOutput,
-    ListPendingActionItemsService,
+    ListPendingActionItemsQueryService,
 )
 from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.exceptions import UnauthorizedOperationError
@@ -66,13 +66,13 @@ def _build_service(
     record_repo: InMemoryRecordRepository | None = None,
     action_item_repo: InMemoryActionItemRepository | None = None,
 ) -> tuple[
-    ListPendingActionItemsService,
+    ListPendingActionItemsQueryService,
     InMemoryRecordRepository,
     InMemoryActionItemRepository,
 ]:
     rr = record_repo or InMemoryRecordRepository()
     air = action_item_repo or InMemoryActionItemRepository()
-    svc = ListPendingActionItemsService(
+    svc = ListPendingActionItemsQueryService(
         action_item_repository=air,
         record_repository=rr,
     )

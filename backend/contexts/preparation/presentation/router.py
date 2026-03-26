@@ -153,15 +153,15 @@ from contexts.preparation.presentation.schemas import (
 )
 from contexts.record.application.get_last_session_summary import (
     GetLastSessionSummaryInput,
-    GetLastSessionSummaryService,
+    GetLastSessionSummaryQueryService,
 )
 from contexts.record.application.list_all_pending_action_items import (
     ListAllPendingActionItemsInput,
-    ListAllPendingActionItemsService,
+    ListAllPendingActionItemsQueryService,
 )
 from contexts.record.application.list_pending_action_items import (
     ListPendingActionItemsInput,
-    ListPendingActionItemsService,
+    ListPendingActionItemsQueryService,
 )
 from foundation.auth.dependencies import get_current_user_id
 from shared.domain.value_objects import UserId
@@ -573,7 +573,7 @@ async def add_agenda_comment(
 async def list_all_pending_action_items(
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListAllPendingActionItemsService,
+        ListAllPendingActionItemsQueryService,
         Depends(get_list_all_pending_action_items_service),
     ],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
@@ -607,7 +607,8 @@ async def list_pending_action_items(
     counterpart_id: UUID,
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        ListPendingActionItemsService, Depends(get_list_pending_action_items_service)
+        ListPendingActionItemsQueryService,
+        Depends(get_list_pending_action_items_service),
     ],
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
 ) -> ListPendingActionItemsResponse:
@@ -644,7 +645,7 @@ async def get_last_session_summary(
     counterpart_id: Annotated[UUID, Query()],
     current_user_id: Annotated[UserId, Depends(get_current_user_id)],
     service: Annotated[
-        GetLastSessionSummaryService, Depends(get_get_last_session_summary_service)
+        GetLastSessionSummaryQueryService, Depends(get_get_last_session_summary_service)
     ],
 ) -> GetLastSessionSummaryResponse | None:
     output = await service.execute(

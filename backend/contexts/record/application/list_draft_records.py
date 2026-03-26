@@ -34,19 +34,19 @@ class DraftRecordItemDTO:
 
 @dataclass(frozen=True)
 class ListDraftRecordsInput:
-    """Input DTO for ListDraftRecordsService."""
+    """Input DTO for ListDraftRecordsQueryService."""
 
     actor_id: UserId
 
 
 @dataclass(frozen=True)
 class ListDraftRecordsOutput:
-    """Output DTO for ListDraftRecordsService."""
+    """Output DTO for ListDraftRecordsQueryService."""
 
     items: list[DraftRecordItemDTO]
 
 
-class ListDraftRecordsService:
+class ListDraftRecordsQueryService:
     """Query draft records owned by the actor.
 
     Authorization:

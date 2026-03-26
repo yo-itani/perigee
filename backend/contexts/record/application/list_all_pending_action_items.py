@@ -32,7 +32,7 @@ class AllPendingActionItemDTO:
 
 @dataclass(frozen=True)
 class ListAllPendingActionItemsInput:
-    """Input DTO for ListAllPendingActionItemsService."""
+    """Input DTO for ListAllPendingActionItemsQueryService."""
 
     actor_id: UserId
     limit: int = 50
@@ -40,7 +40,7 @@ class ListAllPendingActionItemsInput:
 
 @dataclass(frozen=True)
 class ListAllPendingActionItemsOutput:
-    """Output DTO for ListAllPendingActionItemsService."""
+    """Output DTO for ListAllPendingActionItemsQueryService."""
 
     items: list[AllPendingActionItemDTO]
 
@@ -55,7 +55,7 @@ class InvalidLimitError(Exception):
         super().__init__(f"limit must be between 1 and {MAX_LIMIT}, got {limit}")
 
 
-class ListAllPendingActionItemsService:
+class ListAllPendingActionItemsQueryService:
     """Query all pending (not completed) action items for an organizer.
 
     Returns action items across all counterparts where the actor is the

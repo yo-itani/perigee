@@ -26,10 +26,10 @@ from contexts.record.application.delete_action_item import DeleteActionItemUseCa
 from contexts.record.application.get_record_detail import GetRecordDetailUseCase
 from contexts.record.application.get_viewers import GetViewersUseCase
 from contexts.record.application.list_draft_records import (
-    ListDraftRecordsService,
+    ListDraftRecordsQueryService,
 )
 from contexts.record.application.list_oneonone_history import (
-    ListOneOnOneHistoryService,
+    ListOneOnOneHistoryQueryService,
 )
 from contexts.record.application.list_record_comments import (
     ListRecordCommentsUseCase,
@@ -298,18 +298,18 @@ def get_complete_action_item_use_case(
 
 def get_list_draft_records_service(
     record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
-) -> ListDraftRecordsService:
-    """Provide a ListDraftRecordsService with all dependencies injected."""
-    return ListDraftRecordsService(
+) -> ListDraftRecordsQueryService:
+    """Provide a ListDraftRecordsQueryService with all dependencies injected."""
+    return ListDraftRecordsQueryService(
         record_repository=record_repo,
     )
 
 
 def get_list_oneonone_history_service(
     record_repo: Annotated[RecordRepository, Depends(get_record_repository)],
-) -> ListOneOnOneHistoryService:
-    """Provide a ListOneOnOneHistoryService with all dependencies injected."""
-    return ListOneOnOneHistoryService(
+) -> ListOneOnOneHistoryQueryService:
+    """Provide a ListOneOnOneHistoryQueryService with all dependencies injected."""
+    return ListOneOnOneHistoryQueryService(
         record_repository=record_repo,
     )
 
