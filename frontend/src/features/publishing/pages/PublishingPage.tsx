@@ -100,7 +100,7 @@ export function PublishingPage() {
     if (!viewersResult) return;
 
     // Publish
-    const result = await publishRecord(viewerIds);
+    const result = await publishRecord();
     if (result) {
       setIsModalOpen(false);
       void navigate(`/records/${recordId}`);

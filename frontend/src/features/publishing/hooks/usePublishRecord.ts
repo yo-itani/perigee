@@ -4,7 +4,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { PublishRecordResponse } from "../types";
 
 interface UsePublishRecordResult {
-  publishRecord: (viewerIds: string[]) => Promise<PublishRecordResponse | null>;
+  publishRecord: () => Promise<PublishRecordResponse | null>;
   isSubmitting: boolean;
   error: string | null;
 }
@@ -14,15 +14,15 @@ export function usePublishRecord(recordId: string): UsePublishRecordResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const publishRecord = useCallback(
-    async (viewerIds: string[]): Promise<PublishRecordResponse | null> => {
+  const publishRecord =
+    useCallback(async (): Promise<PublishRecordResponse | null> => {
       setIsSubmitting(true);
       setError(null);
       try {
         const data = await apiClient.post<PublishRecordResponse>(
           `/records/${recordId}/publish`,
           userId,
-          { viewer_ids: viewerIds },
+          {},
         );
         return data;
       } catch (e) {
@@ -35,9 +35,7 @@ export function usePublishRecord(recordId: string): UsePublishRecordResult {
       } finally {
         setIsSubmitting(false);
       }
-    },
-    [recordId, userId],
-  );
+    }, [recordId, userId]);
 
   return { publishRecord, isSubmitting, error };
 }

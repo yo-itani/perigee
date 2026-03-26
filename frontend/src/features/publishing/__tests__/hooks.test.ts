@@ -155,12 +155,14 @@ describe("usePublishRecord", () => {
 
     let response: unknown;
     await act(async () => {
-      response = await result.current.publishRecord(["v1", "v2"]);
+      response = await result.current.publishRecord();
     });
 
-    expect(mockPost).toHaveBeenCalledWith("/records/r1/publish", TEST_USER_ID, {
-      viewer_ids: ["v1", "v2"],
-    });
+    expect(mockPost).toHaveBeenCalledWith(
+      "/records/r1/publish",
+      TEST_USER_ID,
+      {},
+    );
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -173,7 +175,7 @@ describe("usePublishRecord", () => {
 
     let response: unknown;
     await act(async () => {
-      response = await result.current.publishRecord(["v1"]);
+      response = await result.current.publishRecord();
     });
 
     expect(response).toBeNull();
@@ -187,7 +189,7 @@ describe("usePublishRecord", () => {
     const { result } = renderHook(() => usePublishRecord("r1"));
 
     await act(async () => {
-      await result.current.publishRecord(["v1"]);
+      await result.current.publishRecord();
     });
 
     expect(result.current.error).toBe("記録の公開に失敗しました");
