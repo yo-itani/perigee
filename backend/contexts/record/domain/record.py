@@ -53,6 +53,7 @@ class Record:
     conducted_at: datetime
     created_at: datetime
     _updated_at: datetime
+    _latest_activity_at: datetime | None
     _events: list[_RecordEvent] = field(default_factory=list, repr=False)
 
     @property
@@ -74,6 +75,10 @@ class Record:
     @property
     def updated_at(self) -> datetime:
         return self._updated_at
+
+    @property
+    def latest_activity_at(self) -> datetime | None:
+        return self._latest_activity_at
 
     @staticmethod
     def create(
@@ -99,6 +104,7 @@ class Record:
             conducted_at=conducted_at,
             created_at=ts,
             _updated_at=ts,
+            _latest_activity_at=None,
         )
         record._events.append(
             RecordCreated(
@@ -169,6 +175,7 @@ class Record:
         self._assert_draft()
         self._status = RecordStatus.PUBLISHED
         self._updated_at = now
+        self._latest_activity_at = now
         self._events.append(
             RecordPublished(
                 occurred_at=now,
@@ -203,6 +210,11 @@ class Record:
                 viewer_ids=tuple(deduplicated),
             )
         )
+
+    def notify_comment_added(self, now: datetime) -> None:
+        """Update content timestamp when a comment is added."""
+        self._latest_activity_at = now
+        self._updated_at = now
 
     def is_visible_to(self, user_id: UserId) -> bool:
         """Check if the record is visible to a given user.
