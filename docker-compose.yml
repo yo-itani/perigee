@@ -30,6 +30,8 @@ services:
       PERIGEE_DB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
       PERIGEE_DB_NAME: ${PERIGEE_DB_NAME:-perigee}
       PERIGEE_DEBUG: "true"
+      PERIGEE_CORS_ORIGINS: ${PERIGEE_CORS_ORIGINS:-http://localhost:5173}
+      PERIGEE_TRUSTED_HOSTS: ${PERIGEE_TRUSTED_HOSTS:-localhost}
     volumes:
       - ./backend:/app
     depends_on:
