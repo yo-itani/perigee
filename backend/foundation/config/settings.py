@@ -16,18 +16,14 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     trusted_hosts: str = ""
 
-    def get_cors_origins(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
-
-    def get_trusted_hosts(self) -> list[str]:
-        return [h.strip() for h in self.trusted_hosts.split(",") if h.strip()]
-
     # Database
     db_host: str = "localhost"
     db_port: int = 3306
     db_user: str = "perigee"
     db_password: str = ""
     db_name: str = "perigee"
+
+    model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
 
     @property
     def database_url(self) -> str:
@@ -36,7 +32,11 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
-    model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
+    def get_cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def get_trusted_hosts(self) -> list[str]:
+        return [h.strip() for h in self.trusted_hosts.split(",") if h.strip()]
 
 
 settings = Settings()
