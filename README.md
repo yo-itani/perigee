@@ -61,6 +61,7 @@ docker compose exec backend uv run alembic downgrade -1
 
 - `CORS_ORIGINS` が未設定の場合、フロントエンドからのリクエストはブラウザにブロックされる
 - `TRUSTED_HOSTS` は本番環境では必ず設定すること
+- Docker Compose 起動時は `docker-compose.yml` に定義されたデフォルト値（`CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173`、`TRUSTED_HOSTS=localhost,127.0.0.1`）が使われる
 
 ### アプリケーション
 
