@@ -37,8 +37,17 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.CheckConstraint("id = 1", name="chk_system_settings_singleton"),
     )
-    # Insert the singleton row
-    op.execute("INSERT INTO system_settings (id) VALUES (1)")
+    # Insert the singleton row.
+    # If users already exist (pre-existing environment), mark setup as complete.
+    op.execute(
+        """
+        INSERT INTO system_settings (id, setup_completed_at)
+        SELECT 1, CASE
+            WHEN (SELECT COUNT(*) FROM users) > 0 THEN NOW(6)
+            ELSE NULL
+        END
+        """
+    )
 
 
 def downgrade() -> None:
