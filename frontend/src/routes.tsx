@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AdminGuard } from "@/components/guards/AdminGuard";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { SchedulingPage } from "@/features/scheduling/pages/SchedulingPage";
 import { PreparationPage } from "@/features/preparation/pages/PreparationPage";
@@ -13,6 +14,7 @@ import { DraftListPage } from "@/features/publishing/pages/DraftListPage";
 import { NotificationSettingPage } from "@/features/notification-settings/pages/NotificationSettingPage";
 import { SetupPage } from "@/features/setup/pages/SetupPage";
 import { SetupGuard } from "@/features/setup/components/SetupGuard";
+import { AdminUsersPage } from "@/features/admin/pages/AdminUsersPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -39,6 +41,14 @@ export const router = createBrowserRouter([
           {
             path: "settings/notifications",
             element: <NotificationSettingPage />,
+          },
+          {
+            path: "admin/users",
+            element: (
+              <AdminGuard>
+                <AdminUsersPage />
+              </AdminGuard>
+            ),
           },
           { path: "*", element: <NotFoundPage /> },
         ],

@@ -1,4 +1,5 @@
 import { NavLink } from "react-router";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface NavItem {
   to: string;
@@ -8,6 +9,7 @@ interface NavItem {
 interface NavGroup {
   label: string;
   items: NavItem[];
+  adminOnly?: boolean;
 }
 
 const navGroups: NavGroup[] = [
@@ -35,16 +37,27 @@ const navGroups: NavGroup[] = [
     label: "設定",
     items: [{ to: "/settings/notifications", label: "通知設定" }],
   },
+  {
+    label: "管理",
+    items: [{ to: "/admin/users", label: "ユーザー管理" }],
+    adminOnly: true,
+  },
 ];
 
 export function Sidebar() {
+  const { role } = useCurrentUser();
+
+  const visibleGroups = navGroups.filter(
+    (group) => !group.adminOnly || role === "admin",
+  );
+
   return (
     <aside className="flex h-full w-[220px] flex-col border-r border-border-subtle bg-background overflow-y-auto px-4 pt-6">
       <div className="mb-5 border-b border-border-subtle pb-2.5">
         <span className="text-[13px] font-medium text-foreground">perigee</span>
       </div>
       <nav>
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label} className="mb-5">
             <div className="mb-1.5 text-[11px] tracking-[0.05em] text-text-muted">
               {group.label}
