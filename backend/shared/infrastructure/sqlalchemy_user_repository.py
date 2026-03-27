@@ -67,6 +67,11 @@ class SqlAlchemyUserRepository(UserRepository):
         rows = result.scalars().all()
         return [self._to_entity(row) for row in rows]
 
+    async def count_all(self) -> int:
+        stmt = select(func.count()).select_from(UserTable)
+        result = await self._session.execute(stmt)
+        return result.scalar_one()
+
     async def count_active_admins(self) -> int:
         stmt = (
             select(func.count())

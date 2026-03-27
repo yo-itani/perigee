@@ -32,6 +32,7 @@ from contexts.workspace.infrastructure.tables import (
     MembershipTable,  # noqa: F401
     WorkspaceTable,  # noqa: F401
 )
+from shared.infrastructure.tables import SystemSettingsTable  # noqa: F401
 from shared.infrastructure.tables import UserTable  # noqa: F401
 
 __all__ = [
@@ -54,6 +55,7 @@ __all__ = [
     "TemplateAgendaTemplateTable",
     "TemplateDefaultCounterpartTable",
     "TemplateTable",
+    "SystemSettingsTable",
     "UserTable",
     "WorkspaceTable",
 ]
