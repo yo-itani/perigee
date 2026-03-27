@@ -41,9 +41,7 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-[220px] flex-col border-r border-border-subtle bg-background overflow-y-auto px-4 pt-6">
       <div className="mb-5 border-b border-border-subtle pb-2.5">
-        <span className="text-[13px] font-medium text-foreground">
-          perigee
-        </span>
+        <span className="text-[13px] font-medium text-foreground">perigee</span>
       </div>
       <nav>
         {navGroups.map((group) => (
