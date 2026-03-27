@@ -72,11 +72,6 @@ class SqlAlchemyUserRepository(UserRepository):
         result = await self._session.execute(stmt)
         return result.scalar_one()
 
-    async def count_all_for_update(self) -> int:
-        stmt = select(func.count()).select_from(UserTable).with_for_update()
-        result = await self._session.execute(stmt)
-        return result.scalar_one()
-
     async def count_active_admins(self) -> int:
         stmt = (
             select(func.count())

@@ -12,8 +12,11 @@ from shared.application.setup_first_user_use_case import (
     SetupFirstUserInput,
     SetupFirstUserUseCase,
 )
-from shared.domain.user import User
-from shared.domain.value_objects import UserId, UserRole
+from shared.domain.system_settings import SystemSettings
+from shared.domain.value_objects import UserRole
+from shared.infrastructure.in_memory_system_settings_repository import (
+    InMemorySystemSettingsRepository,
+)
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
 
 
@@ -44,8 +47,13 @@ class FakeUnitOfWork(UnitOfWork):
 
 
 @pytest.fixture
-def repo() -> InMemoryUserRepository:
+def user_repo() -> InMemoryUserRepository:
     return InMemoryUserRepository()
+
+
+@pytest.fixture
+def system_settings_repo() -> InMemorySystemSettingsRepository:
+    return InMemorySystemSettingsRepository()
 
 
 @pytest.fixture
@@ -55,18 +63,25 @@ def uow() -> FakeUnitOfWork:
 
 @pytest.fixture
 def use_case(
-    repo: InMemoryUserRepository, uow: FakeUnitOfWork
+    user_repo: InMemoryUserRepository,
+    system_settings_repo: InMemorySystemSettingsRepository,
+    uow: FakeUnitOfWork,
 ) -> SetupFirstUserUseCase:
-    return SetupFirstUserUseCase(user_repo=repo, uow=uow)
+    return SetupFirstUserUseCase(
+        user_repo=user_repo,
+        system_settings_repo=system_settings_repo,
+        uow=uow,
+    )
 
 
 @pytest.mark.asyncio
 async def test_setup_first_user_success(
     use_case: SetupFirstUserUseCase,
-    repo: InMemoryUserRepository,
+    user_repo: InMemoryUserRepository,
+    system_settings_repo: InMemorySystemSettingsRepository,
     uow: FakeUnitOfWork,
 ) -> None:
-    """The first user is created with admin role when no users exist."""
+    """The first user is created with admin role when setup is not complete."""
     output = await use_case.execute(
         SetupFirstUserInput(name="Admin", email="admin@example.com")
     )
@@ -77,28 +92,32 @@ async def test_setup_first_user_success(
     assert output.slack_user_id is None
 
     # Verify user was actually persisted
-    saved = await repo.get_by_email("admin@example.com")
+    saved = await user_repo.get_by_email("admin@example.com")
     assert saved is not None
     assert saved.role == UserRole.ADMIN
+
+    # Verify system settings were marked as complete
+    settings = await system_settings_repo.get()
+    assert settings.is_setup_complete is True
+    assert settings.setup_completed_at is not None
 
     # Verify UoW was committed
     assert uow.committed is True
 
 
 @pytest.mark.asyncio
-async def test_setup_first_user_raises_when_users_exist(
-    repo: InMemoryUserRepository,
+async def test_setup_first_user_raises_when_already_complete(
+    system_settings_repo: InMemorySystemSettingsRepository,
     use_case: SetupFirstUserUseCase,
     uow: FakeUnitOfWork,
 ) -> None:
-    """SetupAlreadyCompleteError is raised when users already exist."""
-    existing = User(
-        id=UserId.generate(),
-        name="Existing",
-        email="existing@example.com",
-        role=UserRole.MEMBER,
-    )
-    repo.add(existing)
+    """SetupAlreadyCompleteError is raised when setup is already complete."""
+    from datetime import UTC, datetime
+
+    # Mark setup as already complete
+    settings = SystemSettings()
+    settings.mark_setup_complete(datetime.now(UTC))
+    await system_settings_repo.save(settings)
 
     with pytest.raises(SetupAlreadyCompleteError):
         await use_case.execute(

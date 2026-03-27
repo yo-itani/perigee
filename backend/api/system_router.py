@@ -8,7 +8,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
-from api.dependencies import get_unit_of_work, get_user_repository
+from api.dependencies import (
+    get_system_settings_repository,
+    get_unit_of_work,
+    get_user_repository,
+)
 from foundation.application.unit_of_work import UnitOfWork
 from shared.application.get_system_status_query_service import (
     GetSystemStatusOutput,
@@ -20,6 +24,7 @@ from shared.application.setup_first_user_use_case import (
     SetupFirstUserOutput,
     SetupFirstUserUseCase,
 )
+from shared.domain.system_settings_repository import SystemSettingsRepository
 from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserRole
 
@@ -66,16 +71,23 @@ class SetupFirstUserResponse(BaseModel):
 
 
 def _get_system_status_query_service(
-    repo: Annotated[UserRepository, Depends(get_user_repository)],
+    system_settings_repo: Annotated[
+        SystemSettingsRepository, Depends(get_system_settings_repository)
+    ],
 ) -> GetSystemStatusQueryService:
-    return GetSystemStatusQueryService(user_repo=repo)
+    return GetSystemStatusQueryService(system_settings_repo=system_settings_repo)
 
 
 def _get_setup_first_user_use_case(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
+    system_settings_repo: Annotated[
+        SystemSettingsRepository, Depends(get_system_settings_repository)
+    ],
     uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
 ) -> SetupFirstUserUseCase:
-    return SetupFirstUserUseCase(user_repo=repo, uow=uow)
+    return SetupFirstUserUseCase(
+        user_repo=repo, system_settings_repo=system_settings_repo, uow=uow
+    )
 
 
 # -- Endpoints -----------------------------------------------------------------

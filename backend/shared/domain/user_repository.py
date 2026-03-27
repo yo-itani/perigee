@@ -26,13 +26,4 @@ class UserRepository(ABC):
     async def count_all(self) -> int: ...
 
     @abstractmethod
-    async def count_all_for_update(self) -> int:
-        """Count all users with a row-level lock (SELECT ... FOR UPDATE).
-
-        Used for exclusive control when the caller needs to prevent
-        concurrent inserts (e.g., first-user setup).
-        """
-        ...
-
-    @abstractmethod
     async def count_active_admins(self) -> int: ...

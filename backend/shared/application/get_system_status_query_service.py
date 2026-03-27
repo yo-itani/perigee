@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from shared.domain.user_repository import UserRepository
+from shared.domain.system_settings_repository import SystemSettingsRepository
 
 
 @dataclass(frozen=True)
@@ -13,11 +13,11 @@ class GetSystemStatusOutput:
 
 
 class GetSystemStatusQueryService:
-    """Return whether the system has at least one registered user."""
+    """Return whether the system setup has been completed."""
 
-    def __init__(self, user_repo: UserRepository) -> None:
-        self._user_repo = user_repo
+    def __init__(self, system_settings_repo: SystemSettingsRepository) -> None:
+        self._system_settings_repo = system_settings_repo
 
     async def execute(self) -> GetSystemStatusOutput:
-        count = await self._user_repo.count_all()
-        return GetSystemStatusOutput(is_setup_complete=count > 0)
+        settings = await self._system_settings_repo.get()
+        return GetSystemStatusOutput(is_setup_complete=settings.is_setup_complete)

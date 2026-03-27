@@ -1,4 +1,6 @@
-from sqlalchemy import CHAR, Boolean, String
+from datetime import datetime
+
+from sqlalchemy import CHAR, Boolean, CheckConstraint, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from foundation.db.base import Base, TimestampMixin
@@ -17,3 +19,13 @@ class UserTable(Base, TimestampMixin):
     slack_user_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, default=None
     )
+
+
+class SystemSettingsTable(Base, TimestampMixin):
+    """ORM model for the system_settings table (singleton row, id=1)."""
+
+    __tablename__ = "system_settings"
+    __table_args__ = (CheckConstraint("id = 1", name="chk_system_settings_singleton"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    setup_completed_at: Mapped[datetime | None] = mapped_column(nullable=True)

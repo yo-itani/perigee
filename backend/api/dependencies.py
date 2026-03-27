@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.auth.dependencies import parse_user_id_header
 from foundation.domain.event_dispatcher import EventDispatcher
+from shared.domain.system_settings_repository import SystemSettingsRepository
 from shared.domain.user import User
 from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId
@@ -44,6 +45,17 @@ def get_event_dispatcher(request: Request) -> EventDispatcher:
     """Return the app-scope singleton EventDispatcher from app.state."""
     dispatcher: EventDispatcher = request.app.state.event_dispatcher
     return dispatcher
+
+
+def get_system_settings_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> SystemSettingsRepository:
+    """Provide a SystemSettingsRepository backed by the request-scoped session."""
+    from shared.infrastructure.sqlalchemy_system_settings_repository import (
+        SqlAlchemySystemSettingsRepository,
+    )
+
+    return SqlAlchemySystemSettingsRepository(session)
 
 
 def get_user_repository(
