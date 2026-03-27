@@ -9,6 +9,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import mysql
 
 revision: str = "0010"
 down_revision: str | None = "0009"
@@ -20,7 +21,7 @@ def upgrade() -> None:
     # Add nullable column
     op.add_column(
         "records",
-        sa.Column("latest_activity_at", sa.DATETIME(fsp=6), nullable=True),
+        sa.Column("latest_activity_at", mysql.DATETIME(fsp=6), nullable=True),
     )
 
     # Backfill: set latest_activity_at for published records using updated_at
