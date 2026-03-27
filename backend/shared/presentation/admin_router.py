@@ -108,7 +108,8 @@ async def list_users(
                 slack_user_id=u.slack_user_id,
             )
             for u in output.users
-        ]
+        ],
+        total=output.total,
     )
 
 

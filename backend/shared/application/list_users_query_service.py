@@ -17,6 +17,7 @@ class ListUsersInput:
 @dataclass(frozen=True)
 class ListUsersOutput:
     users: list[ListUsersItem]
+    total: int
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,7 @@ class ListUsersQueryService:
     async def execute(self, input_dto: ListUsersInput | None = None) -> ListUsersOutput:
         dto = input_dto or ListUsersInput()
         users = await self._user_repo.list_all(offset=dto.offset, limit=dto.limit)
+        total = await self._user_repo.count_all()
         return ListUsersOutput(
             users=[
                 ListUsersItem(
@@ -49,5 +51,6 @@ class ListUsersQueryService:
                     slack_user_id=u.slack_user_id,
                 )
                 for u in users
-            ]
+            ],
+            total=total,
         )
