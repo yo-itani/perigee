@@ -34,6 +34,34 @@
 - `.env` ファイルから読み込む（`env_file=".env"`）
 - OS 環境変数が `.env` より優先される
 - すべての変数に `PERIGEE_` プレフィックスを付ける（例: `PERIGEE_DB_HOST`）
+
+## データベースマイグレーション
+
+Alembic（async対応）を使用。DB接続情報は `pydantic-settings` 経由で `.env` から取得される（`alembic.ini` の `sqlalchemy.url` は使用しない）。
+
+```bash
+# backend ディレクトリで実行
+cd backend
+
+# マイグレーション適用（最新まで）
+uv run alembic upgrade head
+
+# 現在のリビジョン確認
+uv run alembic current
+
+# マイグレーション履歴
+uv run alembic history
+
+# 新規マイグレーション作成
+uv run alembic revision -m "create_xxx_table"
+
+# 1つ戻す
+uv run alembic downgrade -1
+```
+
+- マイグレーションファイルは `backend/migrations/versions/` に連番プレフィックス付きで配置（例: `0001_create_users_table.py`）
+- `migrations/env.py` で `Base.metadata` を参照しており、モデル定義から自動検出される
+
 ## Git / GitHub ルール
 
 - **デフォルトブランチ**: `develop`

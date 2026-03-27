@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     slack_enabled: bool = True
     slack_http_timeout: int = 10
 
+    # Web Server
+    cors_origins: str = ""
+    trusted_hosts: str = ""
+
+    def get_cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    def get_trusted_hosts(self) -> list[str]:
+        return [h.strip() for h in self.trusted_hosts.split(",") if h.strip()]
+
     # Database
     db_host: str = "localhost"
     db_port: int = 3306
