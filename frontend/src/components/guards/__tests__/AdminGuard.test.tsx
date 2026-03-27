@@ -14,9 +14,14 @@ function renderWithRouter(initialPath: string) {
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/" element={<div>Home</div>} />
-        <Route element={<AdminGuard />}>
-          <Route path="/admin/users" element={<div>Admin Users</div>} />
-        </Route>
+        <Route
+          path="/admin/users"
+          element={
+            <AdminGuard>
+              <div>Admin Users</div>
+            </AdminGuard>
+          }
+        />
       </Routes>
     </MemoryRouter>,
   );
