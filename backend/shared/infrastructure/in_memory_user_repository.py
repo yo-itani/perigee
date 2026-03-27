@@ -38,6 +38,9 @@ class InMemoryUserRepository(UserRepository):
     async def count_all(self) -> int:
         return len(self._users)
 
+    async def count_all_for_update(self) -> int:
+        return len(self._users)
+
     async def count_active_admins(self) -> int:
         return sum(
             1 for u in self._users.values() if u.role == UserRole.ADMIN and u.is_active

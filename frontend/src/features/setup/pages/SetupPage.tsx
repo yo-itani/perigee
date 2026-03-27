@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,12 @@ import { useSetupFirstUser } from "../hooks/useSetupFirstUser";
 
 export function SetupPage() {
   const navigate = useNavigate();
-  const { isSetupComplete, isLoading: isStatusLoading } = useSystemStatus();
+  const {
+    isSetupComplete,
+    isLoading: isStatusLoading,
+    error: statusError,
+    refetch,
+  } = useSystemStatus();
   const { setupUser, isSubmitting, error: submitError } = useSetupFirstUser();
 
   const [name, setName] = useState("");
@@ -17,8 +22,19 @@ export function SetupPage() {
 
   // Redirect to dashboard if setup is already complete
   if (isSetupComplete === true) {
-    void navigate("/", { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
+  }
+
+  // Show error with retry when status fetch fails
+  if (statusError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface">
+        <p className="text-sm text-destructive">{statusError}</p>
+        <Button variant="outline" onClick={() => void refetch()}>
+          再読み込み
+        </Button>
+      </div>
+    );
   }
 
   // Show loading while checking status

@@ -8,7 +8,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
-from api.dependencies import get_user_repository
+from api.dependencies import get_unit_of_work, get_user_repository
+from foundation.application.unit_of_work import UnitOfWork
 from shared.application.get_system_status_query_service import (
     GetSystemStatusOutput,
     GetSystemStatusQueryService,
@@ -72,8 +73,9 @@ def _get_system_status_query_service(
 
 def _get_setup_first_user_use_case(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
 ) -> SetupFirstUserUseCase:
-    return SetupFirstUserUseCase(user_repo=repo)
+    return SetupFirstUserUseCase(user_repo=repo, uow=uow)
 
 
 # -- Endpoints -----------------------------------------------------------------

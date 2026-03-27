@@ -1,8 +1,20 @@
 import { Navigate, Outlet } from "react-router";
+import { Button } from "@/components/ui/button";
 import { useSystemStatus } from "../hooks/useSystemStatus";
 
 export function SetupGuard() {
-  const { isSetupComplete, isLoading } = useSystemStatus();
+  const { isSetupComplete, isLoading, error, refetch } = useSystemStatus();
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface">
+        <p className="text-sm text-destructive">{error}</p>
+        <Button variant="outline" onClick={() => void refetch()}>
+          再読み込み
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading || isSetupComplete === null) {
     return (

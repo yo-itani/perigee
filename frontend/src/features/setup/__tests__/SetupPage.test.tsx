@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { SetupPage } from "../pages/SetupPage";
 
@@ -7,9 +8,13 @@ import { SetupPage } from "../pages/SetupPage";
 
 const mockNavigate = vi.fn();
 
-vi.mock("react-router", () => ({
-  useNavigate: () => mockNavigate,
-}));
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 let systemStatusReturn = {
   isSetupComplete: false as boolean | null,
@@ -36,7 +41,11 @@ vi.mock("../hooks/useSetupFirstUser", () => ({
 // -- Helpers ------------------------------------------------------------------
 
 function renderPage() {
-  return render(<SetupPage />);
+  return render(
+    <MemoryRouter>
+      <SetupPage />
+    </MemoryRouter>,
+  );
 }
 
 // -- Tests --------------------------------------------------------------------
@@ -65,7 +74,8 @@ describe("SetupPage", () => {
       isSetupComplete: true,
     };
     renderPage();
-    expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+    // Navigate component is rendered (not imperative navigate())
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   // -- Loading state ----------------------------------------------------------
@@ -79,6 +89,40 @@ describe("SetupPage", () => {
     const { container } = renderPage();
     const skeletons = container.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  // -- Error state with retry -------------------------------------------------
+
+  it("shows error message and retry button when status fetch fails", () => {
+    systemStatusReturn = {
+      ...systemStatusReturn,
+      isSetupComplete: null,
+      isLoading: false,
+      error: "システムステータスの取得に失敗しました",
+    };
+    renderPage();
+    expect(
+      screen.getByText("システムステータスの取得に失敗しました"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "再読み込み" }),
+    ).toBeInTheDocument();
+  });
+
+  it("calls refetch when retry button is clicked", async () => {
+    const mockRefetch = vi.fn();
+    systemStatusReturn = {
+      ...systemStatusReturn,
+      isSetupComplete: null,
+      isLoading: false,
+      error: "システムステータスの取得に失敗しました",
+      refetch: mockRefetch,
+    };
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "再読み込み" }));
+    expect(mockRefetch).toHaveBeenCalledOnce();
   });
 
   // -- Normal display ---------------------------------------------------------

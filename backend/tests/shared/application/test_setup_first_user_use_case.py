@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from types import TracebackType
+
 import pytest
 
+from foundation.application.unit_of_work import UnitOfWork
 from shared.application.setup_first_user_use_case import (
     SetupAlreadyCompleteError,
     SetupFirstUserInput,
@@ -14,20 +17,54 @@ from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
 
 
+class FakeUnitOfWork(UnitOfWork):
+    """Fake UnitOfWork that tracks commit/rollback calls."""
+
+    def __init__(self) -> None:
+        self.committed = False
+        self.rolled_back = False
+
+    async def commit(self) -> None:
+        self.committed = True
+
+    async def rollback(self) -> None:
+        self.rolled_back = True
+
+    async def __aenter__(self) -> FakeUnitOfWork:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_type is not None:
+            await self.rollback()
+
+
 @pytest.fixture
 def repo() -> InMemoryUserRepository:
     return InMemoryUserRepository()
 
 
 @pytest.fixture
-def use_case(repo: InMemoryUserRepository) -> SetupFirstUserUseCase:
-    return SetupFirstUserUseCase(user_repo=repo)
+def uow() -> FakeUnitOfWork:
+    return FakeUnitOfWork()
+
+
+@pytest.fixture
+def use_case(
+    repo: InMemoryUserRepository, uow: FakeUnitOfWork
+) -> SetupFirstUserUseCase:
+    return SetupFirstUserUseCase(user_repo=repo, uow=uow)
 
 
 @pytest.mark.asyncio
 async def test_setup_first_user_success(
     use_case: SetupFirstUserUseCase,
     repo: InMemoryUserRepository,
+    uow: FakeUnitOfWork,
 ) -> None:
     """The first user is created with admin role when no users exist."""
     output = await use_case.execute(
@@ -44,11 +81,15 @@ async def test_setup_first_user_success(
     assert saved is not None
     assert saved.role == UserRole.ADMIN
 
+    # Verify UoW was committed
+    assert uow.committed is True
+
 
 @pytest.mark.asyncio
 async def test_setup_first_user_raises_when_users_exist(
     repo: InMemoryUserRepository,
     use_case: SetupFirstUserUseCase,
+    uow: FakeUnitOfWork,
 ) -> None:
     """SetupAlreadyCompleteError is raised when users already exist."""
     existing = User(
@@ -63,3 +104,7 @@ async def test_setup_first_user_raises_when_users_exist(
         await use_case.execute(
             SetupFirstUserInput(name="New Admin", email="new@example.com")
         )
+
+    # Verify UoW was NOT committed (rolled back via __aexit__)
+    assert uow.committed is False
+    assert uow.rolled_back is True
