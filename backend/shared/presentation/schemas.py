@@ -32,3 +32,39 @@ class UpdateMyProfileRequest(BaseModel):
         if not _EMAIL_RE.match(v):
             raise ValueError("Invalid email address")
         return v
+
+
+class CreateUserRequest(BaseModel):
+    """Request schema for creating a user."""
+
+    name: str
+    email: str
+    role: UserRole
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if not _EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
+        return v
+
+
+class UpdateUserRequest(BaseModel):
+    """Request schema for updating a user."""
+
+    name: str
+    email: str
+    role: UserRole
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if not _EMAIL_RE.match(v):
+            raise ValueError("Invalid email address")
+        return v
+
+
+class UserListResponse(BaseModel):
+    """Response schema for user list."""
+
+    users: list[UserProfileResponse]

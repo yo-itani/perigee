@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.domain.user import User
@@ -60,6 +60,24 @@ class SqlAlchemyUserRepository(UserRepository):
         existing.role = user.role.value
         existing.is_active = user.is_active
         existing.slack_user_id = user.slack_user_id
+
+    async def list_all(self) -> list[User]:
+        stmt = select(UserTable).order_by(UserTable.name)
+        result = await self._session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._to_entity(row) for row in rows]
+
+    async def count_active_admins(self) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(UserTable)
+            .where(
+                UserTable.role == UserRole.ADMIN.value,
+                UserTable.is_active.is_(True),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one()
 
     @staticmethod
     def _to_entity(row: UserTable) -> User:

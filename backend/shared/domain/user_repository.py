@@ -18,3 +18,9 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def save(self, user: User) -> None: ...
+
+    @abstractmethod
+    async def list_all(self) -> list[User]: ...
+
+    @abstractmethod
+    async def count_active_admins(self) -> int: ...
