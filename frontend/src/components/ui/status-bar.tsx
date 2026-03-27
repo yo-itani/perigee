@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const statusBarVariants = cva(
-  "flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-[13px]",
+  "flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm",
   {
     variants: {
       variant: {

@@ -18,11 +18,11 @@ describe("Card", () => {
 });
 
 describe("CardTitle", () => {
-  it("applies 13px font size and tracking", () => {
+  it("applies standard font size and tracking tokens", () => {
     render(<CardTitle data-testid="title">Title</CardTitle>);
     const cls = screen.getByTestId("title").className;
-    expect(cls).toContain("text-[13px]");
-    expect(cls).toContain("tracking-[0.03em]");
+    expect(cls).toContain("text-sm");
+    expect(cls).toContain("tracking-wide");
   });
 
   it("applies text-subtle color", () => {

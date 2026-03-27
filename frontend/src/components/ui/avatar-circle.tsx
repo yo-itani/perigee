@@ -12,8 +12,8 @@ const avatarCircleVariants = cva(
         success: "bg-success-bg text-success-text",
       },
       size: {
-        default: "size-7 text-[11px]",
-        lg: "size-8 text-[13px]",
+        default: "size-7 text-xs",
+        lg: "size-8 text-sm",
       },
     },
     defaultVariants: {
