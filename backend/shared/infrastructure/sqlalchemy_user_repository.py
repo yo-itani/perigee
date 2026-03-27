@@ -61,8 +61,8 @@ class SqlAlchemyUserRepository(UserRepository):
         existing.is_active = user.is_active
         existing.slack_user_id = user.slack_user_id
 
-    async def list_all(self) -> list[User]:
-        stmt = select(UserTable).order_by(UserTable.name)
+    async def list_all(self, *, offset: int = 0, limit: int = 100) -> list[User]:
+        stmt = select(UserTable).order_by(UserTable.name).offset(offset).limit(limit)
         result = await self._session.execute(stmt)
         rows = result.scalars().all()
         return [self._to_entity(row) for row in rows]
@@ -75,6 +75,7 @@ class SqlAlchemyUserRepository(UserRepository):
                 UserTable.role == UserRole.ADMIN.value,
                 UserTable.is_active.is_(True),
             )
+            .with_for_update()
         )
         result = await self._session.execute(stmt)
         return result.scalar_one()

@@ -49,8 +49,12 @@ class UpdateUserUseCase:
         if user is None:
             raise UserNotFoundError(f"User {input_dto.user_id.value} not found")
 
-        # Last admin protection: if changing role from admin to member
-        if user.role == UserRole.ADMIN and input_dto.role != UserRole.ADMIN:
+        # Last admin protection: only applies to active admins
+        if (
+            user.role == UserRole.ADMIN
+            and user.is_active
+            and input_dto.role != UserRole.ADMIN
+        ):
             active_admin_count = await self._user_repo.count_active_admins()
             if active_admin_count <= 1:
                 raise LastAdminError(

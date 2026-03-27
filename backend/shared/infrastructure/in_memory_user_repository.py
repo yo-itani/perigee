@@ -31,8 +31,9 @@ class InMemoryUserRepository(UserRepository):
     async def save(self, user: User) -> None:
         self._users[user.id] = user
 
-    async def list_all(self) -> list[User]:
-        return sorted(self._users.values(), key=lambda u: u.name)
+    async def list_all(self, *, offset: int = 0, limit: int = 100) -> list[User]:
+        all_users = sorted(self._users.values(), key=lambda u: u.name)
+        return all_users[offset : offset + limit]
 
     async def count_active_admins(self) -> int:
         return sum(

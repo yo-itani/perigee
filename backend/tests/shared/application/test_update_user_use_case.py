@@ -155,3 +155,27 @@ async def test_admin_role_change_allowed_when_multiple_admins(
         )
     )
     assert output.role == UserRole.MEMBER
+
+
+@pytest.mark.asyncio
+async def test_inactive_admin_role_change_allowed(
+    repo: InMemoryUserRepository, use_case: UpdateUserUseCase
+) -> None:
+    """Changing role of an inactive admin is allowed even if they are the last admin."""
+    inactive_admin = _make_user(
+        name="InactiveAdmin",
+        email="inactive-admin@example.com",
+        role=UserRole.ADMIN,
+        is_active=False,
+    )
+    repo.add(inactive_admin)
+
+    output = await use_case.execute(
+        UpdateUserInput(
+            user_id=inactive_admin.id,
+            name="InactiveAdmin",
+            email="inactive-admin@example.com",
+            role=UserRole.MEMBER,
+        )
+    )
+    assert output.role == UserRole.MEMBER
