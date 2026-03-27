@@ -207,14 +207,16 @@ class TestCrudOperations:
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["users"]) == 2
+        assert data["total"] == 2
 
     @pytest.mark.asyncio
     async def test_list_users_with_pagination(self, client: AsyncClient) -> None:
-        """Pagination query params limit results."""
+        """Pagination query params limit results and total reflects all users."""
         resp = await client.get("/users?offset=0&limit=1", headers=_admin_headers())
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["users"]) == 1
+        assert data["total"] == 2
 
     @pytest.mark.asyncio
     async def test_list_users_invalid_limit(self, client: AsyncClient) -> None:

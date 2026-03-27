@@ -68,3 +68,4 @@ class UserListResponse(BaseModel):
     """Response schema for user list."""
 
     users: list[UserProfileResponse]
+    total: int
