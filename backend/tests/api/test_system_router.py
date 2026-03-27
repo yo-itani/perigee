@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from types import TracebackType
 
@@ -114,9 +115,10 @@ def app(
 
 
 @pytest.fixture
-async def client(app: FastAPI) -> AsyncClient:
+async def client(app: FastAPI) -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app)
-    return AsyncClient(transport=transport, base_url="http://test")
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c
 
 
 # ---------------------------------------------------------------------------
