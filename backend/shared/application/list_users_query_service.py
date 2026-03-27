@@ -9,6 +9,12 @@ from shared.domain.value_objects import UserId, UserRole
 
 
 @dataclass(frozen=True)
+class ListUsersInput:
+    offset: int = 0
+    limit: int = 100
+
+
+@dataclass(frozen=True)
 class ListUsersOutput:
     users: list[ListUsersItem]
 
@@ -24,13 +30,14 @@ class ListUsersItem:
 
 
 class ListUsersQueryService:
-    """Return all users in the system."""
+    """Return users in the system with pagination."""
 
     def __init__(self, user_repo: UserRepository) -> None:
         self._user_repo = user_repo
 
-    async def execute(self) -> ListUsersOutput:
-        users = await self._user_repo.list_all()
+    async def execute(self, input_dto: ListUsersInput | None = None) -> ListUsersOutput:
+        dto = input_dto or ListUsersInput()
+        users = await self._user_repo.list_all(offset=dto.offset, limit=dto.limit)
         return ListUsersOutput(
             users=[
                 ListUsersItem(

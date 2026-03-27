@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.dependencies import require_admin
 from shared.application.activate_user_use_case import (
@@ -36,7 +36,10 @@ from shared.application.get_user_detail_query_service import (
 from shared.application.get_user_detail_query_service import (
     UserNotFoundError as GetUserNotFoundError,
 )
-from shared.application.list_users_query_service import ListUsersQueryService
+from shared.application.list_users_query_service import (
+    ListUsersInput,
+    ListUsersQueryService,
+)
 from shared.application.update_user_use_case import (
     EmailAlreadyTakenError as UpdateEmailAlreadyTakenError,
 )
@@ -70,15 +73,30 @@ from shared.presentation.schemas import (
 admin_router = APIRouter(prefix="/users", tags=["User Management"])
 
 
+def _parse_user_id(raw: str) -> UserId:
+    """Parse a user_id path parameter, raising 400 on invalid UUID."""
+    try:
+        return UserId.from_str(raw)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user ID format",
+        ) from None
+
+
 @admin_router.get("", response_model=UserListResponse)
 async def list_users(
     _admin: Annotated[User, Depends(require_admin)],
     query_service: Annotated[
         ListUsersQueryService, Depends(get_list_users_query_service)
     ],
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 100,
 ) -> UserListResponse:
-    """Return all users in the system."""
-    output = await query_service.execute()
+    """Return users in the system with pagination."""
+    output = await query_service.execute(
+        input_dto=ListUsersInput(offset=offset, limit=limit)
+    )
     return UserListResponse(
         users=[
             UserProfileResponse(
@@ -137,7 +155,7 @@ async def get_user_detail(
     """Return a single user's detail."""
     try:
         output = await query_service.execute(
-            input_dto=GetUserDetailInput(user_id=UserId.from_str(user_id))
+            input_dto=GetUserDetailInput(user_id=_parse_user_id(user_id))
         )
     except GetUserNotFoundError:
         raise HTTPException(
@@ -165,7 +183,7 @@ async def update_user(
     try:
         output = await use_case.execute(
             input_dto=UpdateUserInput(
-                user_id=UserId.from_str(user_id),
+                user_id=_parse_user_id(user_id),
                 name=body.name,
                 email=body.email,
                 role=body.role,
@@ -205,7 +223,7 @@ async def deactivate_user(
     """Deactivate a user."""
     try:
         output = await use_case.execute(
-            input_dto=DeactivateUserInput(user_id=UserId.from_str(user_id))
+            input_dto=DeactivateUserInput(user_id=_parse_user_id(user_id))
         )
     except DeactivateUserNotFoundError:
         raise HTTPException(
@@ -236,7 +254,7 @@ async def activate_user(
     """Activate a deactivated user."""
     try:
         output = await use_case.execute(
-            input_dto=ActivateUserInput(user_id=UserId.from_str(user_id))
+            input_dto=ActivateUserInput(user_id=_parse_user_id(user_id))
         )
     except ActivateUserNotFoundError:
         raise HTTPException(
