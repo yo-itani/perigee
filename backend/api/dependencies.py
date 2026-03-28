@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +15,11 @@ from shared.domain.system_settings_repository import SystemSettingsRepository
 from shared.domain.user import User
 from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId
+
+if TYPE_CHECKING:
+    from foundation.auth.invitation_token_repository import InvitationTokenRepository
+    from foundation.auth.login_attempt_repository import LoginAttemptRepository
+    from foundation.auth.refresh_token_repository import RefreshTokenRepository
 
 
 async def get_session() -> AsyncGenerator[AsyncSession]:
@@ -67,6 +72,39 @@ def get_user_repository(
     )
 
     return SqlAlchemyUserRepository(session)
+
+
+def get_refresh_token_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> RefreshTokenRepository:
+    """Provide a RefreshTokenRepository backed by the request-scoped session."""
+    from foundation.auth.sqlalchemy_refresh_token_repository import (
+        SqlAlchemyRefreshTokenRepository,
+    )
+
+    return SqlAlchemyRefreshTokenRepository(session)
+
+
+def get_login_attempt_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> LoginAttemptRepository:
+    """Provide a LoginAttemptRepository backed by the request-scoped session."""
+    from foundation.auth.sqlalchemy_login_attempt_repository import (
+        SqlAlchemyLoginAttemptRepository,
+    )
+
+    return SqlAlchemyLoginAttemptRepository(session)
+
+
+def get_invitation_token_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> InvitationTokenRepository:
+    """Provide an InvitationTokenRepository backed by the request-scoped session."""
+    from foundation.auth.sqlalchemy_invitation_token_repository import (
+        SqlAlchemyInvitationTokenRepository,
+    )
+
+    return SqlAlchemyInvitationTokenRepository(session)
 
 
 async def get_authenticated_user_id(

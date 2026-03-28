@@ -9,8 +9,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_session, get_user_repository
+from api.dependencies import (
+    get_invitation_token_repository,
+    get_login_attempt_repository,
+    get_refresh_token_repository,
+    get_session,
+    get_user_repository,
+)
 from foundation.auth.csrf import verify_origin
+from foundation.auth.invitation_token_repository import InvitationTokenRepository
 from foundation.auth.login_attempt_repository import LoginAttemptRepository
 from foundation.auth.refresh_token_repository import RefreshTokenRepository
 from foundation.auth.use_cases.login_use_case import (
@@ -81,41 +88,6 @@ class SetPasswordResponse(BaseModel):
     message: str = "Password set successfully"
 
 
-# -- DI Providers --------------------------------------------------------------
-
-
-def _get_refresh_token_repo(
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> RefreshTokenRepository:
-    from foundation.auth.sqlalchemy_refresh_token_repository import (
-        SqlAlchemyRefreshTokenRepository,
-    )
-
-    return SqlAlchemyRefreshTokenRepository(session)
-
-
-def _get_login_attempt_repo(
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> LoginAttemptRepository:
-    from foundation.auth.sqlalchemy_login_attempt_repository import (
-        SqlAlchemyLoginAttemptRepository,
-    )
-
-    return SqlAlchemyLoginAttemptRepository(session)
-
-
-def _get_invitation_token_repo(
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> object:
-    from foundation.auth.invitation_token_repository import InvitationTokenRepository
-    from foundation.auth.sqlalchemy_invitation_token_repository import (
-        SqlAlchemyInvitationTokenRepository,
-    )
-
-    repo: InvitationTokenRepository = SqlAlchemyInvitationTokenRepository(session)
-    return repo
-
-
 # -- Cookie helpers ------------------------------------------------------------
 
 
@@ -153,10 +125,10 @@ async def login(
     response: Response,
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     refresh_token_repo: Annotated[
-        RefreshTokenRepository, Depends(_get_refresh_token_repo)
+        RefreshTokenRepository, Depends(get_refresh_token_repository)
     ],
     login_attempt_repo: Annotated[
-        LoginAttemptRepository, Depends(_get_login_attempt_repo)
+        LoginAttemptRepository, Depends(get_login_attempt_repository)
     ],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> LoginResponse:
@@ -213,7 +185,7 @@ async def refresh(
     response: Response,
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     refresh_token_repo: Annotated[
-        RefreshTokenRepository, Depends(_get_refresh_token_repo)
+        RefreshTokenRepository, Depends(get_refresh_token_repository)
     ],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RefreshResponse:
@@ -259,7 +231,7 @@ async def logout(
     request: Request,
     response: Response,
     refresh_token_repo: Annotated[
-        RefreshTokenRepository, Depends(_get_refresh_token_repo)
+        RefreshTokenRepository, Depends(get_refresh_token_repository)
     ],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
@@ -283,19 +255,17 @@ async def set_password(
     request: Request,
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     refresh_token_repo: Annotated[
-        RefreshTokenRepository, Depends(_get_refresh_token_repo)
+        RefreshTokenRepository, Depends(get_refresh_token_repository)
+    ],
+    invitation_token_repo: Annotated[
+        InvitationTokenRepository, Depends(get_invitation_token_repository)
     ],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> SetPasswordResponse:
     """Set password using an invitation token."""
-    from foundation.auth.sqlalchemy_invitation_token_repository import (
-        SqlAlchemyInvitationTokenRepository,
-    )
     from foundation.config.settings import settings
 
     verify_origin(request, settings.cors_origins_list)
-
-    invitation_token_repo = SqlAlchemyInvitationTokenRepository(session)
 
     use_case = SetPasswordUseCase(
         user_repo=user_repo,
