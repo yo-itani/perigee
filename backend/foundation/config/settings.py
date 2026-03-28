@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,7 +21,15 @@ class Settings(BaseSettings):
     db_name: str = "perigee"
 
     # JWT / Auth
-    jwt_secret_key: str = ""
+    jwt_secret_key: str
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def _validate_jwt_secret_key(cls, v: str) -> str:
+        if len(v) < 32:
+            msg = "PERIGEE_JWT_SECRET_KEY must be at least 32 characters"
+            raise ValueError(msg)
+        return v
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
@@ -42,4 +51,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]  # pydantic-settings fills from env

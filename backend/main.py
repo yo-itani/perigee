@@ -2,6 +2,7 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 
 from api.event_setup import create_event_dispatcher
@@ -21,17 +22,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         scheduler.start()
 
     # Register auth cleanup scheduler on the same APScheduler instance
-    _register_auth_cleanup(scheduler)
+    standalone = _register_auth_cleanup(scheduler)
+    if standalone is not None:
+        app.state.auth_cleanup_scheduler = standalone
 
     yield
+
+    if standalone is not None:
+        standalone.shutdown()
     if scheduler is not None:
         scheduler.shutdown()
 
 
 def _register_auth_cleanup(
     reminder_scheduler: object | None,
-) -> None:
-    """Register the auth cleanup job on the reminder scheduler's APScheduler."""
+) -> AsyncIOScheduler | None:
+    """Register the auth cleanup job.
+
+    Returns a standalone AsyncIOScheduler if one was created (caller must
+    shut it down), or None when the job was added to the existing scheduler.
+    """
     try:
         from foundation.auth.cleanup_scheduler import AuthCleanupScheduler
 
@@ -41,18 +51,18 @@ def _register_auth_cleanup(
             if apscheduler is not None:
                 cleanup = AuthCleanupScheduler(apscheduler)
                 cleanup.register()
-                return
+                return None
 
         # Fallback: create a standalone scheduler
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
         standalone = AsyncIOScheduler()
         cleanup = AuthCleanupScheduler(standalone)
         cleanup.register()
         standalone.start()
         logger.info("Auth cleanup scheduler started (standalone)")
+        return standalone
     except Exception:
         logger.exception("Failed to register auth cleanup scheduler")
+        return None
 
 
 app = FastAPI(title="perigee", version="0.1.0", lifespan=lifespan)

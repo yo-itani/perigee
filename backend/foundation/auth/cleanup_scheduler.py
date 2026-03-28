@@ -49,15 +49,15 @@ async def _run_cleanup() -> None:
     from foundation.db.session import async_session_factory
 
     now = datetime.now(UTC)
-    cutoff = now - timedelta(days=_RETENTION_DAYS)
+    login_attempt_cutoff = now - timedelta(days=_RETENTION_DAYS)
 
     try:
         async with async_session_factory() as session:
             refresh_repo = SqlAlchemyRefreshTokenRepository(session)
             login_repo = SqlAlchemyLoginAttemptRepository(session)
 
-            deleted_tokens = await refresh_repo.delete_expired(cutoff)
-            deleted_attempts = await login_repo.delete_older_than(cutoff)
+            deleted_tokens = await refresh_repo.delete_expired(now)
+            deleted_attempts = await login_repo.delete_older_than(login_attempt_cutoff)
 
             await session.commit()
 
