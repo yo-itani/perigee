@@ -79,7 +79,7 @@ export function SetupPage() {
       password,
     });
     if (result) {
-      void navigate("/", { replace: true });
+      void navigate("/login", { replace: true });
     }
   };
 

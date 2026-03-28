@@ -9,9 +9,14 @@ export function Header() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logoutApi();
-    clearAccessToken();
-    void navigate("/login", { replace: true });
+    try {
+      await logoutApi();
+    } catch {
+      // サーバー側ログアウト失敗でもクライアント側は必ずクリアする
+    } finally {
+      clearAccessToken();
+      void navigate("/login", { replace: true });
+    }
   };
 
   return (

@@ -264,7 +264,7 @@ describe("SetupPage", () => {
     });
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
     });
   });
 
