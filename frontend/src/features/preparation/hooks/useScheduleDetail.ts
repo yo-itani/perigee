@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { ScheduleDetail } from "../types";
 
 interface UseScheduleDetailResult {
@@ -11,7 +10,6 @@ interface UseScheduleDetailResult {
 }
 
 export function useScheduleDetail(scheduleId: string): UseScheduleDetailResult {
-  const { userId } = useCurrentUser();
   const [schedule, setSchedule] = useState<ScheduleDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useScheduleDetail(scheduleId: string): UseScheduleDetailResult {
     try {
       const data = await apiClient.get<ScheduleDetail>(
         `/schedules/${scheduleId}`,
-        userId,
       );
       setSchedule(data);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useScheduleDetail(scheduleId: string): UseScheduleDetailResult {
     } finally {
       setIsLoading(false);
     }
-  }, [scheduleId, userId]);
+  }, [scheduleId]);
 
   useEffect(() => {
     void fetchSchedule();

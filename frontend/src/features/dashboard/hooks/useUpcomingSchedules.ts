@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { UpcomingScheduleItem, UpcomingSchedulesResponse } from "../types";
 
 interface UseUpcomingSchedulesResult {
@@ -11,7 +10,6 @@ interface UseUpcomingSchedulesResult {
 }
 
 export function useUpcomingSchedules(): UseUpcomingSchedulesResult {
-  const { userId } = useCurrentUser();
   const [schedules, setSchedules] = useState<UpcomingScheduleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useUpcomingSchedules(): UseUpcomingSchedulesResult {
     try {
       const data = await apiClient.get<UpcomingSchedulesResponse>(
         "/schedules/upcoming",
-        userId,
       );
       setSchedules(data.schedules);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useUpcomingSchedules(): UseUpcomingSchedulesResult {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void fetchSchedules();

@@ -30,9 +30,16 @@ function renderWithRouter(initialPath: string) {
 describe("AdminGuard", () => {
   it("renders child route when user is admin", () => {
     mockUseCurrentUser.mockReturnValue({
-      userId: "u1",
-      name: "Admin",
-      role: "admin",
+      user: {
+        userId: "u1",
+        name: "Admin",
+        email: "test@example.com",
+        role: "admin",
+        isActive: true,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     renderWithRouter("/admin/users");
@@ -43,9 +50,16 @@ describe("AdminGuard", () => {
 
   it("redirects to / when user is not admin", () => {
     mockUseCurrentUser.mockReturnValue({
-      userId: "u2",
-      name: "Member",
-      role: "member",
+      user: {
+        userId: "u2",
+        name: "Member",
+        email: "test@example.com",
+        role: "member",
+        isActive: true,
+      },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
     });
 
     renderWithRouter("/admin/users");

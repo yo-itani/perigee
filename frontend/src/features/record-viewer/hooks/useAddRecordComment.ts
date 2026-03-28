@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { AddRecordCommentResponse } from "../types";
 
 interface UseAddRecordCommentResult {
@@ -12,7 +11,6 @@ interface UseAddRecordCommentResult {
 export function useAddRecordComment(
   recordId: string,
 ): UseAddRecordCommentResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +21,6 @@ export function useAddRecordComment(
       try {
         const data = await apiClient.post<AddRecordCommentResponse>(
           `/records/${recordId}/comments`,
-          userId,
           { body },
         );
         return data;
@@ -38,7 +35,7 @@ export function useAddRecordComment(
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { addComment, isSubmitting, error };

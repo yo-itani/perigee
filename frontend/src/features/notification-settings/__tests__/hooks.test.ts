@@ -21,8 +21,16 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
 
@@ -51,10 +59,7 @@ describe("useNotificationSetting", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      "/notification-settings",
-      TEST_USER_ID,
-    );
+    expect(mockGet).toHaveBeenCalledWith("/notification-settings");
     expect(result.current.setting).toEqual(mockSetting);
     expect(result.current.error).toBeNull();
   });
@@ -139,11 +144,10 @@ describe("useUpdateNotificationSetting", () => {
       });
     });
 
-    expect(mockPut).toHaveBeenCalledWith(
-      "/notification-settings",
-      TEST_USER_ID,
-      { reminder_minutes_before: 15, is_enabled: false },
-    );
+    expect(mockPut).toHaveBeenCalledWith("/notification-settings", {
+      reminder_minutes_before: 15,
+      is_enabled: false,
+    });
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });

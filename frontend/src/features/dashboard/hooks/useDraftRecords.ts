@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { DraftRecordItem, DraftRecordsResponse } from "../types";
 
 interface UseDraftRecordsResult {
@@ -11,7 +10,6 @@ interface UseDraftRecordsResult {
 }
 
 export function useDraftRecords(): UseDraftRecordsResult {
-  const { userId } = useCurrentUser();
   const [drafts, setDrafts] = useState<DraftRecordItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +18,7 @@ export function useDraftRecords(): UseDraftRecordsResult {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<DraftRecordsResponse>(
-        "/records/drafts",
-        userId,
-      );
+      const data = await apiClient.get<DraftRecordsResponse>("/records/drafts");
       setDrafts(data.items);
     } catch (e) {
       if (e instanceof ApiError) {
@@ -34,7 +29,7 @@ export function useDraftRecords(): UseDraftRecordsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void fetchDrafts();

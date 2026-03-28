@@ -1,24 +1,28 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import type { User } from "../types";
 
-interface UseDeactivateUserReturn {
-  deactivateUser: (targetUserId: string) => Promise<User | null>;
+interface InvitationResponse {
+  token: string;
+  expires_at: string;
+}
+
+interface UseInviteUserReturn {
+  inviteUser: (userId: string) => Promise<InvitationResponse | null>;
   isLoading: boolean;
   error: ApiError | null;
 }
 
-export function useDeactivateUser(): UseDeactivateUserReturn {
+export function useInviteUser(): UseInviteUserReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const deactivateUser = useCallback(
-    async (targetUserId: string): Promise<User | null> => {
+  const inviteUser = useCallback(
+    async (userId: string): Promise<InvitationResponse | null> => {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await apiClient.put<User>(
-          `/users/${targetUserId}/deactivate`,
+        const result = await apiClient.post<InvitationResponse>(
+          `/users/${userId}/invite`,
         );
         return result;
       } catch (e) {
@@ -35,5 +39,5 @@ export function useDeactivateUser(): UseDeactivateUserReturn {
     [],
   );
 
-  return { deactivateUser, isLoading, error };
+  return { inviteUser, isLoading, error };
 }

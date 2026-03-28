@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { CompleteActionItemResponse } from "../types";
 
 interface UseCompleteActionItemResult {
@@ -12,7 +11,6 @@ interface UseCompleteActionItemResult {
 }
 
 export function useCompleteActionItem(): UseCompleteActionItemResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +23,6 @@ export function useCompleteActionItem(): UseCompleteActionItemResult {
       try {
         const data = await apiClient.post<CompleteActionItemResponse>(
           `/action-items/${actionItemId}/complete`,
-          userId,
         );
         return data;
       } catch (e) {
@@ -39,7 +36,7 @@ export function useCompleteActionItem(): UseCompleteActionItemResult {
         setIsSubmitting(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { completeItem, isSubmitting, error };

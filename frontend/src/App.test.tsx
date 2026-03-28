@@ -1,9 +1,53 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+
+vi.mock("@/hooks/useCurrentUser", () => ({
+  useCurrentUser: () => ({
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "dev@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock("@/features/dashboard/hooks/useUpcomingSchedules", () => ({
+  useUpcomingSchedules: () => ({
+    schedules: [],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+vi.mock("@/features/dashboard/hooks/useDraftRecords", () => ({
+  useDraftRecords: () => ({ drafts: [], isLoading: false, error: null }),
+}));
+
+vi.mock("@/features/dashboard/hooks/usePendingActionItems", () => ({
+  usePendingActionItems: () => ({
+    items: [],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+vi.mock("@/features/dashboard/hooks/useUnreadNotifications", () => ({
+  useUnreadNotifications: () => ({
+    notifications: [],
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
 
 function renderWithProviders(initialEntries: string[] = ["/"]) {
   const queryClient = new QueryClient({

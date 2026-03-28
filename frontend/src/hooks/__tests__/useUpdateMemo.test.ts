@@ -22,12 +22,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,7 +54,7 @@ describe("useUpdateMemo", () => {
       response = await result.current.updateMemo("Updated memo");
     });
 
-    expect(mockPut).toHaveBeenCalledWith("/records/r1/memo", TEST_USER_ID, {
+    expect(mockPut).toHaveBeenCalledWith("/records/r1/memo", {
       memo: "Updated memo",
     });
     expect(response).toEqual(mockResponse);

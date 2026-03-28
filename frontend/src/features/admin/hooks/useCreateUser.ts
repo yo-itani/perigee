@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { CreateUserPayload, User } from "../types";
 
 interface UseCreateUserReturn {
@@ -10,7 +9,6 @@ interface UseCreateUserReturn {
 }
 
 export function useCreateUser(): UseCreateUserReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -19,7 +17,7 @@ export function useCreateUser(): UseCreateUserReturn {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await apiClient.post<User>("/users", userId, payload);
+        const result = await apiClient.post<User>("/users", payload);
         return result;
       } catch (e) {
         const apiError =
@@ -32,7 +30,7 @@ export function useCreateUser(): UseCreateUserReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { createUser, isLoading, error };

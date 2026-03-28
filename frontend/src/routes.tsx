@@ -1,6 +1,9 @@
 import { createBrowserRouter } from "react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminGuard } from "@/components/guards/AdminGuard";
+import { AuthGuard } from "@/features/auth/components/AuthGuard";
+import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { SetPasswordPage } from "@/features/auth/pages/SetPasswordPage";
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { SchedulingPage } from "@/features/scheduling/pages/SchedulingPage";
 import { PreparationPage } from "@/features/preparation/pages/PreparationPage";
@@ -18,39 +21,52 @@ import { AdminUsersPage } from "@/features/admin/pages/AdminUsersPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
+  { path: "login", element: <LoginPage /> },
+  { path: "set-password", element: <SetPasswordPage /> },
   { path: "setup", element: <SetupPage /> },
   {
-    element: <SetupGuard />,
+    element: <AuthGuard />,
     children: [
       {
-        element: <AppLayout />,
+        element: <SetupGuard />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: "scheduling", element: <SchedulingPage /> },
-          { path: "schedules", element: <ScheduleListPage /> },
           {
-            path: "schedules/:scheduleId/preparation",
-            element: <PreparationPage />,
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <DashboardPage /> },
+              { path: "scheduling", element: <SchedulingPage /> },
+              { path: "schedules", element: <ScheduleListPage /> },
+              {
+                path: "schedules/:scheduleId/preparation",
+                element: <PreparationPage />,
+              },
+              { path: "records/in-progress", element: <RecordingListPage /> },
+              { path: "records/drafts", element: <DraftListPage /> },
+              {
+                path: "records/:recordId/recording",
+                element: <RecordingPage />,
+              },
+              {
+                path: "records/:recordId/publish",
+                element: <PublishingPage />,
+              },
+              { path: "records", element: <RecordListPage /> },
+              { path: "records/:recordId", element: <RecordViewerPage /> },
+              {
+                path: "settings/notifications",
+                element: <NotificationSettingPage />,
+              },
+              {
+                path: "admin/users",
+                element: (
+                  <AdminGuard>
+                    <AdminUsersPage />
+                  </AdminGuard>
+                ),
+              },
+              { path: "*", element: <NotFoundPage /> },
+            ],
           },
-          { path: "records/in-progress", element: <RecordingListPage /> },
-          { path: "records/drafts", element: <DraftListPage /> },
-          { path: "records/:recordId/recording", element: <RecordingPage /> },
-          { path: "records/:recordId/publish", element: <PublishingPage /> },
-          { path: "records", element: <RecordListPage /> },
-          { path: "records/:recordId", element: <RecordViewerPage /> },
-          {
-            path: "settings/notifications",
-            element: <NotificationSettingPage />,
-          },
-          {
-            path: "admin/users",
-            element: (
-              <AdminGuard>
-                <AdminUsersPage />
-              </AdminGuard>
-            ),
-          },
-          { path: "*", element: <NotFoundPage /> },
         ],
       },
     ],

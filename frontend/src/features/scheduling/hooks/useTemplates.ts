@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface TemplateListItem {
   template_id: string;
@@ -25,7 +24,6 @@ interface UseTemplatesReturn {
 export type { TemplateListItem };
 
 export function useTemplates(): UseTemplatesReturn {
-  const { userId } = useCurrentUser();
   const [templates, setTemplates] = useState<TemplateListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
@@ -34,10 +32,7 @@ export function useTemplates(): UseTemplatesReturn {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await apiClient.get<ListTemplatesResponse>(
-        "/templates",
-        userId,
-      );
+      const result = await apiClient.get<ListTemplatesResponse>("/templates");
       setTemplates(result.templates);
     } catch (e) {
       const apiError =
@@ -46,7 +41,7 @@ export function useTemplates(): UseTemplatesReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void fetchTemplates();

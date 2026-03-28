@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { ConfirmAgendaResponse } from "../types";
 
 interface UseConfirmAgendaResult {
@@ -10,7 +9,6 @@ interface UseConfirmAgendaResult {
 }
 
 export function useConfirmAgenda(recordId: string): UseConfirmAgendaResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +19,6 @@ export function useConfirmAgenda(recordId: string): UseConfirmAgendaResult {
       try {
         const data = await apiClient.post<ConfirmAgendaResponse>(
           `/records/${recordId}/agendas/${agendaId}/confirm`,
-          userId,
         );
         return data;
       } catch (e) {
@@ -35,7 +32,7 @@ export function useConfirmAgenda(recordId: string): UseConfirmAgendaResult {
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { confirmAgenda, isSubmitting, error };

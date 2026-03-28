@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { PublishRecordResponse } from "../types";
 
 interface UsePublishRecordResult {
@@ -10,7 +9,6 @@ interface UsePublishRecordResult {
 }
 
 export function usePublishRecord(recordId: string): UsePublishRecordResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +19,6 @@ export function usePublishRecord(recordId: string): UsePublishRecordResult {
       try {
         const data = await apiClient.post<PublishRecordResponse>(
           `/records/${recordId}/publish`,
-          userId,
           {},
         );
         return data;
@@ -35,7 +32,7 @@ export function usePublishRecord(recordId: string): UsePublishRecordResult {
       } finally {
         setIsSubmitting(false);
       }
-    }, [recordId, userId]);
+    }, [recordId]);
 
   return { publishRecord, isSubmitting, error };
 }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { NotificationSetting } from "../types";
 
 interface UseNotificationSettingResult {
@@ -11,7 +10,6 @@ interface UseNotificationSettingResult {
 }
 
 export function useNotificationSetting(): UseNotificationSettingResult {
-  const { userId } = useCurrentUser();
   const [setting, setSetting] = useState<NotificationSetting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useNotificationSetting(): UseNotificationSettingResult {
     try {
       const data = await apiClient.get<NotificationSetting>(
         "/notification-settings",
-        userId,
       );
       setSetting(data);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useNotificationSetting(): UseNotificationSettingResult {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void fetchSetting();

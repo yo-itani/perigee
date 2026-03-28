@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { AgendaItem, AgendasResponse } from "../types";
 
 interface UseScheduleAgendasResult {
@@ -13,7 +12,6 @@ interface UseScheduleAgendasResult {
 export function useScheduleAgendas(
   scheduleId: string,
 ): UseScheduleAgendasResult {
-  const { userId } = useCurrentUser();
   const [agendas, setAgendas] = useState<AgendaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +22,6 @@ export function useScheduleAgendas(
     try {
       const data = await apiClient.get<AgendasResponse>(
         `/schedules/${scheduleId}/agendas`,
-        userId,
       );
       setAgendas(data.agendas);
     } catch (e) {
@@ -36,7 +33,7 @@ export function useScheduleAgendas(
     } finally {
       setIsLoading(false);
     }
-  }, [scheduleId, userId]);
+  }, [scheduleId]);
 
   useEffect(() => {
     if (!scheduleId) {
