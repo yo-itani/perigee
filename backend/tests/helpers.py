@@ -1,11 +1,25 @@
-"""Shared test helper functions."""
+"""Shared test helper functions.
+
+Provides:
+- Test user creation helpers (DB row insertion)
+- JWT token generation for authenticated test requests
+- httpx AsyncClient builder with ASGITransport
+"""
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.domain.value_objects import UserId
 from shared.infrastructure.tables import UserTable
+
+# ---------------------------------------------------------------------------
+# Test user helpers (DB)
+# ---------------------------------------------------------------------------
 
 
 def make_test_user_table(
@@ -50,3 +64,99 @@ async def create_test_user(
     session.add(row)
     await session.flush()
     return uid
+
+
+# ---------------------------------------------------------------------------
+# JWT token helpers
+# ---------------------------------------------------------------------------
+
+_TEST_SECRET = "test-secret-key-for-unit-tests-32chars!"
+
+
+def create_test_access_token(
+    user_id: str | UserId,
+    *,
+    expire_minutes: int = 30,
+    secret_key: str = _TEST_SECRET,
+) -> str:
+    """Create a valid JWT access token for test requests.
+
+    Uses the same signing logic as the production code so that the real
+    auth middleware can validate the token without any DI overrides.
+    """
+    from foundation.auth.jwt_token import create_access_token
+
+    uid_str = str(user_id.value) if isinstance(user_id, UserId) else user_id
+    return create_access_token(uid_str, secret_key, expire_minutes)
+
+
+def auth_headers(
+    user_id: str | UserId,
+    *,
+    expire_minutes: int = 30,
+    secret_key: str = _TEST_SECRET,
+) -> dict[str, str]:
+    """Return an Authorization header dict with a valid Bearer token.
+
+    Usage::
+
+        headers = auth_headers(user_id)
+        response = await client.get("/some-endpoint", headers=headers)
+    """
+    token = create_test_access_token(
+        user_id, expire_minutes=expire_minutes, secret_key=secret_key
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+# ---------------------------------------------------------------------------
+# httpx AsyncClient helpers
+# ---------------------------------------------------------------------------
+
+_DEFAULT_BASE_URL = "http://test"
+
+
+@asynccontextmanager
+async def create_async_client(
+    app: object,
+    *,
+    base_url: str = _DEFAULT_BASE_URL,
+    headers: dict[str, str] | None = None,
+) -> AsyncGenerator[AsyncClient]:
+    """Create an httpx AsyncClient wired to a FastAPI app via ASGITransport.
+
+    Usage::
+
+        async with create_async_client(app) as client:
+            resp = await client.get("/health")
+
+        # With auth:
+        hdrs = auth_headers(user_id)
+        async with create_async_client(app, headers=hdrs) as client:
+            resp = await client.get("/protected")
+    """
+    transport = ASGITransport(app=app)  # type: ignore[arg-type]
+    async with AsyncClient(
+        transport=transport, base_url=base_url, headers=headers
+    ) as client:
+        yield client
+
+
+@asynccontextmanager
+async def create_authenticated_client(
+    app: object,
+    user_id: str | UserId,
+    *,
+    base_url: str = _DEFAULT_BASE_URL,
+    secret_key: str = _TEST_SECRET,
+) -> AsyncGenerator[AsyncClient]:
+    """Create an httpx AsyncClient with JWT auth headers pre-configured.
+
+    Combines create_async_client and auth_headers into a single helper::
+
+        async with create_authenticated_client(app, user_id) as client:
+            resp = await client.get("/protected")
+    """
+    headers = auth_headers(user_id, secret_key=secret_key)
+    async with create_async_client(app, base_url=base_url, headers=headers) as client:
+        yield client

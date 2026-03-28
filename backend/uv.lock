@@ -155,6 +155,18 @@ wheels = [
 ]
 
 [[package]]
+name = "faker"
+version = "40.11.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fa/e5/b16bf568a2f20fe7423282db4a4059dbcadef70e9029c1c106836f8edd84/faker-40.11.1.tar.gz", hash = "sha256:61965046e79e8cfde4337d243eac04c0d31481a7c010033141103b43f603100c", size = 1957415, upload-time = "2026-03-23T14:05:50.233Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/ec/3c4b78eb0d2f6a81fb8cc9286745845bff661e6815741eff7a6ac5fcc9ea/faker-40.11.1-py3-none-any.whl", hash = "sha256:3af3a213ba8fb33ce6ba2af7aef2ac91363dae35d0cec0b2b0337d189e5bee2a", size = 1989484, upload-time = "2026-03-23T14:05:48.793Z" },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.135.1"
 source = { registry = "https://pypi.org/simple" }
@@ -357,6 +369,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "httpx" },
+    { name = "polyfactory" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -379,6 +392,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = "~=0.28" },
+    { name = "polyfactory", specifier = "~=2.21" },
     { name = "pyright", specifier = "~=1.1" },
     { name = "pytest", specifier = "~=8.3" },
     { name = "pytest-asyncio", specifier = "~=0.25" },
@@ -392,6 +406,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
+]
+
+[[package]]
+name = "polyfactory"
+version = "2.22.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "faker" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/c6/517137955bb3764e813edfa0086e8b3675dc126c49428e8482a70018ec33/polyfactory-2.22.5.tar.gz", hash = "sha256:d641d8c10c7d3e1f0f862ba2733ad1523069af58614bb1c077aeccabb66d26b7", size = 264946, upload-time = "2025-11-15T09:52:39.863Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/87/6cd69c43e86bc5863f93dba3c9fb42ee4fda36a0fe5aa3cbd25001fb26f8/polyfactory-2.22.5-py3-none-any.whl", hash = "sha256:822d1af463520153200b4b62b06b0dc73a1d5edc8911e2e63ed0757ae21cc2b3", size = 63934, upload-time = "2025-11-15T09:52:37.956Z" },
 ]
 
 [[package]]
