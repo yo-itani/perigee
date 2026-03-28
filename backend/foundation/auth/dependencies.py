@@ -11,6 +11,7 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from foundation.auth.jwt_token import TokenError, decode_access_token
+from foundation.config.settings import settings
 from shared.domain.value_objects import UserId
 
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -25,8 +26,6 @@ async def parse_user_id_from_jwt(
 
     Returns the authenticated UserId.
     """
-    from foundation.config.settings import settings
-
     credentials: HTTPAuthorizationCredentials | None = await _bearer_scheme(request)
     if credentials is None:
         raise HTTPException(status_code=401, detail=_AUTH_ERROR_DETAIL)

@@ -33,7 +33,7 @@ class _FakeSettings:
 
 def _patch_settings():  # type: ignore[no-untyped-def]
     return patch(
-        "foundation.config.settings.settings", _FakeSettings()
+        "foundation.auth.dependencies.settings", _FakeSettings()
     )
 
 

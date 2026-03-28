@@ -37,6 +37,7 @@ from foundation.auth.use_cases.set_password_use_case import (
     SetPasswordInput,
     SetPasswordUseCase,
 )
+from foundation.config.settings import settings
 from shared.domain.user_repository import UserRepository
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -133,7 +134,6 @@ async def login(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> LoginResponse:
     """Authenticate with email and password."""
-    from foundation.config.settings import settings
 
     ip_address = request.client.host if request.client else "unknown"
 
@@ -190,7 +190,6 @@ async def refresh(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RefreshResponse:
     """Refresh the access token using the refresh token cookie."""
-    from foundation.config.settings import settings
 
     verify_origin(request, settings.cors_origins_list)
 
@@ -236,7 +235,6 @@ async def logout(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     """Log out by revoking the refresh token and clearing the cookie."""
-    from foundation.config.settings import settings
 
     verify_origin(request, settings.cors_origins_list)
 
@@ -263,7 +261,6 @@ async def set_password(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> SetPasswordResponse:
     """Set password using an invitation token."""
-    from foundation.config.settings import settings
 
     verify_origin(request, settings.cors_origins_list)
 
