@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     slack_enabled: bool = True
     slack_http_timeout: int = 10
 
+    # Web Server
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    trusted_hosts: str = ""
+
     # Database
     db_host: str = "localhost"
     db_port: int = 3306
@@ -36,8 +40,7 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
-    # CORS
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
 
     @property
     def database_url(self) -> str:
@@ -51,7 +54,10 @@ class Settings(BaseSettings):
         """Parse comma-separated CORS origins into a list."""
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
-    model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
+    @property
+    def trusted_hosts_list(self) -> list[str]:
+        """Parse comma-separated trusted hosts into a list."""
+        return [h.strip() for h in self.trusted_hosts.split(",") if h.strip()]
 
 
 _settings: Settings | None = None
