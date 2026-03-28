@@ -94,9 +94,11 @@ uv run pytest tests/contexts/record/domain/test_record.py::TestPublish::test_pub
 
 ### Integration テスト（プレゼンテーション層）
 
-プレゼンテーション層のテストでは、`X-User-Id` ヘッダーを付与して認証済みユーザーをシミュレートする。FastAPI アプリをテスト内で構築し、`httpx.AsyncClient` の `ASGITransport` で接続する。
+プレゼンテーション層のテストでは、本番と同じ JWT 認証を通す。`tests/helpers.py` の `auth_headers()` / `create_authenticated_client()` を使い、テスト用秘密鍵で署名した Bearer トークンを付与する。DI override による認証差し替えは行わない。
 
 ```python
+from tests.helpers import auth_headers, create_async_client
+
 pytestmark = pytest.mark.integration
 
 def _create_test_app():
@@ -113,11 +115,9 @@ def app():
 
 # 認証済みリクエスト
 async def test_authenticated_request(app, user_id: str) -> None:
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with create_async_client(app, headers=auth_headers(user_id)) as client:
         response = await client.post(
             "/some-endpoint",
-            headers={"X-User-Id": user_id},
             json={...},
         )
     assert response.status_code == 201
