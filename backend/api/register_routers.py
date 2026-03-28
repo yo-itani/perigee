@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from api.auth_router import auth_router
 from api.system_router import system_router
 from contexts.notification.presentation.router import (
     notifications_router,
@@ -22,6 +23,7 @@ def register_routers(app: FastAPI) -> None:
     from shared.presentation.router import router as users_router
 
     app.include_router(system_router)
+    app.include_router(auth_router)
     app.include_router(notification_router)
     app.include_router(notifications_router)
     app.include_router(preparation_router, tags=["Preparation"])

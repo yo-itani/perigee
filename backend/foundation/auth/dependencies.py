@@ -1,28 +1,44 @@
+"""Authentication dependencies for FastAPI.
+
+Extracts and validates JWT access tokens from the Authorization header.
+"""
+
 from __future__ import annotations
 
 import uuid
 
-from fastapi import Header, HTTPException
+from fastapi import HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from foundation.auth.jwt_token import TokenError, decode_access_token
 from shared.domain.value_objects import UserId
 
-_ERROR_DETAIL = "X-User-Id header is missing or invalid"
+_bearer_scheme = HTTPBearer(auto_error=False)
+
+_AUTH_ERROR_DETAIL = "Not authenticated"
 
 
-def parse_user_id_header(
-    x_user_id: str | None = Header(default=None),
+async def parse_user_id_from_jwt(
+    request: Request,
 ) -> UserId:
-    """Parse and validate the X-User-Id header value.
+    """Extract and validate the JWT access token from the Authorization header.
 
-    This is a development-only header parser.
-    Replace with JWT token extraction for production use.
+    Returns the authenticated UserId.
     """
-    if x_user_id is None:
-        raise HTTPException(status_code=401, detail=_ERROR_DETAIL)
+    from foundation.config.settings import settings
+
+    credentials: HTTPAuthorizationCredentials | None = await _bearer_scheme(request)
+    if credentials is None:
+        raise HTTPException(status_code=401, detail=_AUTH_ERROR_DETAIL)
 
     try:
-        return UserId(value=uuid.UUID(x_user_id))
+        user_id_str = decode_access_token(
+            credentials.credentials, settings.jwt_secret_key
+        )
+    except TokenError:
+        raise HTTPException(status_code=401, detail=_AUTH_ERROR_DETAIL) from None
+
+    try:
+        return UserId(value=uuid.UUID(user_id_str))
     except ValueError:
-        raise HTTPException(
-            status_code=401, detail=_ERROR_DETAIL,
-        ) from None
+        raise HTTPException(status_code=401, detail=_AUTH_ERROR_DETAIL) from None

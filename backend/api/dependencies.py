@@ -9,7 +9,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from foundation.application.unit_of_work import UnitOfWork
-from foundation.auth.dependencies import parse_user_id_header
+from foundation.auth.dependencies import parse_user_id_from_jwt
 from foundation.domain.event_dispatcher import EventDispatcher
 from shared.domain.system_settings_repository import SystemSettingsRepository
 from shared.domain.user import User
@@ -69,16 +69,22 @@ def get_user_repository(
     return SqlAlchemyUserRepository(session)
 
 
+async def get_authenticated_user_id(
+    request: Request,
+) -> UserId:
+    """Extract and validate JWT, returning the authenticated UserId.
+
+    This is a lightweight dependency that does NOT require a DB session,
+    so routes fail fast with 401 when the token is missing or invalid.
+    """
+    return await parse_user_id_from_jwt(request)
+
+
 async def get_current_user(
-    parsed_id: Annotated[UserId, Depends(parse_user_id_header)],
+    parsed_id: Annotated[UserId, Depends(get_authenticated_user_id)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> User:
-    """Authenticate and return the current User.
-
-    This is a development-only authentication dependency.
-    Replace the implementation body with JWT validation (or
-    similar) for production use -- router signatures unchanged.
-    """
+    """Authenticate and return the current User via JWT access token."""
     user = await user_repo.get_by_id(parsed_id)
     if user is None:
         raise HTTPException(

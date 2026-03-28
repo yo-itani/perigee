@@ -16,6 +16,7 @@ from shared.domain.value_objects import UserId, UserRole
 class SetupFirstUserInput:
     name: str
     email: str
+    password: str | None = None
 
 
 @dataclass(frozen=True)
@@ -56,11 +57,18 @@ class SetupFirstUserUseCase:
             if settings.is_setup_complete:
                 raise SetupAlreadyCompleteError("Setup is already complete.")
 
+            password_hash: str | None = None
+            if input_dto.password is not None:
+                from foundation.auth.password import hash_password
+
+                password_hash = hash_password(input_dto.password)
+
             user = User(
                 id=UserId.generate(),
                 name=input_dto.name,
                 email=input_dto.email,
                 role=UserRole.ADMIN,
+                password_hash=password_hash,
             )
             await self._user_repo.save(user)
 

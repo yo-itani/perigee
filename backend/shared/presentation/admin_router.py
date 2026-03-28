@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import require_admin
+from api.dependencies import get_session, require_admin
 from shared.application.activate_user_use_case import (
     ActivateUserInput,
     ActivateUserUseCase,
@@ -269,4 +272,60 @@ async def activate_user(
         role=output.role,
         is_active=output.is_active,
         slack_user_id=output.slack_user_id,
+    )
+
+
+class InvitationResponse(BaseModel):
+    token: str
+    expires_at: datetime
+
+
+@admin_router.post(
+    "/{user_id}/invite",
+    response_model=InvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_invitation(
+    user_id: str,
+    _admin: Annotated[User, Depends(require_admin)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> InvitationResponse:
+    """Generate an invitation link for a user to set their password."""
+    from foundation.auth.sqlalchemy_invitation_token_repository import (
+        SqlAlchemyInvitationTokenRepository,
+    )
+    from foundation.auth.use_cases.create_invitation_use_case import (
+        CreateInvitationInput,
+        CreateInvitationUseCase,
+    )
+    from foundation.auth.use_cases.create_invitation_use_case import (
+        UserNotFoundError as InvitationUserNotFoundError,
+    )
+    from shared.infrastructure.sqlalchemy_user_repository import (
+        SqlAlchemyUserRepository,
+    )
+
+    user_repo = SqlAlchemyUserRepository(session)
+    invitation_token_repo = SqlAlchemyInvitationTokenRepository(session)
+
+    use_case = CreateInvitationUseCase(
+        user_repo=user_repo,
+        invitation_token_repo=invitation_token_repo,
+    )
+
+    try:
+        output = await use_case.execute(
+            CreateInvitationInput(user_id=_parse_user_id(user_id))
+        )
+    except InvitationUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    await session.commit()
+
+    return InvitationResponse(
+        token=output.token,
+        expires_at=output.expires_at,
     )
