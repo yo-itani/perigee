@@ -97,4 +97,5 @@ uv run alembic downgrade -1
 - `docs/system_design.md` # システム設計書（ユビキタス言語、ドメインイベント、ビジネスルール等）
 - `docs/architecture.md` # アーキテクチャ設計（DDD構成、ディレクトリ構造、レイヤー責務）
 - `docs/coding-standards.md` # コーディング規約（命名規則、カラートークン、レイヤー依存ルール等）
+- `docs/testing-strategy.md` # テスト方針（テスト分類、実行方法、データ生成方針、認証方針、共通fixture）
 - `docs/wireframes.html` # 主要画面の画面イメージ。デザイン的なことより画面要素的な部分を参照する
