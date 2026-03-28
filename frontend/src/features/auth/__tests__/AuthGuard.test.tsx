@@ -38,9 +38,7 @@ describe("AuthGuard", () => {
     renderGuard();
 
     // Should show loading initially, then protected content
-    expect(
-      await screen.findByText("Protected Content"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Protected Content")).toBeInTheDocument();
     expect(authStore.getAccessToken()).toBe("restored-token");
   });
 
