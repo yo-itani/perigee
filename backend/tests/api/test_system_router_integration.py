@@ -59,3 +59,39 @@ class TestSetupFirstUserIntegration:
         # Cleanup
         async with async_session_factory() as session:
             await _cleanup(session)
+
+    async def test_setup_with_password_stores_hash(self) -> None:
+        """POST /system/setup with password stores a password hash."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # Ensure clean state
+            async with async_session_factory() as session:
+                await _cleanup(session)
+
+            response = await client.post(
+                "/system/setup",
+                json={
+                    "name": "Admin",
+                    "email": "admin@example.com",
+                    "password": "secure-password-123",
+                },
+            )
+            assert response.status_code == 201
+            data = response.json()
+            assert data["name"] == "Admin"
+            assert data["role"] == "admin"
+
+            # Verify the password hash was stored by attempting to login
+            login_resp = await client.post(
+                "/auth/login",
+                json={
+                    "email": "admin@example.com",
+                    "password": "secure-password-123",
+                },
+            )
+            assert login_resp.status_code == 200
+            assert "access_token" in login_resp.json()
+
+        # Cleanup
+        async with async_session_factory() as session:
+            await _cleanup(session)
