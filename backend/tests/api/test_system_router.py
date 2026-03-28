@@ -216,6 +216,46 @@ class TestSetupFirstUser:
         assert response.status_code == 409
 
     @pytest.mark.asyncio
+    async def test_setup_with_password_stores_hash(
+        self,
+        client: AsyncClient,
+        user_repo: InMemoryUserRepository,
+    ) -> None:
+        """POST /system/setup with password stores the password hash."""
+        response = await client.post(
+            "/system/setup",
+            json={
+                "name": "Admin",
+                "email": "admin@example.com",
+                "password": "secure-password-123",
+            },
+        )
+
+        assert response.status_code == 201
+
+        saved = await user_repo.get_by_email("admin@example.com")
+        assert saved is not None
+        assert saved.has_password is True
+
+        from foundation.auth.password import verify_password
+
+        assert verify_password("secure-password-123", saved.password_hash)  # type: ignore[arg-type]
+
+    @pytest.mark.asyncio
+    async def test_setup_rejects_short_password(self, client: AsyncClient) -> None:
+        """POST /system/setup returns 422 for password shorter than 8 chars."""
+        response = await client.post(
+            "/system/setup",
+            json={
+                "name": "Admin",
+                "email": "admin@example.com",
+                "password": "short",
+            },
+        )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
     async def test_setup_rejects_invalid_email(self, client: AsyncClient) -> None:
         """POST /system/setup returns 422 for invalid email."""
         response = await client.post(
