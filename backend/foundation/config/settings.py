@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,6 +32,7 @@ class Settings(BaseSettings):
             msg = "PERIGEE_JWT_SECRET_KEY must be at least 32 characters"
             raise ValueError(msg)
         return v
+
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
@@ -51,4 +54,21 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PERIGEE_", env_file=".env")
 
 
-settings = Settings()  # type: ignore[call-arg]  # pydantic-settings fills from env
+_settings: Settings | None = None
+
+
+def _get_settings() -> Settings:
+    global _settings  # noqa: PLW0603
+    if _settings is None:
+        _settings = Settings()  # type: ignore[call-arg]  # pydantic-settings fills from env
+    return _settings
+
+
+class _SettingsProxy:
+    """Proxy that delays Settings instantiation until first attribute access."""
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(_get_settings(), name)
+
+
+settings: Settings = _SettingsProxy()  # type: ignore[assignment]
