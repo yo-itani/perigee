@@ -49,6 +49,7 @@ class SqlAlchemyUserRepository(UserRepository):
             role=user.role.value,
             is_active=user.is_active,
             slack_user_id=user.slack_user_id,
+            password_hash=user.password_hash,
         )
         self._session.add(row)
         await self._session.flush()
@@ -60,6 +61,7 @@ class SqlAlchemyUserRepository(UserRepository):
         existing.role = user.role.value
         existing.is_active = user.is_active
         existing.slack_user_id = user.slack_user_id
+        existing.password_hash = user.password_hash
 
     async def list_all(self, *, offset: int = 0, limit: int = 100) -> list[User]:
         stmt = select(UserTable).order_by(UserTable.name).offset(offset).limit(limit)
@@ -94,4 +96,5 @@ class SqlAlchemyUserRepository(UserRepository):
             role=UserRole(row.role),
             is_active=row.is_active,
             slack_user_id=row.slack_user_id,
+            password_hash=row.password_hash,
         )

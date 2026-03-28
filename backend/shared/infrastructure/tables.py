@@ -19,6 +19,9 @@ class UserTable(Base, TimestampMixin):
     slack_user_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, default=None
     )
+    password_hash: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
 
 
 class SystemSettingsTable(Base, TimestampMixin):

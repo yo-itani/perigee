@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import require_admin
+from api.dependencies import (
+    get_invitation_token_repository,
+    get_session,
+    get_user_repository,
+    require_admin,
+)
+from foundation.auth.invitation_token_repository import InvitationTokenRepository
 from shared.application.activate_user_use_case import (
     ActivateUserInput,
     ActivateUserUseCase,
@@ -54,6 +63,7 @@ from shared.application.update_user_use_case import (
     UserNotFoundError as UpdateUserNotFoundError,
 )
 from shared.domain.user import User
+from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId
 from shared.presentation.dependencies import (
     get_activate_user_use_case,
@@ -269,4 +279,55 @@ async def activate_user(
         role=output.role,
         is_active=output.is_active,
         slack_user_id=output.slack_user_id,
+    )
+
+
+class InvitationResponse(BaseModel):
+    token: str
+    expires_at: datetime
+
+
+@admin_router.post(
+    "/{user_id}/invite",
+    response_model=InvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_invitation(
+    user_id: str,
+    _admin: Annotated[User, Depends(require_admin)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+    invitation_token_repo: Annotated[
+        InvitationTokenRepository, Depends(get_invitation_token_repository)
+    ],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> InvitationResponse:
+    """Generate an invitation link for a user to set their password."""
+    from foundation.auth.use_cases.create_invitation_use_case import (
+        CreateInvitationInput,
+        CreateInvitationUseCase,
+    )
+    from foundation.auth.use_cases.create_invitation_use_case import (
+        UserNotFoundError as InvitationUserNotFoundError,
+    )
+
+    use_case = CreateInvitationUseCase(
+        user_repo=user_repo,
+        invitation_token_repo=invitation_token_repo,
+    )
+
+    try:
+        output = await use_case.execute(
+            CreateInvitationInput(user_id=_parse_user_id(user_id))
+        )
+    except InvitationUserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from None
+
+    await session.commit()
+
+    return InvitationResponse(
+        token=output.token,
+        expires_at=output.expires_at,
     )
