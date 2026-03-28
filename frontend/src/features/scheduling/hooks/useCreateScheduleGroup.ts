@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface CounterpartSchedulePayload {
   counterpart_id: string;
@@ -33,7 +32,6 @@ export type {
 };
 
 export function useCreateScheduleGroup(): UseCreateScheduleGroupReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -46,7 +44,6 @@ export function useCreateScheduleGroup(): UseCreateScheduleGroupReturn {
       try {
         const result = await apiClient.post<CreateScheduleGroupResult>(
           "/schedule-groups",
-          userId,
           payload,
         );
         return result;
@@ -61,7 +58,7 @@ export function useCreateScheduleGroup(): UseCreateScheduleGroupReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { createScheduleGroup, isLoading, error };

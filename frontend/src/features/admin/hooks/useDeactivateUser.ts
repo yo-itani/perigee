@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { User } from "../types";
 
 interface UseDeactivateUserReturn {
@@ -10,7 +9,6 @@ interface UseDeactivateUserReturn {
 }
 
 export function useDeactivateUser(): UseDeactivateUserReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -21,7 +19,6 @@ export function useDeactivateUser(): UseDeactivateUserReturn {
       try {
         const result = await apiClient.put<User>(
           `/users/${targetUserId}/deactivate`,
-          userId,
         );
         return result;
       } catch (e) {
@@ -35,7 +32,7 @@ export function useDeactivateUser(): UseDeactivateUserReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { deactivateUser, isLoading, error };

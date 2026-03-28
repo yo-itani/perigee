@@ -16,7 +16,8 @@ import { determineRole } from "../utils";
 export function RecordViewerPage() {
   const { recordId } = useParams<{ recordId: string }>();
   const navigate = useNavigate();
-  const { userId } = useCurrentUser();
+  const { user } = useCurrentUser();
+  const userId = user?.userId ?? "";
 
   const {
     record,

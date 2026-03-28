@@ -12,7 +12,8 @@ import { UnreadRecordList } from "../components/UnreadRecordList";
 import { countThisWeekSchedules, formatDateJa } from "../utils";
 
 export function DashboardPage() {
-  const { name: userName } = useCurrentUser();
+  const { user } = useCurrentUser();
+  const userName = user?.name ?? "";
   const {
     schedules,
     isLoading: schedulesLoading,

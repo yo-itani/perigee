@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface CounterpartSchedulePayload {
   counterpart_id: string;
@@ -28,7 +27,6 @@ interface UseCreateFromTemplateReturn {
 export type { CreateFromTemplatePayload, CreateFromTemplateResult };
 
 export function useCreateFromTemplate(): UseCreateFromTemplateReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -41,7 +39,6 @@ export function useCreateFromTemplate(): UseCreateFromTemplateReturn {
       try {
         const result = await apiClient.post<CreateFromTemplateResult>(
           "/schedule-groups/from-template",
-          userId,
           payload,
         );
         return result;
@@ -56,7 +53,7 @@ export function useCreateFromTemplate(): UseCreateFromTemplateReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { createFromTemplate, isLoading, error };

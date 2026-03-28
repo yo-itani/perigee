@@ -10,6 +10,8 @@ dependencies = [
     "alembic~=1.18",
     "pydantic-settings~=2.13",
     "apscheduler~=3.11",
+    "bcrypt~=4.3",
+    "pyjwt~=2.10",
 ]
 
 [dependency-groups]

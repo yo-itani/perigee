@@ -18,6 +18,7 @@ export function SetupPage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Redirect to dashboard if setup is already complete
@@ -63,10 +64,22 @@ export function SetupPage() {
       setValidationError("有効なメールアドレスを入力してください");
       return;
     }
+    if (!password) {
+      setValidationError("パスワードを入力してください");
+      return;
+    }
+    if (password.length < 8) {
+      setValidationError("パスワードは8文字以上で入力してください");
+      return;
+    }
 
-    const result = await setupUser({ name: name.trim(), email: email.trim() });
+    const result = await setupUser({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+    });
     if (result) {
-      void navigate("/", { replace: true });
+      void navigate("/login", { replace: true });
     }
   };
 
@@ -109,6 +122,22 @@ export function SetupPage() {
                   setEmail(e.target.value);
                   setValidationError(null);
                 }}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                パスワード
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="8文字以上"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setValidationError(null);
+                }}
+                autoComplete="new-password"
               />
             </div>
 

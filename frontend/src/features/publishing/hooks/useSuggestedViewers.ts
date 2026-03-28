@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { SuggestedViewersResponse } from "../types";
 
 interface UseSuggestedViewersResult {
@@ -13,7 +12,6 @@ interface UseSuggestedViewersResult {
 export function useSuggestedViewers(
   recordId: string,
 ): UseSuggestedViewersResult {
-  const { userId } = useCurrentUser();
   const [suggestedViewerIds, setSuggestedViewerIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +22,6 @@ export function useSuggestedViewers(
     try {
       const data = await apiClient.get<SuggestedViewersResponse>(
         `/records/${recordId}/suggested-viewers`,
-        userId,
       );
       setSuggestedViewerIds(data.suggested_viewer_ids);
     } catch (e) {
@@ -36,7 +33,7 @@ export function useSuggestedViewers(
     } finally {
       setIsLoading(false);
     }
-  }, [recordId, userId]);
+  }, [recordId]);
 
   useEffect(() => {
     void fetchSuggestedViewers();

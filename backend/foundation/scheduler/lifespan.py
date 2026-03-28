@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 
 from contexts.notification.domain.notification_sender import NotificationSender
+from foundation.config.settings import settings
 from foundation.scheduler.reminder_scheduler import ReminderScheduler
 
 logger = logging.getLogger(__name__)
@@ -74,8 +75,6 @@ def get_base_notification_sender() -> NotificationSender:
     Returns SlackNotificationSender when Slack is enabled and configured,
     otherwise falls back to a log-only sender.
     """
-    from foundation.config.settings import settings
-
     if settings.slack_enabled and settings.slack_webhook_url:
         from contexts.notification.infrastructure.slack_notification_sender import (
             SlackNotificationSender,

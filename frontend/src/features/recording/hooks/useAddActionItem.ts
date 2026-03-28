@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { AddActionItemResponse } from "../types";
 
 interface UseAddActionItemResult {
@@ -10,7 +9,6 @@ interface UseAddActionItemResult {
 }
 
 export function useAddActionItem(recordId: string): UseAddActionItemResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +19,6 @@ export function useAddActionItem(recordId: string): UseAddActionItemResult {
       try {
         const data = await apiClient.post<AddActionItemResponse>(
           `/records/${recordId}/action-items`,
-          userId,
           { title },
         );
         return data;
@@ -36,7 +33,7 @@ export function useAddActionItem(recordId: string): UseAddActionItemResult {
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { addActionItem, isSubmitting, error };

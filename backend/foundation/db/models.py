@@ -32,10 +32,20 @@ from contexts.workspace.infrastructure.tables import (
     MembershipTable,  # noqa: F401
     WorkspaceTable,  # noqa: F401
 )
-from shared.infrastructure.tables import SystemSettingsTable  # noqa: F401
-from shared.infrastructure.tables import UserTable  # noqa: F401
+from foundation.auth.tables import (
+    InvitationTokenTable,  # noqa: F401
+    LoginAttemptTable,  # noqa: F401
+    RefreshTokenTable,  # noqa: F401
+)
+from shared.infrastructure.tables import (
+    SystemSettingsTable,  # noqa: F401
+    UserTable,  # noqa: F401
+)
 
 __all__ = [
+    "InvitationTokenTable",
+    "LoginAttemptTable",
+    "RefreshTokenTable",
     "ActionItemTable",
     "AgendaCommentTable",
     "ReadStatusTable",

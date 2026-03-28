@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { AddAgendaResponse } from "../types";
 
 interface UseAddAgendaResult {
@@ -10,7 +9,6 @@ interface UseAddAgendaResult {
 }
 
 export function useAddAgenda(scheduleId: string): UseAddAgendaResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +23,6 @@ export function useAddAgenda(scheduleId: string): UseAddAgendaResult {
       try {
         const data = await apiClient.post<AddAgendaResponse>(
           `/schedules/${scheduleId}/agendas`,
-          userId,
           { topic },
         );
         return data;
@@ -40,7 +37,7 @@ export function useAddAgenda(scheduleId: string): UseAddAgendaResult {
         setIsSubmitting(false);
       }
     },
-    [scheduleId, userId],
+    [scheduleId],
   );
 
   return { addAgenda, isSubmitting, error };

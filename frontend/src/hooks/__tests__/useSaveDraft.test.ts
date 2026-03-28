@@ -22,12 +22,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,10 +54,7 @@ describe("useSaveDraft", () => {
       response = await result.current.saveDraft();
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/records/r1/save-draft",
-      TEST_USER_ID,
-    );
+    expect(mockPost).toHaveBeenCalledWith("/records/r1/save-draft");
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });

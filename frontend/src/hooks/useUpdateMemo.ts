@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface UpdateMemoResponse {
   record_id: string;
@@ -13,7 +12,6 @@ interface UseUpdateMemoResult {
 }
 
 export function useUpdateMemo(recordId: string): UseUpdateMemoResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +22,6 @@ export function useUpdateMemo(recordId: string): UseUpdateMemoResult {
       try {
         const data = await apiClient.put<UpdateMemoResponse>(
           `/records/${recordId}/memo`,
-          userId,
           { memo },
         );
         return data;
@@ -39,7 +36,7 @@ export function useUpdateMemo(recordId: string): UseUpdateMemoResult {
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { updateMemo, isSubmitting, error };

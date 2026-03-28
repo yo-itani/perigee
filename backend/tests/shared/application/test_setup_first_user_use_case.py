@@ -127,3 +127,40 @@ async def test_setup_first_user_raises_when_already_complete(
     # Verify UoW was NOT committed (rolled back via __aexit__)
     assert uow.committed is False
     assert uow.rolled_back is True
+
+
+@pytest.mark.asyncio
+async def test_setup_with_password_stores_hash(
+    use_case: SetupFirstUserUseCase,
+    user_repo: InMemoryUserRepository,
+) -> None:
+    """Password is hashed and stored when provided."""
+    output = await use_case.execute(
+        SetupFirstUserInput(
+            name="Admin",
+            email="admin@example.com",
+            password="secure-password-123",
+        )
+    )
+    assert output.role == UserRole.ADMIN
+
+    saved = await user_repo.get_by_email("admin@example.com")
+    assert saved is not None
+    assert saved.has_password is True
+
+    from foundation.auth.password import verify_password
+
+    assert verify_password("secure-password-123", saved.password_hash)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_setup_without_password_has_no_hash(
+    use_case: SetupFirstUserUseCase,
+    user_repo: InMemoryUserRepository,
+) -> None:
+    """When no password is provided, password_hash is None."""
+    await use_case.execute(SetupFirstUserInput(name="Admin", email="admin@example.com"))
+
+    saved = await user_repo.get_by_email("admin@example.com")
+    assert saved is not None
+    assert saved.has_password is False

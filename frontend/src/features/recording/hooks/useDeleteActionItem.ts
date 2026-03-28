@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface UseDeleteActionItemResult {
   deleteActionItem: (actionItemId: string) => Promise<boolean>;
@@ -11,7 +10,6 @@ interface UseDeleteActionItemResult {
 export function useDeleteActionItem(
   recordId: string,
 ): UseDeleteActionItemResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +20,6 @@ export function useDeleteActionItem(
       try {
         await apiClient.delete<void>(
           `/records/${recordId}/action-items/${actionItemId}`,
-          userId,
         );
         return true;
       } catch (e) {
@@ -36,7 +33,7 @@ export function useDeleteActionItem(
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { deleteActionItem, isSubmitting, error };

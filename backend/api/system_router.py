@@ -47,12 +47,20 @@ class SetupFirstUserRequest(BaseModel):
 
     name: str
     email: str
+    password: str | None = None
 
     @field_validator("email")
     @classmethod
     def validate_email(cls, v: str) -> str:
         if not _EMAIL_RE.match(v):
             raise ValueError("Invalid email address")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str | None) -> str | None:
+        if v is not None and len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
         return v
 
 
@@ -120,7 +128,9 @@ async def setup_first_user(
     """Register the first admin user. Only available when no users exist."""
     try:
         output: SetupFirstUserOutput = await use_case.execute(
-            input_dto=SetupFirstUserInput(name=body.name, email=body.email),
+            input_dto=SetupFirstUserInput(
+                name=body.name, email=body.email, password=body.password
+            ),
         )
     except SetupAlreadyCompleteError:
         raise HTTPException(

@@ -14,6 +14,7 @@ class User:
         role: UserRole = UserRole.MEMBER,
         is_active: bool = True,
         slack_user_id: str | None = None,
+        password_hash: str | None = None,
     ) -> None:
         self._id = id
         self._name = name
@@ -21,6 +22,7 @@ class User:
         self._role = role
         self._is_active = is_active
         self._slack_user_id = slack_user_id
+        self._password_hash = password_hash
 
     @property
     def id(self) -> UserId:
@@ -47,6 +49,14 @@ class User:
         return self._slack_user_id
 
     @property
+    def password_hash(self) -> str | None:
+        return self._password_hash
+
+    @property
+    def has_password(self) -> bool:
+        return self._password_hash is not None
+
+    @property
     def is_admin(self) -> bool:
         return self._role == UserRole.ADMIN
 
@@ -54,6 +64,10 @@ class User:
         """Update user profile (name and email only, not role)."""
         self._name = name
         self._email = email
+
+    def set_password_hash(self, password_hash: str) -> None:
+        """Set the password hash. Use foundation.auth.password to hash first."""
+        self._password_hash = password_hash
 
     def deactivate(self) -> None:
         self._is_active = False
