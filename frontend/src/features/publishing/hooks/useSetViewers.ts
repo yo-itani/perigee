@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { SetViewersResponse } from "../types";
 
 interface UseSetViewersResult {
@@ -10,7 +9,6 @@ interface UseSetViewersResult {
 }
 
 export function useSetViewers(recordId: string): UseSetViewersResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +19,6 @@ export function useSetViewers(recordId: string): UseSetViewersResult {
       try {
         const data = await apiClient.put<SetViewersResponse>(
           `/records/${recordId}/viewers`,
-          userId,
           { viewer_ids: viewerIds },
         );
         return data;
@@ -36,7 +33,7 @@ export function useSetViewers(recordId: string): UseSetViewersResult {
         setIsSubmitting(false);
       }
     },
-    [recordId, userId],
+    [recordId],
   );
 
   return { setViewers, isSubmitting, error };

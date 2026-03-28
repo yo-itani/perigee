@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { NotificationListResponse, NotificationRecord } from "../types";
 
 interface UseUnreadNotificationsResult {
@@ -11,7 +10,6 @@ interface UseUnreadNotificationsResult {
 }
 
 export function useUnreadNotifications(): UseUnreadNotificationsResult {
-  const { userId } = useCurrentUser();
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useUnreadNotifications(): UseUnreadNotificationsResult {
     try {
       const data = await apiClient.get<NotificationListResponse>(
         "/notifications?unread=true",
-        userId,
       );
       setNotifications(data.notifications);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useUnreadNotifications(): UseUnreadNotificationsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     void fetchNotifications();

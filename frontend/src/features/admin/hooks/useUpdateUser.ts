@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { UpdateUserPayload, User } from "../types";
 
 interface UseUpdateUserReturn {
@@ -13,7 +12,6 @@ interface UseUpdateUserReturn {
 }
 
 export function useUpdateUser(): UseUpdateUserReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -27,7 +25,6 @@ export function useUpdateUser(): UseUpdateUserReturn {
       try {
         const result = await apiClient.put<User>(
           `/users/${targetUserId}`,
-          userId,
           payload,
         );
         return result;
@@ -42,7 +39,7 @@ export function useUpdateUser(): UseUpdateUserReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { updateUser, isLoading, error };

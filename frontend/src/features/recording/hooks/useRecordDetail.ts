@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { RecordDetail } from "../types";
 
 interface UseRecordDetailResult {
@@ -11,7 +10,6 @@ interface UseRecordDetailResult {
 }
 
 export function useRecordDetail(recordId: string): UseRecordDetailResult {
-  const { userId } = useCurrentUser();
   const [record, setRecord] = useState<RecordDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,10 +18,7 @@ export function useRecordDetail(recordId: string): UseRecordDetailResult {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<RecordDetail>(
-        `/records/${recordId}`,
-        userId,
-      );
+      const data = await apiClient.get<RecordDetail>(`/records/${recordId}`);
       setRecord(data);
     } catch (e) {
       if (e instanceof ApiError) {
@@ -34,7 +29,7 @@ export function useRecordDetail(recordId: string): UseRecordDetailResult {
     } finally {
       setIsLoading(false);
     }
-  }, [recordId, userId]);
+  }, [recordId]);
 
   useEffect(() => {
     void fetchRecord();

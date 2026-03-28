@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { StartSessionResponse } from "../types";
 
 interface UseStartSessionResult {
@@ -13,7 +12,6 @@ interface UseStartSessionResult {
 }
 
 export function useStartSession(): UseStartSessionResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +25,6 @@ export function useStartSession(): UseStartSessionResult {
       try {
         const data = await apiClient.post<StartSessionResponse>(
           `/records/from-schedule`,
-          userId,
           { schedule_id: scheduleId, conducted_at: conductedAt },
         );
         return data;
@@ -42,7 +39,7 @@ export function useStartSession(): UseStartSessionResult {
         setIsSubmitting(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { startSession, isSubmitting, error };

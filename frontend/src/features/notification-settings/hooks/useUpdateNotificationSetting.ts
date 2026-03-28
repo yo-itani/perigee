@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type {
   NotificationSetting,
   UpdateNotificationSettingPayload,
@@ -15,7 +14,6 @@ interface UseUpdateNotificationSettingResult {
 }
 
 export function useUpdateNotificationSetting(): UseUpdateNotificationSettingResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +26,6 @@ export function useUpdateNotificationSetting(): UseUpdateNotificationSettingResu
       try {
         const data = await apiClient.put<NotificationSetting>(
           "/notification-settings",
-          userId,
           payload,
         );
         return data;
@@ -43,7 +40,7 @@ export function useUpdateNotificationSetting(): UseUpdateNotificationSettingResu
         setIsSubmitting(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { updateSetting, isSubmitting, error };

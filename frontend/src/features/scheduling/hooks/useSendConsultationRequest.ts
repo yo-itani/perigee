@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface SendConsultationRequestPayload {
   organizer_id: string;
@@ -24,7 +23,6 @@ interface UseSendConsultationRequestReturn {
 export type { SendConsultationRequestPayload, SendConsultationRequestResult };
 
 export function useSendConsultationRequest(): UseSendConsultationRequestReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -37,7 +35,6 @@ export function useSendConsultationRequest(): UseSendConsultationRequestReturn {
       try {
         const result = await apiClient.post<SendConsultationRequestResult>(
           "/schedules/consultation-request",
-          userId,
           payload,
         );
         return result;
@@ -52,7 +49,7 @@ export function useSendConsultationRequest(): UseSendConsultationRequestReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { sendConsultationRequest, isLoading, error };

@@ -3,9 +3,13 @@ import { Navigate } from "react-router";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export function AdminGuard({ children }: { children: ReactNode }) {
-  const { role } = useCurrentUser();
+  const { user, isLoading } = useCurrentUser();
 
-  if (role !== "admin") {
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user || user.role !== "admin") {
     return <Navigate to="/" replace />;
   }
 

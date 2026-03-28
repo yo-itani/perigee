@@ -4,6 +4,7 @@ import { ApiError } from "@/api/client";
 interface SetupFirstUserRequest {
   name: string;
   email: string;
+  password: string;
 }
 
 interface SetupFirstUserResponse {

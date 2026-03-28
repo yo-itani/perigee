@@ -25,12 +25,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -62,7 +68,7 @@ describe("useRecordDetail", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/records/r1", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/records/r1");
     expect(result.current.record).toEqual(mockRecord);
     expect(result.current.error).toBeNull();
   });
@@ -110,10 +116,7 @@ describe("useConfirmAgenda", () => {
       response = await result.current.confirmAgenda("a1");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/records/r1/agendas/a1/confirm",
-      TEST_USER_ID,
-    );
+    expect(mockPost).toHaveBeenCalledWith("/records/r1/agendas/a1/confirm");
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -162,11 +165,9 @@ describe("useAddActionItem", () => {
       response = await result.current.addActionItem("New action");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/records/r1/action-items",
-      TEST_USER_ID,
-      { title: "New action" },
-    );
+    expect(mockPost).toHaveBeenCalledWith("/records/r1/action-items", {
+      title: "New action",
+    });
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -217,10 +218,7 @@ describe("useDeleteActionItem", () => {
       success = await result.current.deleteActionItem("ai1");
     });
 
-    expect(mockDelete).toHaveBeenCalledWith(
-      "/records/r1/action-items/ai1",
-      TEST_USER_ID,
-    );
+    expect(mockDelete).toHaveBeenCalledWith("/records/r1/action-items/ai1");
     expect(success).toBe(true);
     expect(result.current.error).toBeNull();
   });

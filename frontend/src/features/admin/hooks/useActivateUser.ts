@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { User } from "../types";
 
 interface UseActivateUserReturn {
@@ -10,7 +9,6 @@ interface UseActivateUserReturn {
 }
 
 export function useActivateUser(): UseActivateUserReturn {
-  const { userId } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -21,7 +19,6 @@ export function useActivateUser(): UseActivateUserReturn {
       try {
         const result = await apiClient.put<User>(
           `/users/${targetUserId}/activate`,
-          userId,
         );
         return result;
       } catch (e) {
@@ -35,7 +32,7 @@ export function useActivateUser(): UseActivateUserReturn {
         setIsLoading(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { activateUser, isLoading, error };

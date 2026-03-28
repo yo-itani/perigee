@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { UserTable } from "../components/UserTable";
 import { CreateUserForm } from "../components/CreateUserForm";
 import { EditUserModal } from "../components/EditUserModal";
+import { InviteLinkModal } from "../components/InviteLinkModal";
 import { useUsers } from "../hooks/useUsers";
 import { useCreateUser } from "../hooks/useCreateUser";
 import { useUpdateUser } from "../hooks/useUpdateUser";
 import { useDeactivateUser } from "../hooks/useDeactivateUser";
 import { useActivateUser } from "../hooks/useActivateUser";
+import { useInviteUser } from "../hooks/useInviteUser";
 import type { User } from "../types";
 
 export function AdminUsersPage() {
@@ -26,8 +28,10 @@ export function AdminUsersPage() {
   } = useUpdateUser();
   const { deactivateUser, isLoading: isDeactivating } = useDeactivateUser();
   const { activateUser, isLoading: isActivating } = useActivateUser();
+  const { inviteUser, isLoading: isInviting } = useInviteUser();
 
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   const handleCreate = async (payload: Parameters<typeof createUser>[0]) => {
     const result = await createUser(payload);
@@ -55,6 +59,14 @@ export function AdminUsersPage() {
       await activateUser(user.id);
     }
     await refetch();
+  };
+
+  const handleInvite = async (user: User) => {
+    const result = await inviteUser(user.id);
+    if (result) {
+      const url = `${window.location.origin}/set-password?token=${result.token}`;
+      setInviteLink(url);
+    }
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -99,7 +111,9 @@ export function AdminUsersPage() {
                 users={users}
                 onEdit={setEditingUser}
                 onToggleActive={handleToggleActive}
+                onInvite={(user) => void handleInvite(user)}
                 isToggling={isDeactivating || isActivating}
+                isInviting={isInviting}
               />
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
@@ -139,6 +153,13 @@ export function AdminUsersPage() {
           onClose={() => setEditingUser(null)}
           isLoading={isUpdating}
           error={updateError}
+        />
+      )}
+
+      {inviteLink && (
+        <InviteLinkModal
+          link={inviteLink}
+          onClose={() => setInviteLink(null)}
         />
       )}
     </div>

@@ -75,11 +75,28 @@ vi.mock("../hooks/useActivateUser", () => ({
   }),
 }));
 
+const mockInviteUser = vi.fn();
+
+vi.mock("../hooks/useInviteUser", () => ({
+  useInviteUser: () => ({
+    inviteUser: mockInviteUser,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
-    role: "admin",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
 

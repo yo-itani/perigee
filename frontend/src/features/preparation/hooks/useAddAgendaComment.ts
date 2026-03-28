@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { AddAgendaCommentResponse } from "../types";
 
 interface UseAddAgendaCommentResult {
@@ -13,7 +12,6 @@ interface UseAddAgendaCommentResult {
 }
 
 export function useAddAgendaComment(): UseAddAgendaCommentResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +25,6 @@ export function useAddAgendaComment(): UseAddAgendaCommentResult {
       try {
         const data = await apiClient.post<AddAgendaCommentResponse>(
           `/agendas/${agendaId}/comments`,
-          userId,
           { body },
         );
         return data;
@@ -42,7 +39,7 @@ export function useAddAgendaComment(): UseAddAgendaCommentResult {
         setIsSubmitting(false);
       }
     },
-    [userId],
+    [],
   );
 
   return { addComment, isSubmitting, error };

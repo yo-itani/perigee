@@ -21,12 +21,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -58,7 +64,7 @@ describe("useRecordDetail", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/records/r1", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/records/r1");
     expect(result.current.record).toEqual(mockRecord);
     expect(result.current.error).toBeNull();
   });
@@ -114,7 +120,7 @@ describe("useRecordComments", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/records/r1/comments", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/records/r1/comments");
     expect(result.current.comments).toEqual(mockComments.comments);
     expect(result.current.error).toBeNull();
   });
@@ -163,7 +169,7 @@ describe("useRecordViewers", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/records/r1/viewers", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/records/r1/viewers");
     expect(result.current.viewerIds).toEqual(["viewer1", "viewer2"]);
     expect(result.current.error).toBeNull();
   });
@@ -212,11 +218,9 @@ describe("useAddRecordComment", () => {
       response = await result.current.addComment("Nice work!");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/records/r1/comments",
-      TEST_USER_ID,
-      { body: "Nice work!" },
-    );
+    expect(mockPost).toHaveBeenCalledWith("/records/r1/comments", {
+      body: "Nice work!",
+    });
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -268,10 +272,7 @@ describe("useCompleteActionItem", () => {
       response = await result.current.completeItem("ai1");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/action-items/ai1/complete",
-      TEST_USER_ID,
-    );
+    expect(mockPost).toHaveBeenCalledWith("/action-items/ai1/complete");
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { PendingActionItem, PendingActionItemsResponse } from "../types";
 
 interface UsePendingActionItemsResult {
@@ -13,7 +12,6 @@ interface UsePendingActionItemsResult {
 export function usePendingActionItems(
   counterpartId: string | null,
 ): UsePendingActionItemsResult {
-  const { userId } = useCurrentUser();
   const [items, setItems] = useState<PendingActionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +27,6 @@ export function usePendingActionItems(
     try {
       const data = await apiClient.get<PendingActionItemsResponse>(
         `/action-items/pending/${counterpartId}`,
-        userId,
       );
       setItems(data.items);
     } catch (e) {
@@ -41,7 +38,7 @@ export function usePendingActionItems(
     } finally {
       setIsLoading(false);
     }
-  }, [counterpartId, userId]);
+  }, [counterpartId]);
 
   useEffect(() => {
     void fetchItems();

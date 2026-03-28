@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { RecordComment, ListRecordCommentsResponse } from "../types";
 
 interface UseRecordCommentsResult {
@@ -11,7 +10,6 @@ interface UseRecordCommentsResult {
 }
 
 export function useRecordComments(recordId: string): UseRecordCommentsResult {
-  const { userId } = useCurrentUser();
   const [comments, setComments] = useState<RecordComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useRecordComments(recordId: string): UseRecordCommentsResult {
     try {
       const data = await apiClient.get<ListRecordCommentsResponse>(
         `/records/${recordId}/comments`,
-        userId,
       );
       setComments(data.comments);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useRecordComments(recordId: string): UseRecordCommentsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [recordId, userId]);
+  }, [recordId]);
 
   useEffect(() => {
     void fetchComments();

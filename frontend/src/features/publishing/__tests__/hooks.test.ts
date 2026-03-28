@@ -24,12 +24,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -52,10 +58,7 @@ describe("useSuggestedViewers", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      "/records/r1/suggested-viewers",
-      TEST_USER_ID,
-    );
+    expect(mockGet).toHaveBeenCalledWith("/records/r1/suggested-viewers");
     expect(result.current.suggestedViewerIds).toEqual(["viewer1", "viewer2"]);
     expect(result.current.error).toBeNull();
   });
@@ -107,7 +110,7 @@ describe("useSetViewers", () => {
       response = await result.current.setViewers(["v1", "v2"]);
     });
 
-    expect(mockPut).toHaveBeenCalledWith("/records/r1/viewers", TEST_USER_ID, {
+    expect(mockPut).toHaveBeenCalledWith("/records/r1/viewers", {
       viewer_ids: ["v1", "v2"],
     });
     expect(response).toEqual(mockResponse);
@@ -158,11 +161,7 @@ describe("usePublishRecord", () => {
       response = await result.current.publishRecord();
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/records/r1/publish",
-      TEST_USER_ID,
-      {},
-    );
+    expect(mockPost).toHaveBeenCalledWith("/records/r1/publish", {});
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });

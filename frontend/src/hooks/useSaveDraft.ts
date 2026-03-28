@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface SaveDraftResponse {
   record_id: string;
@@ -13,7 +12,6 @@ interface UseSaveDraftResult {
 }
 
 export function useSaveDraft(recordId: string): UseSaveDraftResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +21,6 @@ export function useSaveDraft(recordId: string): UseSaveDraftResult {
     try {
       const data = await apiClient.post<SaveDraftResponse>(
         `/records/${recordId}/save-draft`,
-        userId,
       );
       return data;
     } catch (e) {
@@ -36,7 +33,7 @@ export function useSaveDraft(recordId: string): UseSaveDraftResult {
     } finally {
       setIsSubmitting(false);
     }
-  }, [recordId, userId]);
+  }, [recordId]);
 
   return { saveDraft, isSubmitting, error };
 }

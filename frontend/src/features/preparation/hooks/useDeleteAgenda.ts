@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface UseDeleteAgendaResult {
   deleteAgenda: (agendaId: string) => Promise<boolean>;
@@ -9,7 +8,6 @@ interface UseDeleteAgendaResult {
 }
 
 export function useDeleteAgenda(scheduleId: string): UseDeleteAgendaResult {
-  const { userId } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +18,6 @@ export function useDeleteAgenda(scheduleId: string): UseDeleteAgendaResult {
       try {
         await apiClient.delete<void>(
           `/schedules/${scheduleId}/agendas/${agendaId}`,
-          userId,
         );
         return true;
       } catch (e) {
@@ -34,7 +31,7 @@ export function useDeleteAgenda(scheduleId: string): UseDeleteAgendaResult {
         setIsSubmitting(false);
       }
     },
-    [scheduleId, userId],
+    [scheduleId],
   );
 
   return { deleteAgenda, isSubmitting, error };

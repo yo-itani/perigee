@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { GetViewersResponse } from "../types";
 
 interface UseRecordViewersResult {
@@ -11,7 +10,6 @@ interface UseRecordViewersResult {
 }
 
 export function useRecordViewers(recordId: string): UseRecordViewersResult {
-  const { userId } = useCurrentUser();
   const [viewerIds, setViewerIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +20,6 @@ export function useRecordViewers(recordId: string): UseRecordViewersResult {
     try {
       const data = await apiClient.get<GetViewersResponse>(
         `/records/${recordId}/viewers`,
-        userId,
       );
       setViewerIds(data.viewer_ids);
     } catch (e) {
@@ -34,7 +31,7 @@ export function useRecordViewers(recordId: string): UseRecordViewersResult {
     } finally {
       setIsLoading(false);
     }
-  }, [recordId, userId]);
+  }, [recordId]);
 
   useEffect(() => {
     void fetchViewers();

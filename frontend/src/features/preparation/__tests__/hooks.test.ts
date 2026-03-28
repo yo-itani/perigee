@@ -23,12 +23,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -58,7 +64,7 @@ describe("useScheduleDetail", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/schedules/s1", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/schedules/s1");
     expect(result.current.schedule).toEqual(mockSchedule);
     expect(result.current.error).toBeNull();
   });
@@ -116,7 +122,7 @@ describe("useScheduleAgendas", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith("/schedules/s1/agendas", TEST_USER_ID);
+    expect(mockGet).toHaveBeenCalledWith("/schedules/s1/agendas");
     expect(result.current.agendas).toEqual(mockAgendas.agendas);
     expect(result.current.error).toBeNull();
   });
@@ -164,13 +170,9 @@ describe("useAddAgenda", () => {
       response = await result.current.addAgenda("New topic");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/schedules/s1/agendas",
-      TEST_USER_ID,
-      {
-        topic: "New topic",
-      },
-    );
+    expect(mockPost).toHaveBeenCalledWith("/schedules/s1/agendas", {
+      topic: "New topic",
+    });
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -218,10 +220,7 @@ describe("useDeleteAgenda", () => {
       success = await result.current.deleteAgenda("a1");
     });
 
-    expect(mockDelete).toHaveBeenCalledWith(
-      "/schedules/s1/agendas/a1",
-      TEST_USER_ID,
-    );
+    expect(mockDelete).toHaveBeenCalledWith("/schedules/s1/agendas/a1");
     expect(success).toBe(true);
     expect(result.current.error).toBeNull();
   });
@@ -271,11 +270,9 @@ describe("useAddAgendaComment", () => {
       response = await result.current.addComment("a1", "Great point");
     });
 
-    expect(mockPost).toHaveBeenCalledWith(
-      "/agendas/a1/comments",
-      TEST_USER_ID,
-      { body: "Great point" },
-    );
+    expect(mockPost).toHaveBeenCalledWith("/agendas/a1/comments", {
+      body: "Great point",
+    });
     expect(response).toEqual(mockResponse);
     expect(result.current.error).toBeNull();
   });
@@ -337,10 +334,7 @@ describe("usePendingActionItems", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      "/action-items/pending/cp1",
-      TEST_USER_ID,
-    );
+    expect(mockGet).toHaveBeenCalledWith("/action-items/pending/cp1");
     expect(result.current.items).toEqual(mockItems.items);
     expect(result.current.error).toBeNull();
   });

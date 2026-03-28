@@ -6,14 +6,18 @@ interface UserTableProps {
   users: User[];
   onEdit: (user: User) => void;
   onToggleActive: (user: User) => void;
+  onInvite: (user: User) => void;
   isToggling: boolean;
+  isInviting: boolean;
 }
 
 export function UserTable({
   users,
   onEdit,
   onToggleActive,
+  onInvite,
   isToggling,
+  isInviting,
 }: UserTableProps) {
   if (users.length === 0) {
     return (
@@ -61,6 +65,14 @@ export function UserTable({
                     onClick={() => onEdit(user)}
                   >
                     編集
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onInvite(user)}
+                    disabled={isInviting || !user.is_active}
+                  >
+                    招待
                   </Button>
                   <Button
                     variant={user.is_active ? "danger" : "success"}

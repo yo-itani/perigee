@@ -45,10 +45,10 @@ const navGroups: NavGroup[] = [
 ];
 
 export function Sidebar() {
-  const { role } = useCurrentUser();
+  const { user } = useCurrentUser();
 
   const visibleGroups = navGroups.filter(
-    (group) => !group.adminOnly || role === "admin",
+    (group) => !group.adminOnly || user?.role === "admin",
   );
 
   return (

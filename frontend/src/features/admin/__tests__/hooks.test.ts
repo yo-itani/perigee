@@ -24,13 +24,18 @@ vi.mock("@/api/client", async () => {
 
 vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({
-    userId: "00000000-0000-0000-0000-000000000001",
-    name: "Dev User",
-    role: "admin",
+    user: {
+      userId: "00000000-0000-0000-0000-000000000001",
+      name: "Dev User",
+      email: "test@example.com",
+      role: "admin",
+      isActive: true,
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
   }),
 }));
-
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -63,10 +68,7 @@ describe("useUsers", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockGet).toHaveBeenCalledWith(
-      "/users?offset=0&limit=20",
-      TEST_USER_ID,
-    );
+    expect(mockGet).toHaveBeenCalledWith("/users?offset=0&limit=20");
     expect(result.current.users).toEqual(mockResponse.users);
     expect(result.current.total).toBe(1);
     expect(result.current.error).toBeNull();
@@ -115,7 +117,7 @@ describe("useCreateUser", () => {
       });
     });
 
-    expect(mockPost).toHaveBeenCalledWith("/users", TEST_USER_ID, {
+    expect(mockPost).toHaveBeenCalledWith("/users", {
       name: "New User",
       email: "new@example.com",
       role: "member",
@@ -172,7 +174,7 @@ describe("useUpdateUser", () => {
       });
     });
 
-    expect(mockPut).toHaveBeenCalledWith("/users/u1", TEST_USER_ID, {
+    expect(mockPut).toHaveBeenCalledWith("/users/u1", {
       name: "Updated",
       email: "u1@example.com",
       role: "admin",
@@ -224,7 +226,7 @@ describe("useDeactivateUser", () => {
       response = await result.current.deactivateUser("u1");
     });
 
-    expect(mockPut).toHaveBeenCalledWith("/users/u1/deactivate", TEST_USER_ID);
+    expect(mockPut).toHaveBeenCalledWith("/users/u1/deactivate");
     expect(response).toEqual(mockUser);
   });
 
@@ -267,7 +269,7 @@ describe("useActivateUser", () => {
       response = await result.current.activateUser("u1");
     });
 
-    expect(mockPut).toHaveBeenCalledWith("/users/u1/activate", TEST_USER_ID);
+    expect(mockPut).toHaveBeenCalledWith("/users/u1/activate");
     expect(response).toEqual(mockUser);
   });
 

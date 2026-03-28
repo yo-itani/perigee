@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiClient, ApiError } from "@/api/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { User, UsersResponse } from "../types";
 
 interface UseUsersReturn {
@@ -15,7 +14,6 @@ interface UseUsersReturn {
 }
 
 export function useUsers(initialLimit = 20): UseUsersReturn {
-  const { userId } = useCurrentUser();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +27,6 @@ export function useUsers(initialLimit = 20): UseUsersReturn {
     try {
       const result = await apiClient.get<UsersResponse>(
         `/users?offset=${offset}&limit=${limit}`,
-        userId,
       );
       setUsers(result.users);
       setTotal(result.total);
@@ -40,7 +37,7 @@ export function useUsers(initialLimit = 20): UseUsersReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, offset, limit]);
+  }, [offset, limit]);
 
   useEffect(() => {
     void fetchUsers();

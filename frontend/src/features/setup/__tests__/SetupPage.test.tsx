@@ -132,6 +132,7 @@ describe("SetupPage", () => {
     expect(screen.getByText("初期セットアップ")).toBeInTheDocument();
     expect(screen.getByLabelText("名前")).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toBeInTheDocument();
+    expect(screen.getByLabelText("パスワード")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "登録" })).toBeInTheDocument();
   });
 
@@ -182,6 +183,43 @@ describe("SetupPage", () => {
     expect(mockSetupUser).not.toHaveBeenCalled();
   });
 
+  it("shows validation error when password is empty", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(screen.getByLabelText("名前"), "Admin");
+    await user.type(
+      screen.getByLabelText("メールアドレス"),
+      "admin@example.com",
+    );
+
+    await user.click(screen.getByRole("button", { name: "登録" }));
+
+    expect(
+      screen.getByText("パスワードを入力してください"),
+    ).toBeInTheDocument();
+    expect(mockSetupUser).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error when password is too short", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(screen.getByLabelText("名前"), "Admin");
+    await user.type(
+      screen.getByLabelText("メールアドレス"),
+      "admin@example.com",
+    );
+    await user.type(screen.getByLabelText("パスワード"), "short");
+
+    await user.click(screen.getByRole("button", { name: "登録" }));
+
+    expect(
+      screen.getByText("パスワードは8文字以上で入力してください"),
+    ).toBeInTheDocument();
+    expect(mockSetupUser).not.toHaveBeenCalled();
+  });
+
   it("clears validation error when user types", async () => {
     const user = userEvent.setup();
     renderPage();
@@ -214,12 +252,14 @@ describe("SetupPage", () => {
       screen.getByLabelText("メールアドレス"),
       "admin@example.com",
     );
+    await user.type(screen.getByLabelText("パスワード"), "password123");
     await user.click(screen.getByRole("button", { name: "登録" }));
 
     await waitFor(() => {
       expect(mockSetupUser).toHaveBeenCalledWith({
         name: "Admin",
         email: "admin@example.com",
+        password: "password123",
       });
     });
 
@@ -238,6 +278,7 @@ describe("SetupPage", () => {
       screen.getByLabelText("メールアドレス"),
       "admin@example.com",
     );
+    await user.type(screen.getByLabelText("パスワード"), "password123");
     await user.click(screen.getByRole("button", { name: "登録" }));
 
     await waitFor(() => {
