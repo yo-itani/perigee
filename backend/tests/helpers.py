@@ -17,6 +17,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.domain.value_objects import UserId
 from shared.infrastructure.tables import UserTable
 
+
+def _get_test_secret() -> str:
+    """Return the JWT secret key used by the application under test.
+
+    Reads from settings so that the signing key always matches the key
+    the app uses for verification, even when PERIGEE_JWT_SECRET_KEY is
+    overridden via environment variables.
+    """
+    from foundation.config.settings import settings
+
+    return settings.jwt_secret_key
+
+
 # ---------------------------------------------------------------------------
 # Test user helpers (DB)
 # ---------------------------------------------------------------------------
@@ -70,31 +83,32 @@ async def create_test_user(
 # JWT token helpers
 # ---------------------------------------------------------------------------
 
-_TEST_SECRET = "test-secret-key-for-unit-tests-32chars!"
-
 
 def create_test_access_token(
     user_id: str | UserId,
     *,
     expire_minutes: int = 30,
-    secret_key: str = _TEST_SECRET,
+    secret_key: str | None = None,
 ) -> str:
     """Create a valid JWT access token for test requests.
 
     Uses the same signing logic as the production code so that the real
     auth middleware can validate the token without any DI overrides.
+    ``secret_key`` defaults to ``settings.jwt_secret_key`` so it always
+    matches the key used by the app for verification.
     """
     from foundation.auth.jwt_token import create_access_token
 
+    key = secret_key if secret_key is not None else _get_test_secret()
     uid_str = str(user_id.value) if isinstance(user_id, UserId) else user_id
-    return create_access_token(uid_str, secret_key, expire_minutes)
+    return create_access_token(uid_str, key, expire_minutes)
 
 
 def auth_headers(
     user_id: str | UserId,
     *,
     expire_minutes: int = 30,
-    secret_key: str = _TEST_SECRET,
+    secret_key: str | None = None,
 ) -> dict[str, str]:
     """Return an Authorization header dict with a valid Bearer token.
 
@@ -148,7 +162,7 @@ async def create_authenticated_client(
     user_id: str | UserId,
     *,
     base_url: str = _DEFAULT_BASE_URL,
-    secret_key: str = _TEST_SECRET,
+    secret_key: str | None = None,
 ) -> AsyncGenerator[AsyncClient]:
     """Create an httpx AsyncClient with JWT auth headers pre-configured.
 
