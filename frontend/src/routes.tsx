@@ -25,10 +25,10 @@ export const router = createBrowserRouter([
   { path: "set-password", element: <SetPasswordPage /> },
   { path: "setup", element: <SetupPage /> },
   {
-    element: <AuthGuard />,
+    element: <SetupGuard />,
     children: [
       {
-        element: <SetupGuard />,
+        element: <AuthGuard />,
         children: [
           {
             element: <AppLayout />,
