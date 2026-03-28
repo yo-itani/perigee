@@ -131,7 +131,7 @@ async def test_authenticated_request(app, user_id: str) -> None:
 
 ### ルートレベル (`tests/conftest.py`)
 
-テスト全体で必要な環境変数のデフォルト値を設定する。
+テスト全体で必要な環境変数のデフォルト値と、DB fixture を提供する。
 
 ```python
 os.environ.setdefault(
@@ -140,10 +140,6 @@ os.environ.setdefault(
 )
 ```
 
-### Infrastructure 層 (`tests/contexts/*/infrastructure/conftest.py`)
-
-各境界付けられたコンテキストの infrastructure テスト用に、共通の DB fixture を提供する。
-
 | fixture | スコープ | 用途 |
 |---|---|---|
 | `test_engine` | session | テスト用 DB への非同期エンジン。セッション開始時にテーブル作成、終了時に削除 |
@@ -151,6 +147,8 @@ os.environ.setdefault(
 | `session_factory` | function | 複数セッションが必要なテスト向けのセッションファクトリ |
 
 `test_engine` fixture はテストセッション開始時に `Base.metadata.create_all` でテーブルを作成し、終了時に `Base.metadata.drop_all` で削除する。各テストは `session` fixture を通じてトランザクション内で実行され、テスト後にロールバックされる。
+
+各コンテキストの `tests/contexts/*/infrastructure/conftest.py` はルートの fixture に委譲する薄いファイルであり、fixture の実体は定義していない。
 
 ### Application 層 (`tests/contexts/*/application/conftest.py`)
 
