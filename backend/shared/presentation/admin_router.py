@@ -7,14 +7,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import (
     get_invitation_token_repository,
-    get_session,
+    get_unit_of_work,
     get_user_repository,
     require_admin,
 )
+from foundation.application.unit_of_work import UnitOfWork
 from foundation.auth.invitation_token_repository import InvitationTokenRepository
 from shared.application.activate_user_use_case import (
     ActivateUserInput,
@@ -130,7 +130,6 @@ async def create_user(
     body: CreateUserRequest,
     _admin: Annotated[User, Depends(require_admin)],
     use_case: Annotated[CreateUserUseCase, Depends(get_create_user_use_case)],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> UserProfileResponse:
     """Create a new user."""
     try:
@@ -146,7 +145,6 @@ async def create_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email address is already in use",
         ) from None
-    await session.commit()
     return UserProfileResponse(
         id=str(output.id.value),
         name=output.name,
@@ -191,7 +189,6 @@ async def update_user(
     body: UpdateUserRequest,
     _admin: Annotated[User, Depends(require_admin)],
     use_case: Annotated[UpdateUserUseCase, Depends(get_update_user_use_case)],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> UserProfileResponse:
     """Update a user's name, email, and role."""
     try:
@@ -218,7 +215,6 @@ async def update_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="Cannot remove admin role from the last active admin",
         ) from None
-    await session.commit()
     return UserProfileResponse(
         id=str(output.id.value),
         name=output.name,
@@ -234,7 +230,6 @@ async def deactivate_user(
     user_id: str,
     _admin: Annotated[User, Depends(require_admin)],
     use_case: Annotated[DeactivateUserUseCase, Depends(get_deactivate_user_use_case)],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> UserProfileResponse:
     """Deactivate a user."""
     try:
@@ -251,7 +246,6 @@ async def deactivate_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="Cannot deactivate the last active admin",
         ) from None
-    await session.commit()
     return UserProfileResponse(
         id=str(output.id.value),
         name=output.name,
@@ -267,7 +261,6 @@ async def activate_user(
     user_id: str,
     _admin: Annotated[User, Depends(require_admin)],
     use_case: Annotated[ActivateUserUseCase, Depends(get_activate_user_use_case)],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> UserProfileResponse:
     """Activate a deactivated user."""
     try:
@@ -279,7 +272,6 @@ async def activate_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         ) from None
-    await session.commit()
     return UserProfileResponse(
         id=str(output.id.value),
         name=output.name,
@@ -303,11 +295,11 @@ class InvitationResponse(BaseModel):
 async def create_invitation(
     user_id: str,
     _admin: Annotated[User, Depends(require_admin)],
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     invitation_token_repo: Annotated[
         InvitationTokenRepository, Depends(get_invitation_token_repository)
     ],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> InvitationResponse:
     """Generate an invitation link for a user to set their password."""
     from foundation.auth.use_cases.create_invitation_use_case import (
@@ -319,6 +311,7 @@ async def create_invitation(
     )
 
     use_case = CreateInvitationUseCase(
+        uow=uow,
         user_repo=user_repo,
         invitation_token_repo=invitation_token_repo,
     )
@@ -332,8 +325,6 @@ async def create_invitation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         ) from None
-
-    await session.commit()
 
     return InvitationResponse(
         token=output.token,

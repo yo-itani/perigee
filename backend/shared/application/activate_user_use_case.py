@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from foundation.application.unit_of_work import UnitOfWork
 from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId, UserRole
 
@@ -30,16 +31,19 @@ class UserNotFoundError(Exception):
 class ActivateUserUseCase:
     """Activate a previously deactivated user."""
 
-    def __init__(self, user_repo: UserRepository) -> None:
+    def __init__(self, uow: UnitOfWork, user_repo: UserRepository) -> None:
+        self._uow = uow
         self._user_repo = user_repo
 
     async def execute(self, input_dto: ActivateUserInput) -> ActivateUserOutput:
-        user = await self._user_repo.get_by_id(input_dto.user_id)
-        if user is None:
-            raise UserNotFoundError(f"User {input_dto.user_id.value} not found")
+        async with self._uow:
+            user = await self._user_repo.get_by_id(input_dto.user_id)
+            if user is None:
+                raise UserNotFoundError(f"User {input_dto.user_id.value} not found")
 
-        user.activate()
-        await self._user_repo.save(user)
+            user.activate()
+            await self._user_repo.save(user)
+            await self._uow.commit()
 
         return ActivateUserOutput(
             id=user.id,
