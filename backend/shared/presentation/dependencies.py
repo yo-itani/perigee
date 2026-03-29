@@ -20,8 +20,9 @@ from shared.domain.user_repository import UserRepository
 
 def get_update_my_profile_use_case(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
 ) -> UpdateMyProfileUseCase:
-    return UpdateMyProfileUseCase(user_repo=repo)
+    return UpdateMyProfileUseCase(user_repo=repo, uow=uow)
 
 
 def get_list_users_query_service(
