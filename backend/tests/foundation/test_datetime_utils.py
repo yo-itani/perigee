@@ -1,10 +1,59 @@
 """Unit tests for foundation.datetime_utils boundary conversion functions."""
 
-from datetime import UTC, datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from foundation.datetime_utils import to_aware_utc, to_aware_utc_optional, to_naive_utc
+from foundation.datetime_utils import (
+    normalize_to_utc,
+    to_aware_utc,
+    to_aware_utc_optional,
+    to_naive_utc,
+)
+
+
+class TestNormalizeToUtc:
+    """Tests for normalize_to_utc()."""
+
+    def test_utc_datetime_passes_through(self) -> None:
+        """UTC aware datetime is returned as-is."""
+        utc_dt = datetime(2026, 4, 1, 6, 30, 0, tzinfo=UTC)
+        result = normalize_to_utc(utc_dt)
+
+        assert result == utc_dt
+        assert result.utcoffset() == timedelta(0)
+
+    def test_positive_offset_converted_to_utc(self) -> None:
+        """Datetime with +09:00 offset is converted to equivalent UTC."""
+        jst = timezone(timedelta(hours=9))
+        jst_dt = datetime(2026, 4, 1, 15, 30, 0, tzinfo=jst)
+        result = normalize_to_utc(jst_dt)
+
+        assert result == datetime(2026, 4, 1, 6, 30, 0, tzinfo=UTC)
+        assert result.utcoffset() == timedelta(0)
+
+    def test_negative_offset_converted_to_utc(self) -> None:
+        """Datetime with -05:00 offset is converted to equivalent UTC."""
+        est = timezone(timedelta(hours=-5))
+        est_dt = datetime(2026, 4, 1, 1, 30, 0, tzinfo=est)
+        result = normalize_to_utc(est_dt)
+
+        assert result == datetime(2026, 4, 1, 6, 30, 0, tzinfo=UTC)
+        assert result.utcoffset() == timedelta(0)
+
+    def test_preserves_microseconds(self) -> None:
+        """Microsecond precision is preserved during conversion."""
+        jst = timezone(timedelta(hours=9))
+        jst_dt = datetime(2026, 4, 1, 15, 30, 0, 123456, tzinfo=jst)
+        result = normalize_to_utc(jst_dt)
+
+        assert result.microsecond == 123456
+
+    def test_raises_type_error_for_naive_input(self) -> None:
+        """Naive datetime input raises TypeError."""
+        naive = datetime(2026, 4, 1, 12, 0, 0)
+        with pytest.raises(TypeError, match="Expected aware datetime, got naive"):
+            normalize_to_utc(naive)
 
 
 class TestToNaiveUtc:

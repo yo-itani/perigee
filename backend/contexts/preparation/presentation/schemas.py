@@ -1,8 +1,11 @@
 """Pydantic request/response schemas for the Preparation context API."""
 
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel
+from pydantic import AwareDatetime, BaseModel, field_validator
+
+from foundation.datetime_utils import normalize_to_utc
 
 # ---------------------------------------------------------------------------
 # ScheduleGroup -- POST /schedule-groups
@@ -14,6 +17,11 @@ class CounterpartScheduleSchema(BaseModel):
 
     counterpart_id: UUID
     scheduled_at: AwareDatetime
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class CreateScheduleGroupRequest(BaseModel):
@@ -81,6 +89,11 @@ class CreateScheduleRequest(BaseModel):
     scheduled_at: AwareDatetime
     title: str
 
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
+
 
 class CreateScheduleResponse(BaseModel):
     """Response body for POST /schedules."""
@@ -100,6 +113,11 @@ class SendConsultationRequestRequest(BaseModel):
     scheduled_at: AwareDatetime
     title: str
     agenda_topics: list[str]
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class SendConsultationRequestResponse(BaseModel):
@@ -238,6 +256,11 @@ class RescheduleRequest(BaseModel):
     """Request body for POST /schedules/{schedule_id}/reschedule."""
 
     new_scheduled_at: AwareDatetime
+
+    @field_validator("new_scheduled_at")
+    @classmethod
+    def _normalize_new_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class RenameScheduleRequest(BaseModel):

@@ -57,7 +57,7 @@
 
 | 方向 | 変換 | 使用関数 |
 |---|---|---|
-| Presentation → Domain | aware datetime を UTC aware に正規化 | Pydantic `AwareDatetime` が自動処理 |
+| Presentation → Domain | aware datetime を UTC aware に正規化 | Pydantic スキーマの `field_validator` で `normalize_to_utc()` を明示呼出 |
 | Domain → Infrastructure/DB | UTC aware → naive UTC | `to_naive_utc()` |
 | Infrastructure/DB → Domain | naive UTC → UTC aware | `to_aware_utc()` / `to_aware_utc_optional()` |
 | Domain → Presentation | UTC aware のまま返却 | Schema で `AwareDatetime` |

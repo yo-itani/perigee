@@ -14,6 +14,30 @@ TypeError immediately, preventing silent data corruption.
 from datetime import UTC, datetime, timedelta
 
 
+def normalize_to_utc(dt: datetime) -> datetime:
+    """Normalize an aware datetime to UTC.
+
+    Used at the Presentation layer boundary to convert any aware datetime
+    (potentially with a non-UTC offset like +09:00) to UTC aware datetime
+    before passing it into the domain layer.
+
+    Args:
+        dt: A timezone-aware datetime (any offset).
+
+    Returns:
+        A timezone-aware datetime in UTC.
+
+    Raises:
+        TypeError: If dt is naive (no tzinfo).
+    """
+    if dt.tzinfo is None:
+        raise TypeError(
+            f"Expected aware datetime, got naive: {dt!r}. "
+            "Use AwareDatetime in Pydantic schemas to ensure awareness."
+        )
+    return dt.astimezone(UTC)
+
+
 def to_naive_utc(dt: datetime) -> datetime:
     """Convert an aware UTC datetime to naive UTC for DB storage.
 

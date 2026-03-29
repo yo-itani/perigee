@@ -1,8 +1,11 @@
 """Pydantic request/response schemas for the Record context API."""
 
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, field_validator
+
+from foundation.datetime_utils import normalize_to_utc
 
 # ---------------------------------------------------------------------------
 # Post-hoc record -- POST /records/post-hoc
@@ -14,6 +17,11 @@ class CreatePostHocRecordRequest(BaseModel):
 
     counterpart_id: UUID
     conducted_at: AwareDatetime
+
+    @field_validator("conducted_at")
+    @classmethod
+    def _normalize_conducted_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class CreatePostHocRecordResponse(BaseModel):
@@ -32,6 +40,11 @@ class CreateRecordFromScheduleRequest(BaseModel):
 
     schedule_id: UUID
     conducted_at: AwareDatetime
+
+    @field_validator("conducted_at")
+    @classmethod
+    def _normalize_conducted_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class CreateRecordFromScheduleResponse(BaseModel):
