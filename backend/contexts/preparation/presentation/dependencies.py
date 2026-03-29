@@ -50,6 +50,8 @@ from contexts.preparation.infrastructure.sqlalchemy_schedule_repository import (
 from contexts.preparation.infrastructure.sqlalchemy_template_repository import (
     SqlAlchemyTemplateRepository,
 )
+from contexts.record.domain.action_item_repository import ActionItemRepository
+from contexts.record.domain.record_repository import RecordRepository
 from foundation.application.unit_of_work import UnitOfWork
 from foundation.domain.event_dispatcher import EventDispatcher
 
@@ -96,8 +98,6 @@ if TYPE_CHECKING:
     from contexts.record.application.list_pending_action_items import (
         ListPendingActionItemsQueryService,
     )
-    from contexts.record.domain.action_item_repository import ActionItemRepository
-    from contexts.record.domain.record_repository import RecordRepository
 
 
 def get_schedule_repository(

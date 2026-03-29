@@ -754,3 +754,264 @@ class TestConfirmAgenda:
             )
 
         assert response.status_code == 404
+
+
+# -----------------------------------------------------------------------
+# POST /records/{id}/save-draft
+# -----------------------------------------------------------------------
+
+
+class TestSaveDraftAuth:
+    """POST /records/{id}/save-draft -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without Authorization header returns 401."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/save-draft",
+            )
+
+        assert response.status_code == 401
+
+
+class TestSaveDraft:
+    """POST /records/{id}/save-draft -- save draft."""
+
+    async def test_saves_draft_and_returns_200(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """Saving a draft returns 200 and keeps the record in draft status."""
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(user_id),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Save as draft
+            response = await client.post(
+                f"/records/{record_id}/save-draft",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 200
+        assert response.json()["record_id"] == record_id
+
+        # Verify DB: status remains draft
+        async with session_factory() as s:
+            from contexts.record.infrastructure.tables import RecordTable
+
+            result = await s.execute(
+                select(RecordTable).where(RecordTable.id == record_id)
+            )
+            row = result.scalar_one()
+            assert row.status == "draft"
+
+    async def test_returns_404_for_nonexistent_record(self, app, user_id: str) -> None:
+        """Saving a draft for a nonexistent record returns 404."""
+        record_id = str(uuid.uuid4())
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/records/{record_id}/save-draft",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 404
+
+    async def test_returns_409_for_published_record(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """Saving a draft for an already published record returns 409."""
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create and publish
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(user_id),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            record_id = create_response.json()["record_id"]
+            await client.post(
+                f"/records/{record_id}/publish",
+                headers=auth_headers(user_id),
+                json={"viewer_ids": []},
+            )
+
+            # Try to save draft
+            response = await client.post(
+                f"/records/{record_id}/save-draft",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 409
+
+    async def test_returns_403_for_non_organizer(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """A non-organizer cannot save a draft."""
+        stranger_id = await _new_user(session_factory)
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create a record as organizer
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(user_id),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # Stranger tries to save draft
+            response = await client.post(
+                f"/records/{record_id}/save-draft",
+                headers=auth_headers(stranger_id),
+            )
+
+        assert response.status_code == 403
+
+
+# -----------------------------------------------------------------------
+# GET /records/drafts
+# -----------------------------------------------------------------------
+
+
+class TestListDraftsAuth:
+    """GET /records/drafts -- authentication checks."""
+
+    async def test_returns_401_without_auth_header(self, app) -> None:
+        """Request without Authorization header returns 401."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get("/records/drafts")
+
+        assert response.status_code == 401
+
+
+class TestListDrafts:
+    """GET /records/drafts -- draft listing."""
+
+    async def test_returns_draft_records(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """Draft records are returned in the drafts list."""
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create a record (starts as draft)
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(user_id),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            record_id = create_response.json()["record_id"]
+
+            # List drafts
+            response = await client.get(
+                "/records/drafts",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 200
+        items = response.json()["items"]
+        returned_ids = [i["record_id"] for i in items]
+        assert record_id in returned_ids
+
+    async def test_excludes_published_records(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """Published records are not included in the drafts list."""
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Create and publish a record
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(user_id),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            published_id = create_response.json()["record_id"]
+            await client.post(
+                f"/records/{published_id}/publish",
+                headers=auth_headers(user_id),
+                json={"viewer_ids": []},
+            )
+
+            # List drafts
+            response = await client.get(
+                "/records/drafts",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 200
+        returned_ids = [i["record_id"] for i in response.json()["items"]]
+        assert published_id not in returned_ids
+
+    async def test_excludes_other_users_drafts(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
+        """Another user's drafts are not visible."""
+        other_user = await _new_user(session_factory)
+        counterpart_id = await _new_user(session_factory)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            # Other user creates a draft
+            create_response = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(other_user),
+                json={
+                    "counterpart_id": counterpart_id,
+                    "conducted_at": _future(0),
+                },
+            )
+            other_record_id = create_response.json()["record_id"]
+
+            # Current user lists their drafts
+            response = await client.get(
+                "/records/drafts",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 200
+        returned_ids = [i["record_id"] for i in response.json()["items"]]
+        assert other_record_id not in returned_ids

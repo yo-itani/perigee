@@ -321,10 +321,10 @@ class AllPendingActionItemSchema(BaseModel):
 
     action_item_id: UUID
     content: str
-    created_at: AwareDatetime
+    created_at: datetime
     record_id: UUID
     counterpart_id: UUID
-    conducted_at: AwareDatetime
+    conducted_at: datetime
 
 
 class ListAllPendingActionItemsResponse(BaseModel):
