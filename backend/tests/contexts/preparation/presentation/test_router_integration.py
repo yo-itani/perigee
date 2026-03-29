@@ -7,6 +7,7 @@ using the real FastAPI app with httpx.AsyncClient.  No DI overrides are used.
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -22,6 +23,11 @@ from tests.helpers import auth_headers, create_test_user
 pytestmark = pytest.mark.integration
 
 _BASE_URL = "http://test"
+
+
+def _future(days: int = 30) -> str:
+    """Return an ISO 8601 timestamp ``days`` into the future (UTC)."""
+    return (datetime.now(UTC) + timedelta(days=days)).isoformat()
 
 
 async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
@@ -83,7 +89,7 @@ class TestCreateScheduleAuth:
                 "/schedules",
                 json={
                     "counterpart_id": str(uuid.uuid4()),
-                    "scheduled_at": "2026-04-01T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "Ad-hoc meeting",
                 },
             )
@@ -143,7 +149,7 @@ class TestSendConsultationRequestAuth:
                 "/schedules/consultation-request",
                 json={
                     "organizer_id": str(uuid.uuid4()),
-                    "scheduled_at": "2026-04-01T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "Consultation",
                     "agenda_topics": ["Topic 1"],
                 },
@@ -177,7 +183,7 @@ class TestCreateScheduleGroup:
                     "counterpart_schedules": [
                         {
                             "counterpart_id": cp_id,
-                            "scheduled_at": "2027-06-01T10:00:00+09:00",
+                            "scheduled_at": _future(30),
                         },
                     ],
                     "agenda_topics": ["Progress", "Blockers"],
@@ -268,7 +274,7 @@ class TestCreateScheduleGroupFromTemplate:
                     "counterpart_schedules": [
                         {
                             "counterpart_id": cp_id,
-                            "scheduled_at": "2027-07-01T10:00:00+09:00",
+                            "scheduled_at": _future(30),
                         },
                     ],
                 },
@@ -327,7 +333,7 @@ class TestCreateScheduleGroupFromPast:
                     "counterpart_schedules": [
                         {
                             "counterpart_id": cp_id,
-                            "scheduled_at": "2027-08-01T10:00:00+09:00",
+                            "scheduled_at": _future(30),
                         },
                     ],
                     "agenda_topics": ["Carry A", "Carry B"],
@@ -347,7 +353,7 @@ class TestCreateScheduleGroupFromPast:
                     "counterpart_schedules": [
                         {
                             "counterpart_id": cp_id,
-                            "scheduled_at": "2027-09-01T10:00:00+09:00",
+                            "scheduled_at": _future(60),
                         },
                     ],
                 },
@@ -395,7 +401,7 @@ class TestCreateSchedule:
                 headers=auth_headers(organizer_id),
                 json={
                     "counterpart_id": cp_id,
-                    "scheduled_at": "2027-06-15T14:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "Ad-hoc 1on1",
                 },
             )
@@ -438,7 +444,7 @@ class TestListUpcomingSchedules:
         # Create two schedules via API (both future, status=requested)
         schedule_ids = []
         for i, date in enumerate(
-            ["2027-10-01T10:00:00+09:00", "2027-10-02T10:00:00+09:00"]
+            [_future(30), _future(31)]
         ):
             async with AsyncClient(
                 transport=transport, base_url=_BASE_URL
@@ -492,7 +498,7 @@ class TestListUpcomingSchedules:
                 headers=auth_headers(user_a),
                 json={
                     "counterpart_id": cp,
-                    "scheduled_at": "2027-11-01T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "A's meeting",
                 },
             )
@@ -533,7 +539,7 @@ class TestGetScheduleDetail:
                 headers=auth_headers(organizer_id),
                 json={
                     "counterpart_id": cp_id,
-                    "scheduled_at": "2027-12-01T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "Detail check",
                 },
             )
@@ -570,7 +576,7 @@ class TestGetScheduleDetail:
                 headers=auth_headers(organizer_id),
                 json={
                     "counterpart_id": cp_id,
-                    "scheduled_at": "2027-12-15T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "CP view test",
                 },
             )
@@ -602,7 +608,7 @@ class TestGetScheduleDetail:
                 headers=auth_headers(organizer_id),
                 json={
                     "counterpart_id": cp_id,
-                    "scheduled_at": "2027-12-20T10:00:00+09:00",
+                    "scheduled_at": _future(30),
                     "title": "Private meeting",
                 },
             )
