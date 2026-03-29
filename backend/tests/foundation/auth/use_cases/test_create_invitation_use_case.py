@@ -15,6 +15,7 @@ from foundation.auth.use_cases.create_invitation_use_case import (
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
+from tests.shared.application.fake_unit_of_work import FakeUnitOfWork
 
 
 def _make_user(user_id: UserId | None = None) -> User:
@@ -35,7 +36,9 @@ class TestCreateInvitation:
         user_repo = InMemoryUserRepository(users=[user])
         invitation_repo = InMemoryInvitationTokenRepository()
 
+        uow = FakeUnitOfWork()
         use_case = CreateInvitationUseCase(
+            uow=uow,
             user_repo=user_repo,
             invitation_token_repo=invitation_repo,
         )
@@ -46,6 +49,7 @@ class TestCreateInvitation:
         assert output.expires_at is not None
         # Verify a record was stored
         assert len(invitation_repo._records) == 1
+        assert uow.committed
 
     async def test_user_not_found_raises(self) -> None:
         """Raises UserNotFoundError for nonexistent user."""
@@ -53,6 +57,7 @@ class TestCreateInvitation:
         invitation_repo = InMemoryInvitationTokenRepository()
 
         use_case = CreateInvitationUseCase(
+            uow=FakeUnitOfWork(),
             user_repo=user_repo,
             invitation_token_repo=invitation_repo,
         )

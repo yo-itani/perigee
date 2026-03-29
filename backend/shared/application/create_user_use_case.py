@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from foundation.application.unit_of_work import UnitOfWork
 from shared.domain.user import User
 from shared.domain.user_repository import UserRepository
 from shared.domain.value_objects import UserId, UserRole
@@ -33,21 +34,26 @@ class EmailAlreadyTakenError(Exception):
 class CreateUserUseCase:
     """Create a new user in the system."""
 
-    def __init__(self, user_repo: UserRepository) -> None:
+    def __init__(self, uow: UnitOfWork, user_repo: UserRepository) -> None:
+        self._uow = uow
         self._user_repo = user_repo
 
     async def execute(self, input_dto: CreateUserInput) -> CreateUserOutput:
-        existing = await self._user_repo.get_by_email(input_dto.email)
-        if existing is not None:
-            raise EmailAlreadyTakenError(f"Email {input_dto.email} is already taken")
+        async with self._uow:
+            existing = await self._user_repo.get_by_email(input_dto.email)
+            if existing is not None:
+                raise EmailAlreadyTakenError(
+                    f"Email {input_dto.email} is already taken"
+                )
 
-        user = User(
-            id=UserId.generate(),
-            name=input_dto.name,
-            email=input_dto.email,
-            role=input_dto.role,
-        )
-        await self._user_repo.save(user)
+            user = User(
+                id=UserId.generate(),
+                name=input_dto.name,
+                email=input_dto.email,
+                role=input_dto.role,
+            )
+            await self._user_repo.save(user)
+            await self._uow.commit()
 
         return CreateUserOutput(
             id=user.id,

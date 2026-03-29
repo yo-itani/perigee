@@ -59,6 +59,7 @@ def _build_app(repo: InMemoryUserRepository) -> FastAPI:
     )
     from shared.application.list_users_query_service import ListUsersQueryService
     from shared.application.update_user_use_case import UpdateUserUseCase
+    from tests.shared.application.fake_unit_of_work import FakeUnitOfWork
 
     app = FastAPI()
     app.include_router(admin_router)
@@ -78,25 +79,27 @@ def _build_app(repo: InMemoryUserRepository) -> FastAPI:
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
 
+    uow = FakeUnitOfWork()
+
     app.dependency_overrides[get_current_user] = fake_get_current_user
     app.dependency_overrides[require_admin] = fake_require_admin
     app.dependency_overrides[get_list_users_query_service] = lambda: (
         ListUsersQueryService(user_repo=repo)
     )
     app.dependency_overrides[get_create_user_use_case] = lambda: CreateUserUseCase(
-        user_repo=repo
+        uow=uow, user_repo=repo
     )
     app.dependency_overrides[get_get_user_detail_query_service] = lambda: (
         GetUserDetailQueryService(user_repo=repo)
     )
     app.dependency_overrides[get_update_user_use_case] = lambda: UpdateUserUseCase(
-        user_repo=repo
+        uow=uow, user_repo=repo
     )
     app.dependency_overrides[get_deactivate_user_use_case] = lambda: (
-        DeactivateUserUseCase(user_repo=repo)
+        DeactivateUserUseCase(uow=uow, user_repo=repo)
     )
     app.dependency_overrides[get_activate_user_use_case] = lambda: ActivateUserUseCase(
-        user_repo=repo
+        uow=uow, user_repo=repo
     )
 
     return app

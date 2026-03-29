@@ -12,6 +12,12 @@ from shared.application.create_user_use_case import (
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
+from tests.shared.application.fake_unit_of_work import FakeUnitOfWork
+
+
+@pytest.fixture
+def uow() -> FakeUnitOfWork:
+    return FakeUnitOfWork()
 
 
 @pytest.fixture
@@ -20,8 +26,8 @@ def repo() -> InMemoryUserRepository:
 
 
 @pytest.fixture
-def use_case(repo: InMemoryUserRepository) -> CreateUserUseCase:
-    return CreateUserUseCase(user_repo=repo)
+def use_case(uow: FakeUnitOfWork, repo: InMemoryUserRepository) -> CreateUserUseCase:
+    return CreateUserUseCase(uow=uow, user_repo=repo)
 
 
 @pytest.mark.asyncio

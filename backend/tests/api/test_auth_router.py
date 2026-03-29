@@ -380,7 +380,10 @@ class TestSetPassword:
         user_repo.add(user)
 
         # Create invitation
+        from tests.shared.application.fake_unit_of_work import FakeUnitOfWork
+
         use_case = CreateInvitationUseCase(
+            uow=FakeUnitOfWork(),
             user_repo=user_repo,
             invitation_token_repo=invitation_repo,
         )

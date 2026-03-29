@@ -7,14 +7,14 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import (
     get_invitation_token_repository,
-    get_session,
+    get_unit_of_work,
     get_user_repository,
     require_admin,
 )
+from foundation.application.unit_of_work import UnitOfWork
 from foundation.auth.invitation_token_repository import InvitationTokenRepository
 from shared.application.activate_user_use_case import (
     ActivateUserInput,
@@ -295,11 +295,11 @@ class InvitationResponse(BaseModel):
 async def create_invitation(
     user_id: str,
     _admin: Annotated[User, Depends(require_admin)],
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
     invitation_token_repo: Annotated[
         InvitationTokenRepository, Depends(get_invitation_token_repository)
     ],
-    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> InvitationResponse:
     """Generate an invitation link for a user to set their password."""
     from foundation.auth.use_cases.create_invitation_use_case import (
@@ -311,6 +311,7 @@ async def create_invitation(
     )
 
     use_case = CreateInvitationUseCase(
+        uow=uow,
         user_repo=user_repo,
         invitation_token_repo=invitation_token_repo,
     )
@@ -324,8 +325,6 @@ async def create_invitation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         ) from None
-
-    await session.commit()
 
     return InvitationResponse(
         token=output.token,

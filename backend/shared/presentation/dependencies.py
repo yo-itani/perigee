@@ -6,7 +6,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from api.dependencies import get_user_repository
+from api.dependencies import get_unit_of_work, get_user_repository
+from foundation.application.unit_of_work import UnitOfWork
 from shared.application.activate_user_use_case import ActivateUserUseCase
 from shared.application.create_user_use_case import CreateUserUseCase
 from shared.application.deactivate_user_use_case import DeactivateUserUseCase
@@ -30,9 +31,10 @@ def get_list_users_query_service(
 
 
 def get_create_user_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> CreateUserUseCase:
-    return CreateUserUseCase(user_repo=repo)
+    return CreateUserUseCase(uow=uow, user_repo=repo)
 
 
 def get_get_user_detail_query_service(
@@ -42,18 +44,21 @@ def get_get_user_detail_query_service(
 
 
 def get_update_user_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> UpdateUserUseCase:
-    return UpdateUserUseCase(user_repo=repo)
+    return UpdateUserUseCase(uow=uow, user_repo=repo)
 
 
 def get_deactivate_user_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> DeactivateUserUseCase:
-    return DeactivateUserUseCase(user_repo=repo)
+    return DeactivateUserUseCase(uow=uow, user_repo=repo)
 
 
 def get_activate_user_use_case(
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
     repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> ActivateUserUseCase:
-    return ActivateUserUseCase(user_repo=repo)
+    return ActivateUserUseCase(uow=uow, user_repo=repo)
