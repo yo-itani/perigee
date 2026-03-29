@@ -99,6 +99,5 @@ class CancelScheduleGroupUseCase:
         async with self._uow:
             for schedule in schedules:
                 await self._schedule_repo.save(schedule)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(all_events)

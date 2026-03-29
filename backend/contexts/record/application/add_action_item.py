@@ -85,7 +85,6 @@ class AddActionItemUseCase:
             )
 
             await self._action_item_repository.save(action_item)
-            await self._unit_of_work.commit()
 
         # Dispatch events after successful commit
         events: list[DomainEvent] = list(action_item.collect_events())

@@ -119,7 +119,6 @@ class SendConsultationRequestUseCase:
             await self._schedule_repo.save(schedule)
             if agendas:
                 await self._agenda_repo.save_all(agendas)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)
 

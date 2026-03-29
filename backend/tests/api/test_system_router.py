@@ -50,6 +50,8 @@ class _FakeUnitOfWork(UnitOfWork):
     ) -> None:
         if exc_type is not None:
             await self.rollback()
+        else:
+            await self.commit()
 
 
 # ---------------------------------------------------------------------------

@@ -122,7 +122,6 @@ class AddAgendaUseCase:
 
         async with self._uow:
             await self._agenda_repo.save(agenda)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)
 

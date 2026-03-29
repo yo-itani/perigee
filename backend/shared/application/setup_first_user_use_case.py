@@ -76,8 +76,6 @@ class SetupFirstUserUseCase:
             settings.mark_setup_complete(now)
             await self._system_settings_repo.save(settings)
 
-            await self._uow.commit()
-
         return SetupFirstUserOutput(
             id=user.id,
             name=user.name,

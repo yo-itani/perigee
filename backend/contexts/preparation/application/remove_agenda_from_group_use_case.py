@@ -94,6 +94,5 @@ class RemoveAgendaFromGroupUseCase:
             await self._schedule_group_repo.save(group)
             if removed_ids:
                 await self._agenda_repo.delete_by_ids(removed_ids)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(all_events)

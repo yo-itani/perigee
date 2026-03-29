@@ -18,12 +18,12 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         uow = SqlAlchemyUnitOfWork(session)
         async with uow:
             # repositories use the same session
-            await uow.commit()
+        # auto-commit here
 
     The UoW relies on SQLAlchemy's *autobegin* behaviour -- ``__aenter__``
-    does **not** call ``begin()`` explicitly.  On context-manager exit, any
-    uncommitted changes are rolled back automatically if an exception
-    propagates.
+    does **not** call ``begin()`` explicitly.  On normal exit the
+    transaction is committed automatically.  On exception exit, any
+    uncommitted changes are rolled back.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -53,3 +53,9 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
     ) -> None:
         if exc_type is not None:
             await self.rollback()
+        else:
+            try:
+                await self.commit()
+            except BaseException:
+                await self.rollback()
+                raise

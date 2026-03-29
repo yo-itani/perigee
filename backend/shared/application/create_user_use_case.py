@@ -53,7 +53,6 @@ class CreateUserUseCase:
                 role=input_dto.role,
             )
             await self._user_repo.save(user)
-            await self._uow.commit()
 
         return CreateUserOutput(
             id=user.id,

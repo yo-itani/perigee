@@ -87,7 +87,6 @@ class AddMemberUseCase:
             )
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)
 

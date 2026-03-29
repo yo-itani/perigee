@@ -80,7 +80,6 @@ class SaveTemplateUseCase:
         async with self._uow:
             await self._template_repo.save(template)
             events = list(template.collect_events())
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)
 

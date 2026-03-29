@@ -114,7 +114,6 @@ class CreateRecordFromScheduleUseCase:
             )
 
             await self._record_repository.save(record)
-            await self._unit_of_work.commit()
 
         # Dispatch events after successful commit
         all_events: list[DomainEvent] = list(record.collect_events())

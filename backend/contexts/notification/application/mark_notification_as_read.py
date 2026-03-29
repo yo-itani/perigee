@@ -71,4 +71,3 @@ class MarkNotificationAsReadUseCase:
             record.mark_as_read(now=now)
 
             await self._notification_record_repository.save(record)
-            await self._unit_of_work.commit()

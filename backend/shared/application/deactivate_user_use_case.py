@@ -53,7 +53,6 @@ class DeactivateUserUseCase:
 
             user.deactivate()
             await self._user_repo.save(user)
-            await self._uow.commit()
 
         return DeactivateUserOutput(
             id=user.id,
