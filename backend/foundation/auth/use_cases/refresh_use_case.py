@@ -60,7 +60,10 @@ class RefreshUseCase:
             await self._refresh_token_repo.revoke_by_family_id(record.token_family_id)
             raise InvalidRefreshTokenError("Refresh token has been revoked")
 
-        if record.expires_at < now:
+        # Strip tzinfo for comparison: MariaDB returns naive datetimes
+        # while in-memory repos may return aware datetimes.
+        expires_at = record.expires_at.replace(tzinfo=None)
+        if expires_at < now.replace(tzinfo=None):
             raise InvalidRefreshTokenError("Refresh token has expired")
 
         # Verify user still exists and is active
