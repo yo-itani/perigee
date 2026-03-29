@@ -10,15 +10,26 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
-from tests.helpers import auth_headers
+from shared.domain.value_objects import UserId
+from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
 
 _BASE_URL = "http://test"
+
+
+async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    """Create a new random user in the DB and return its id string."""
+    uid = str(uuid.uuid4())
+    async with session_factory() as s:
+        await create_test_user(s, user_id=UserId(uuid.UUID(uid)))
+        await s.commit()
+    return uid
 
 
 def _create_test_app():
@@ -38,8 +49,8 @@ def app():
 
 
 @pytest.fixture
-def user_id() -> str:
-    return str(uuid.uuid4())
+async def user_id(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    return await _new_user(session_factory)
 
 
 class TestCreatePostHocRecordAuth:
@@ -63,9 +74,14 @@ class TestCreatePostHocRecordAuth:
 class TestCreatePostHocRecord:
     """POST /records/post-hoc -- authenticated creation."""
 
-    async def test_creates_record_and_returns_201(self, app, user_id: str) -> None:
+    async def test_creates_record_and_returns_201(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """An authenticated user can create a post-hoc record."""
-        counterpart_id = str(uuid.uuid4())
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
@@ -120,9 +136,13 @@ class TestSuggestedViewers:
         assert response.status_code == 404
 
     async def test_returns_suggestions_for_existing_record(
-        self, app, user_id: str
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """Organizer can get suggested viewers for an existing record."""
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # First create a record
@@ -130,7 +150,7 @@ class TestSuggestedViewers:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -185,9 +205,15 @@ class TestSetViewersIntegration:
 
         assert response.status_code == 404
 
-    async def test_sets_viewers_for_existing_record(self, app, user_id: str) -> None:
+    async def test_sets_viewers_for_existing_record(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """Organizer can set viewers for an existing record."""
-        viewer_id = str(uuid.uuid4())
+        viewer_id = await _new_user(session_factory)
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # First create a record
@@ -195,7 +221,7 @@ class TestSetViewersIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -250,9 +276,15 @@ class TestPublishRecordIntegration:
 
         assert response.status_code == 404
 
-    async def test_publishes_existing_draft_record(self, app, user_id: str) -> None:
+    async def test_publishes_existing_draft_record(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """Organizer can publish an existing draft record."""
-        viewer_id = str(uuid.uuid4())
+        viewer_id = await _new_user(session_factory)
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # First create a record
@@ -260,7 +292,7 @@ class TestPublishRecordIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -277,8 +309,14 @@ class TestPublishRecordIntegration:
         data = response.json()
         assert data["record_id"] == record_id
 
-    async def test_re_publish_returns_409(self, app, user_id: str) -> None:
+    async def test_re_publish_returns_409(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """Re-publishing an already published record returns 409."""
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Create
@@ -286,7 +324,7 @@ class TestPublishRecordIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -344,8 +382,14 @@ class TestMarkRecordAsViewedIntegration:
 
         assert response.status_code == 404
 
-    async def test_organizer_marks_draft_as_viewed(self, app, user_id: str) -> None:
+    async def test_organizer_marks_draft_as_viewed(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """Organizer can mark their own draft record as viewed."""
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Create a record
@@ -353,7 +397,7 @@ class TestMarkRecordAsViewedIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -369,9 +413,15 @@ class TestMarkRecordAsViewedIntegration:
         data = response.json()
         assert data["record_id"] == record_id
 
-    async def test_returns_403_for_non_visible_user(self, app, user_id: str) -> None:
+    async def test_returns_403_for_non_visible_user(
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
+    ) -> None:
         """A user without visibility cannot mark the record as viewed."""
-        stranger_id = str(uuid.uuid4())
+        stranger_id = await _new_user(session_factory)
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Create a record as organizer
@@ -379,7 +429,7 @@ class TestMarkRecordAsViewedIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )
@@ -394,9 +444,13 @@ class TestMarkRecordAsViewedIntegration:
         assert response.status_code == 403
 
     async def test_marks_published_record_as_viewed_twice(
-        self, app, user_id: str
+        self,
+        app,
+        user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """Marking a record as viewed twice succeeds (idempotent update)."""
+        counterpart_id = await _new_user(session_factory)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Create and publish
@@ -404,7 +458,7 @@ class TestMarkRecordAsViewedIntegration:
                 "/records/post-hoc",
                 headers=auth_headers(user_id),
                 json={
-                    "counterpart_id": str(uuid.uuid4()),
+                    "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
                 },
             )

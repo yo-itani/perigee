@@ -16,6 +16,7 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
@@ -30,7 +31,7 @@ from contexts.record.infrastructure.sqlalchemy_record_repository import (
 )
 from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
 from shared.domain.value_objects import UserId
-from tests.helpers import auth_headers
+from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
 
@@ -53,19 +54,34 @@ def app():
     return _create_test_app()
 
 
-@pytest.fixture
-def organizer_id() -> str:
-    return str(uuid.uuid4())
+async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    """Create a new random user in the DB and return its id string."""
+    uid = str(uuid.uuid4())
+    async with session_factory() as s:
+        await create_test_user(s, user_id=UserId(uuid.UUID(uid)))
+        await s.commit()
+    return uid
 
 
 @pytest.fixture
-def counterpart_id() -> str:
-    return str(uuid.uuid4())
+async def organizer_id(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> str:
+    return await _new_user(session_factory)
 
 
 @pytest.fixture
-def unrelated_user_id() -> str:
-    return str(uuid.uuid4())
+async def counterpart_id(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> str:
+    return await _new_user(session_factory)
+
+
+@pytest.fixture
+async def unrelated_user_id(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> str:
+    return await _new_user(session_factory)
 
 
 async def _create_record(
@@ -89,15 +105,10 @@ async def _create_record(
 async def _publish_record_via_use_case(
     record_id: str,
     organizer_id: str,
+    session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
-    """Helper: publish a record using the application use case directly.
-
-    Since no publish HTTP endpoint is registered yet, this bypasses the
-    HTTP layer and calls the use-case with a fresh DB session.
-    """
-    from foundation.db.session import async_session_factory
-
-    async with async_session_factory() as session:
+    """Helper: publish a record using the application use case directly."""
+    async with session_factory() as session:
         repo = SqlAlchemyRecordRepository(session)
         uow = SqlAlchemyUnitOfWork(session)
         dispatcher = create_event_dispatcher()
@@ -183,14 +194,18 @@ class TestGetRecordDetail:
         assert response.status_code == 403
 
     async def test_counterpart_can_view_published_record(
-        self, app, organizer_id: str, counterpart_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """The counterpart can view a published record."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -205,14 +220,19 @@ class TestGetRecordDetail:
         assert data["status"] == "published"
 
     async def test_unrelated_user_cannot_view_published_record(
-        self, app, organizer_id: str, counterpart_id: str, unrelated_user_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        unrelated_user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """A user who is neither organizer, counterpart, nor viewer cannot view."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -270,14 +290,18 @@ class TestListRecordComments:
         assert response.status_code == 422
 
     async def test_returns_empty_comments_for_published_record(
-        self, app, organizer_id: str, counterpart_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """A freshly published record has no comments."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -290,14 +314,18 @@ class TestListRecordComments:
         assert response.json()["comments"] == []
 
     async def test_counterpart_can_list_comments(
-        self, app, organizer_id: str, counterpart_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """The counterpart can list comments on a published record."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -309,14 +337,19 @@ class TestListRecordComments:
         assert response.status_code == 200
 
     async def test_unrelated_user_cannot_list_comments(
-        self, app, organizer_id: str, counterpart_id: str, unrelated_user_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        unrelated_user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """An unrelated user cannot list comments on a published record."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -375,14 +408,18 @@ class TestGetViewers:
         assert response.json()["viewer_ids"] == []
 
     async def test_counterpart_can_view_viewers_on_published(
-        self, app, organizer_id: str, counterpart_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """The counterpart can view viewers on a published record."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -488,14 +525,18 @@ class TestListOneOnOneHistory:
         assert data["total_count"] == 0
 
     async def test_published_records_included_in_history(
-        self, app, organizer_id: str, counterpart_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """Published records appear in history."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -515,14 +556,19 @@ class TestListOneOnOneHistory:
         assert data["items"][0]["record_id"] == record_id
 
     async def test_unrelated_user_sees_empty_history(
-        self, app, organizer_id: str, counterpart_id: str, unrelated_user_id: str
+        self,
+        app,
+        organizer_id: str,
+        counterpart_id: str,
+        unrelated_user_id: str,
+        session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
         """An unrelated user does not see records in the history."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             record_id = await _create_record(client, organizer_id, counterpart_id)
 
-        await _publish_record_via_use_case(record_id, organizer_id)
+        await _publish_record_via_use_case(record_id, organizer_id, session_factory)
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:

@@ -10,15 +10,26 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
-from tests.helpers import auth_headers
+from shared.domain.value_objects import UserId
+from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
 
 _BASE_URL = "http://test"
+
+
+async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    """Create a new random user in the DB and return its id string."""
+    uid = str(uuid.uuid4())
+    async with session_factory() as s:
+        await create_test_user(s, user_id=UserId(uuid.UUID(uid)))
+        await s.commit()
+    return uid
 
 
 def _create_test_app():
@@ -38,8 +49,8 @@ def app():
 
 
 @pytest.fixture
-def user_id() -> str:
-    return str(uuid.uuid4())
+async def user_id(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    return await _new_user(session_factory)
 
 
 class TestGetNotificationSetting:

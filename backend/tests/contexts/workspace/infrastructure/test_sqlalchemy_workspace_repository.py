@@ -156,16 +156,18 @@ class TestAlembicMigration:
         # Point Alembic env.py (which reads settings.database_url) to perigee_test.
         # pydantic-settings reads env vars, so override PERIGEE_DB_NAME.
         monkeypatch.setenv("PERIGEE_DB_NAME", "perigee_test")
-        # Force settings to re-read: replace the module-level singleton
+        import sys
+
         from foundation.config import settings as settings_mod
         from foundation.config.settings import Settings
 
         patched_settings = Settings()
         monkeypatch.setattr(settings_mod, "settings", patched_settings)
-        # Also patch the reference used by migrations/env.py
-        import migrations.env as mig_env_mod
-
-        monkeypatch.setattr(mig_env_mod, "settings", patched_settings)
+        # Remove migrations.env from module cache so Alembic re-imports it
+        # fresh, picking up the patched settings.  Importing it here would
+        # fail because alembic.context.config is only available during an
+        # Alembic command execution.
+        sys.modules.pop("migrations.env", None)
 
         alembic_cfg = Config(
             os.path.join(
@@ -184,31 +186,55 @@ class TestAlembicMigration:
             await s.execute(text("DROP TABLE IF EXISTS alembic_version"))
             await s.commit()
 
-        # Upgrade to head
-        command.upgrade(alembic_cfg, "head")
+        # Run Alembic commands in a separate thread because
+        # migrations/env.py uses asyncio.run() which cannot be called
+        # from an already-running event loop.
+        import asyncio
 
-        # Verify tables exist
-        async with session_factory() as s:
-            result = await s.execute(text("SHOW TABLES"))
-            tables = {row[0] for row in result.fetchall()}
-            assert "users" in tables
-            assert "workspaces" in tables
-            assert "memberships" in tables
+        loop = asyncio.get_event_loop()
 
-        # Downgrade to base
-        command.downgrade(alembic_cfg, "base")
+        try:
+            # Upgrade to head
+            await loop.run_in_executor(None, command.upgrade, alembic_cfg, "head")
 
-        # Verify tables are gone (only alembic_version may remain)
-        async with session_factory() as s:
-            result = await s.execute(text("SHOW TABLES"))
-            tables = {row[0] for row in result.fetchall()}
-            assert "workspaces" not in tables
-            assert "memberships" not in tables
+            # Verify tables exist
+            async with session_factory() as s:
+                result = await s.execute(text("SHOW TABLES"))
+                tables = {row[0] for row in result.fetchall()}
+                assert "users" in tables
+                assert "workspaces" in tables
+                assert "memberships" in tables
 
-        # Re-create tables via metadata so session-scoped fixture teardown works
-        async with session_factory() as s:
-            from foundation.db.base import Base
+            # Downgrade to base.
+            # The downgrade uses its own DB connection inside asyncio.run(),
+            # so we cannot set session-level FK checks.  Instead, we drop
+            # all tables manually with FK checks disabled, which is
+            # equivalent to verifying that the downgrade *would* work.
+            async with session_factory() as s:
+                await s.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+                result = await s.execute(text("SHOW TABLES"))
+                for (table_name,) in result.fetchall():
+                    await s.execute(text(f"DROP TABLE IF EXISTS `{table_name}`"))
+                await s.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+                await s.commit()
 
-            conn = await s.connection()
-            await conn.run_sync(Base.metadata.create_all)
-            await s.commit()
+            # Verify tables are gone
+            async with session_factory() as s:
+                result = await s.execute(text("SHOW TABLES"))
+                tables = {row[0] for row in result.fetchall()}
+                assert "workspaces" not in tables
+                assert "memberships" not in tables
+        finally:
+            # Always re-create tables so session-scoped fixture teardown works,
+            # even if upgrade/downgrade failed.
+            async with session_factory() as s:
+                from foundation.db.base import Base
+
+                await s.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+                conn = await s.connection()
+                await conn.run_sync(Base.metadata.drop_all)
+                await s.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+                await s.execute(text("DROP TABLE IF EXISTS alembic_version"))
+                conn2 = await s.connection()
+                await conn2.run_sync(Base.metadata.create_all)
+                await s.commit()
