@@ -314,27 +314,19 @@ class TestRejectSchedule:
         assert resp.status_code == 204
         assert await _get_schedule_status(session_factory, schedule_id) == "cancelled"
 
-    async def test_reject_after_reschedule_reverts_to_confirmed(
+    async def test_reject_after_reschedule_returns_409_when_no_pending_request(
         self, app, session_factory: async_sessionmaker[AsyncSession]
     ) -> None:
-        """Rejecting after reschedule (when previously confirmed) reverts to CONFIRMED.
+        """Reject after reschedule returns 409 because no pending request exists.
 
         Flow:
-        1. Counterpart sends consultation request (REQUESTED, requested_by=counterpart)
+        1. Counterpart sends consultation request -> REQUESTED
         2. Organizer confirms -> CONFIRMED
         3. Counterpart reschedules via /reschedule (change_scheduled_at) -> REQUESTED
-           (The old request is superseded, no new ConfirmationRequest is created
-            by change_scheduled_at -- but the reschedule endpoint creates a new
-            pending request via domain.reschedule() -- actually it uses
-            change_scheduled_at which does NOT create a ConfirmationRequest.)
 
         Since change_scheduled_at supersedes existing pending and does NOT create
-        a new ConfirmationRequest, there is no pending request to reject after
-        reschedule. The reject endpoint would get
-        NoPendingConfirmationRequestError (409).
-
-        So this test verifies the reject endpoint returns 409 when there is no
-        pending request after a reschedule (via change_scheduled_at).
+        a new ConfirmationRequest, there is no pending request to reject.
+        The reject endpoint returns NoPendingConfirmationRequestError (409).
         """
         organizer_id = await _new_user(session_factory)
         counterpart_id = await _new_user(session_factory)
@@ -437,15 +429,19 @@ class TestRescheduleSchedule:
                 await _get_schedule_status(session_factory, schedule_id) == "confirmed"
             )
 
-            new_time = _future(60)
+            new_scheduled_at = _future(60)
             resp = await client.post(
                 f"/schedules/{schedule_id}/reschedule",
                 headers=auth_headers(organizer_id),
-                json={"new_scheduled_at": new_time},
+                json={"new_scheduled_at": new_scheduled_at},
             )
 
         assert resp.status_code == 204
         assert await _get_schedule_status(session_factory, schedule_id) == "requested"
+
+        row = await _get_schedule_row(session_factory, schedule_id)
+        expected = datetime.fromisoformat(new_scheduled_at)
+        assert row.scheduled_at.replace(tzinfo=UTC) == expected
 
     async def test_reschedule_from_requested_status(
         self, app, session_factory: async_sessionmaker[AsyncSession]
@@ -459,16 +455,21 @@ class TestRescheduleSchedule:
         )
         assert await _get_schedule_status(session_factory, schedule_id) == "requested"
 
+        new_scheduled_at = _future(45)
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             resp = await client.post(
                 f"/schedules/{schedule_id}/reschedule",
                 headers=auth_headers(counterpart_id),
-                json={"new_scheduled_at": _future(45)},
+                json={"new_scheduled_at": new_scheduled_at},
             )
 
         assert resp.status_code == 204
         assert await _get_schedule_status(session_factory, schedule_id) == "requested"
+
+        row = await _get_schedule_row(session_factory, schedule_id)
+        expected = datetime.fromisoformat(new_scheduled_at)
+        assert row.scheduled_at.replace(tzinfo=UTC) == expected
 
     async def test_reschedule_cancelled_schedule_returns_409(
         self, app, session_factory: async_sessionmaker[AsyncSession]
@@ -511,10 +512,11 @@ class TestRescheduleSchedule:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Counterpart reschedules (change_scheduled_at)
+            new_scheduled_at = _future(60)
             resp = await client.post(
                 f"/schedules/{schedule_id}/reschedule",
                 headers=auth_headers(counterpart_id),
-                json={"new_scheduled_at": _future(60)},
+                json={"new_scheduled_at": new_scheduled_at},
             )
             assert resp.status_code == 204
 
@@ -527,7 +529,8 @@ class TestRescheduleSchedule:
 
         row_after = await _get_schedule_row(session_factory, schedule_id)
         assert row_after.status == "confirmed"
-        assert row_after.scheduled_at != original_scheduled_at
+        expected = datetime.fromisoformat(new_scheduled_at)
+        assert row_after.scheduled_at.replace(tzinfo=UTC) == expected
 
 
 # =====================================================================
