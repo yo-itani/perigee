@@ -505,10 +505,6 @@ class TestRescheduleSchedule:
             app, organizer_id, counterpart_id, days=30
         )
 
-        # Record initial scheduled_at
-        row_before = await _get_schedule_row(session_factory, schedule_id)
-        original_scheduled_at = row_before.scheduled_at
-
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             # Counterpart reschedules (change_scheduled_at)
