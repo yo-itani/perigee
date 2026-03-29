@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,9 +28,9 @@ def _make_record(
     return Record.create(
         organizer_id=organizer_id,
         counterpart_id=counterpart_id,
-        conducted_at=datetime(2026, 3, 20, 14, 0),
+        conducted_at=datetime(2026, 3, 20, 14, 0, tzinfo=UTC),
         schedule_id=schedule_id,
-        now=now or datetime(2026, 3, 20, 10, 0),
+        now=now or datetime(2026, 3, 20, 10, 0, tzinfo=UTC),
     )
 
 
@@ -82,10 +82,10 @@ class TestRecordUpdate:
         record.update_memo(
             memo=Memo("Updated memo content"),
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 12, 0),
+            now=datetime(2026, 3, 20, 12, 0, tzinfo=UTC),
         )
         # Publish
-        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 13, 0))
+        record.publish(actor_id=organizer, now=datetime(2026, 3, 20, 13, 0, tzinfo=UTC))
         await repo.save(record)
         await session.commit()
 
@@ -105,7 +105,7 @@ class TestRecordUpdate:
         record.set_viewers(
             viewer_ids=[viewer1, viewer2],
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 11, 0),
+            now=datetime(2026, 3, 20, 11, 0, tzinfo=UTC),
         )
         await repo.save(record)
         await session.commit()
@@ -127,7 +127,7 @@ class TestRecordUpdate:
         record.set_viewers(
             viewer_ids=[viewer1, viewer2],
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 11, 0),
+            now=datetime(2026, 3, 20, 11, 0, tzinfo=UTC),
         )
         await repo.save(record)
         await session.commit()
@@ -139,7 +139,7 @@ class TestRecordUpdate:
         record.set_viewers(
             viewer_ids=[viewer2, viewer3],
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 12, 0),
+            now=datetime(2026, 3, 20, 12, 0, tzinfo=UTC),
         )
         await repo.save(record)
         await session.commit()
@@ -159,7 +159,7 @@ class TestRecordUpdate:
         record.set_viewers(
             viewer_ids=[viewer1],
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 11, 0),
+            now=datetime(2026, 3, 20, 11, 0, tzinfo=UTC),
         )
         await repo.save(record)
         await session.commit()
@@ -171,7 +171,7 @@ class TestRecordUpdate:
         record.set_viewers(
             viewer_ids=[],
             actor_id=organizer,
-            now=datetime(2026, 3, 20, 12, 0),
+            now=datetime(2026, 3, 20, 12, 0, tzinfo=UTC),
         )
         await repo.save(record)
         await session.commit()

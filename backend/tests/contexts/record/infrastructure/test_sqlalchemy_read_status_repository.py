@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,8 +27,8 @@ async def _create_record(
     record = Record.create(
         organizer_id=organizer,
         counterpart_id=counterpart,
-        conducted_at=datetime(2026, 3, 20, 14, 0),
-        now=datetime(2026, 3, 20, 10, 0),
+        conducted_at=datetime(2026, 3, 20, 14, 0, tzinfo=UTC),
+        now=datetime(2026, 3, 20, 10, 0, tzinfo=UTC),
     )
     repo = SqlAlchemyRecordRepository(session)
     await repo.save(record)
@@ -48,7 +48,7 @@ class TestSaveAndGetById:
         rs = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(rs)
         await session.commit()
@@ -59,7 +59,7 @@ class TestSaveAndGetById:
         assert loaded.id == rs.id
         assert loaded.record_id == record.id
         assert loaded.user_id == organizer
-        assert loaded.last_viewed_at == datetime(2026, 3, 20, 15, 0)
+        assert loaded.last_viewed_at == datetime(2026, 3, 20, 15, 0, tzinfo=UTC)
 
     async def test_get_by_id_returns_none_for_missing(
         self, session: AsyncSession
@@ -81,18 +81,18 @@ class TestSaveUpdate:
         rs = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(rs)
         await session.commit()
 
-        rs.mark_viewed(now=datetime(2026, 3, 20, 18, 0))
+        rs.mark_viewed(now=datetime(2026, 3, 20, 18, 0, tzinfo=UTC))
         await repo.save(rs)
         await session.commit()
 
         loaded = await repo.get_by_id(rs.id)
         assert loaded is not None
-        assert loaded.last_viewed_at == datetime(2026, 3, 20, 18, 0)
+        assert loaded.last_viewed_at == datetime(2026, 3, 20, 18, 0, tzinfo=UTC)
 
 
 class TestFindByRecordAndUser:
@@ -107,7 +107,7 @@ class TestFindByRecordAndUser:
         rs = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(rs)
         await session.commit()
@@ -136,7 +136,7 @@ class TestUpsert:
         rs = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.upsert(rs)
         await session.commit()
@@ -145,7 +145,7 @@ class TestUpsert:
         assert found is not None
         assert found.record_id == record.id
         assert found.user_id == organizer
-        assert found.last_viewed_at == datetime(2026, 3, 20, 15, 0)
+        assert found.last_viewed_at == datetime(2026, 3, 20, 15, 0, tzinfo=UTC)
 
     async def test_upsert_updates_existing_row(self, session: AsyncSession) -> None:
         organizer = await create_test_user(session)
@@ -156,7 +156,7 @@ class TestUpsert:
         rs1 = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.upsert(rs1)
         await session.commit()
@@ -166,14 +166,14 @@ class TestUpsert:
         rs2 = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 18, 0),
+            now=datetime(2026, 3, 20, 18, 0, tzinfo=UTC),
         )
         await repo.upsert(rs2)
         await session.commit()
 
         found = await repo.find_by_record_and_user(record.id, organizer)
         assert found is not None
-        assert found.last_viewed_at == datetime(2026, 3, 20, 18, 0)
+        assert found.last_viewed_at == datetime(2026, 3, 20, 18, 0, tzinfo=UTC)
 
 
 class TestDeleteByRecordAndUser:
@@ -188,7 +188,7 @@ class TestDeleteByRecordAndUser:
         rs = ReadStatus.create(
             record_id=record.id,
             user_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(rs)
         await session.commit()

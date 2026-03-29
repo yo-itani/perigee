@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import text
@@ -29,7 +29,7 @@ def _make_workspace(
     return Workspace.create(
         name=WorkspaceName(name),
         parent_id=parent_id,
-        now=now or datetime(2026, 3, 20, 10, 0),
+        now=now or datetime(2026, 3, 20, 10, 0, tzinfo=UTC),
     )
 
 
@@ -46,7 +46,7 @@ class TestSaveAndGetById:
         ws.add_member(
             user_id=user_id,
             role=MembershipRole.CAPTAIN,
-            now=datetime(2026, 3, 20, 11, 0),
+            now=datetime(2026, 3, 20, 11, 0, tzinfo=UTC),
         )
         await repo.save(ws)
         await session.commit()
@@ -206,9 +206,7 @@ class TestAlembicMigration:
                 assert "memberships" in tables
 
             # Downgrade to base
-            await loop.run_in_executor(
-                None, command.downgrade, alembic_cfg, "base"
-            )
+            await loop.run_in_executor(None, command.downgrade, alembic_cfg, "base")
 
             # Verify tables are gone
             async with session_factory() as s:

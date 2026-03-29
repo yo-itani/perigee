@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,8 +29,8 @@ async def _create_record(
     record = Record.create(
         organizer_id=organizer,
         counterpart_id=counterpart,
-        conducted_at=datetime(2026, 3, 20, 14, 0),
-        now=datetime(2026, 3, 20, 10, 0),
+        conducted_at=datetime(2026, 3, 20, 14, 0, tzinfo=UTC),
+        now=datetime(2026, 3, 20, 10, 0, tzinfo=UTC),
     )
     repo = SqlAlchemyRecordRepository(session)
     await repo.save(record)
@@ -51,7 +51,7 @@ class TestSaveAndGetById:
             record_id=record.id,
             author_id=organizer,
             body=CommentBody("Great session!"),
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(comment)
         await session.commit()
@@ -85,7 +85,7 @@ class TestInsertOnly:
             record_id=record.id,
             author_id=organizer,
             body=CommentBody("First comment"),
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(comment)
         await session.commit()

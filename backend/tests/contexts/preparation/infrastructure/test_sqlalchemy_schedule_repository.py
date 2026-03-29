@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -20,8 +20,8 @@ from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
-NOW = datetime(2026, 4, 1, 10, 0)
-SCHEDULED_AT = datetime(2026, 4, 10, 14, 0)
+NOW = datetime(2026, 4, 1, 10, 0, tzinfo=UTC)
+SCHEDULED_AT = datetime(2026, 4, 10, 14, 0, tzinfo=UTC)
 
 
 def _make_schedule(
@@ -92,7 +92,7 @@ class TestUpdateScalarFields:
         await session.commit()
 
         # Confirm the schedule
-        confirm_time = datetime(2026, 4, 2, 10, 0)
+        confirm_time = datetime(2026, 4, 2, 10, 0, tzinfo=UTC)
         schedule.confirm(actor_id=cp, now=confirm_time)
         await repo.save(schedule)
         await session.commit()
@@ -120,8 +120,8 @@ class TestConfirmationRequestReconciliation:
         await session.commit()
 
         # Reschedule by organizer
-        new_time = datetime(2026, 4, 15, 14, 0)
-        reschedule_now = datetime(2026, 4, 3, 10, 0)
+        new_time = datetime(2026, 4, 15, 14, 0, tzinfo=UTC)
+        reschedule_now = datetime(2026, 4, 3, 10, 0, tzinfo=UTC)
         schedule.reschedule(actor_id=org, new_proposed_at=new_time, now=reschedule_now)
         await repo.save(schedule)
         await session.commit()
@@ -145,12 +145,12 @@ class TestConfirmationRequestReconciliation:
 
         schedule = _make_schedule(organizer_id=org, counterpart_id=cp)
         # Confirm
-        schedule.confirm(actor_id=cp, now=datetime(2026, 4, 2, 10, 0))
+        schedule.confirm(actor_id=cp, now=datetime(2026, 4, 2, 10, 0, tzinfo=UTC))
         # Reschedule by counterpart
         schedule.reschedule(
             actor_id=cp,
-            new_proposed_at=datetime(2026, 4, 20, 14, 0),
-            now=datetime(2026, 4, 5, 10, 0),
+            new_proposed_at=datetime(2026, 4, 20, 14, 0, tzinfo=UTC),
+            now=datetime(2026, 4, 5, 10, 0, tzinfo=UTC),
         )
         await repo.save(schedule)
         await session.commit()
@@ -235,9 +235,7 @@ class TestAlembicMigration:
                 assert "template_agenda_templates" in tables
 
             # Downgrade to base
-            await loop.run_in_executor(
-                None, command.downgrade, alembic_cfg, "base"
-            )
+            await loop.run_in_executor(None, command.downgrade, alembic_cfg, "base")
 
             async with session_factory() as s:
                 result = await s.execute(text("SHOW TABLES"))

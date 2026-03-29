@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +21,7 @@ from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
-NOW = datetime(2026, 4, 1, 10, 0)
+NOW = datetime(2026, 4, 1, 10, 0, tzinfo=UTC)
 
 
 def _make_schedule_group(
@@ -100,20 +100,20 @@ class TestScheduleIdsRestoration:
         s1 = Schedule.create(
             organizer_id=org,
             counterpart_id=cp,
-            scheduled_at=datetime(2026, 4, 10, 14, 0),
+            scheduled_at=datetime(2026, 4, 10, 14, 0, tzinfo=UTC),
             requested_by=org,
             title=ScheduleTitle("Meeting 1"),
             schedule_group_id=group.id,
-            now=datetime(2026, 4, 1, 10, 0, 0),
+            now=datetime(2026, 4, 1, 10, 0, 0, tzinfo=UTC),
         )
         s2 = Schedule.create(
             organizer_id=org,
             counterpart_id=cp,
-            scheduled_at=datetime(2026, 4, 17, 14, 0),
+            scheduled_at=datetime(2026, 4, 17, 14, 0, tzinfo=UTC),
             requested_by=org,
             title=ScheduleTitle("Meeting 2"),
             schedule_group_id=group.id,
-            now=datetime(2026, 4, 1, 10, 0, 1),
+            now=datetime(2026, 4, 1, 10, 0, 1, tzinfo=UTC),
         )
         await schedule_repo.save(s1)
         await schedule_repo.save(s2)
@@ -143,7 +143,7 @@ class TestUpdateAgendaTemplates:
 
         # Modify agenda templates via internal state for testing persistence
         group._agenda_templates.append(AgendaTemplate("Topic B"))
-        group._updated_at = datetime(2026, 4, 2, 10, 0)
+        group._updated_at = datetime(2026, 4, 2, 10, 0, tzinfo=UTC)
         await repo.save(group)
         await session.commit()
 
@@ -166,7 +166,7 @@ class TestUpdateAgendaTemplates:
 
         # Remove second template
         group._agenda_templates.pop(1)
-        group._updated_at = datetime(2026, 4, 2, 10, 0)
+        group._updated_at = datetime(2026, 4, 2, 10, 0, tzinfo=UTC)
         await repo.save(group)
         await session.commit()
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -18,8 +18,8 @@ from shared.domain.value_objects import UserId
 
 pytestmark = pytest.mark.integration
 
-SCHEDULED_AT = datetime(2026, 4, 1, 10, 0)
-SENT_AT = datetime(2026, 3, 31, 9, 30)
+SCHEDULED_AT = datetime(2026, 4, 1, 10, 0, tzinfo=UTC)
+SENT_AT = datetime(2026, 3, 31, 9, 30, tzinfo=UTC)
 
 
 def _make_log(
@@ -71,20 +71,24 @@ class TestUniqueConstraint:
         log1 = _make_log(
             schedule_id=schedule_id,
             user_id=user_id,
-            scheduled_at=datetime(2026, 4, 1, 10, 0),
+            scheduled_at=datetime(2026, 4, 1, 10, 0, tzinfo=UTC),
         )
         await repo.save(log1)
 
         log2 = _make_log(
             schedule_id=schedule_id,
             user_id=user_id,
-            scheduled_at=datetime(2026, 4, 5, 14, 0),
+            scheduled_at=datetime(2026, 4, 5, 14, 0, tzinfo=UTC),
         )
         await repo.save(log2)
         await session.flush()
 
-        assert await repo.exists(schedule_id, user_id, datetime(2026, 4, 1, 10, 0))
-        assert await repo.exists(schedule_id, user_id, datetime(2026, 4, 5, 14, 0))
+        assert await repo.exists(
+            schedule_id, user_id, datetime(2026, 4, 1, 10, 0, tzinfo=UTC)
+        )
+        assert await repo.exists(
+            schedule_id, user_id, datetime(2026, 4, 5, 14, 0, tzinfo=UTC)
+        )
 
 
 class TestExistsQuery:
