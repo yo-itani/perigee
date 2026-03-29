@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel
+from pydantic import AwareDatetime, BaseModel, Field
 
 
 class NotificationSettingResponse(BaseModel):
@@ -32,8 +32,15 @@ class NotificationRecordResponse(BaseModel):
     body: str
     link: str | None
     is_read: bool
-    read_at: AwareDatetime | None
-    created_at: AwareDatetime
+    read_at: AwareDatetime | None = Field(
+        default=None,
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class NotificationListResponse(BaseModel):
