@@ -52,6 +52,7 @@ def upgrade() -> None:
             existing_type=sa.DateTime(),
             type_=DATETIME(fsp=6),
             existing_nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP(6)"),
         )
         op.alter_column(
             table,
@@ -59,6 +60,9 @@ def upgrade() -> None:
             existing_type=sa.DateTime(),
             type_=DATETIME(fsp=6),
             existing_nullable=False,
+            server_default=sa.text(
+                "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)"
+            ),
         )
 
 
@@ -70,6 +74,7 @@ def downgrade() -> None:
             existing_type=DATETIME(fsp=6),
             type_=sa.DateTime(),
             existing_nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
         )
         op.alter_column(
             table,
@@ -77,4 +82,5 @@ def downgrade() -> None:
             existing_type=DATETIME(fsp=6),
             type_=sa.DateTime(),
             existing_nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
         )
