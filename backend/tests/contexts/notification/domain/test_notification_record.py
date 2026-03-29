@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
-from contexts.notification.domain.exceptions import NotificationAlreadyReadError
 from contexts.notification.domain.notification_message import NotificationMessage
 from contexts.notification.domain.notification_record import NotificationRecord
 from contexts.notification.domain.value_objects import NotificationType
@@ -86,15 +83,16 @@ class TestMarkAsRead:
         assert record.is_read is True
         assert record.read_at == read_at
 
-    def test_raises_when_already_read(self) -> None:
+    def test_idempotent_when_already_read(self) -> None:
         record = NotificationRecord.create(
             recipient_id=UserId.generate(),
             message=_make_message(),
         )
-        record.mark_as_read(now=datetime(2026, 3, 26, 11, 0))
+        first_read_at = datetime(2026, 3, 26, 11, 0)
+        record.mark_as_read(now=first_read_at)
 
-        with pytest.raises(
-            NotificationAlreadyReadError,
-            match="already marked as read",
-        ):
-            record.mark_as_read(now=datetime(2026, 3, 26, 12, 0))
+        # Second call is a no-op — no error, read_at unchanged
+        record.mark_as_read(now=datetime(2026, 3, 26, 12, 0))
+
+        assert record.is_read is True
+        assert record.read_at == first_read_at

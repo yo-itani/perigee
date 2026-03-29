@@ -364,13 +364,13 @@ class TestMarkNotificationAsRead:
 
         assert response.status_code == 403
 
-    async def test_already_read_notification_returns_409(
+    async def test_already_read_notification_returns_204_idempotent(
         self,
         app,
         user_id: str,
         session_factory: async_sessionmaker[AsyncSession],
     ) -> None:
-        """Marking an already-read notification returns 409 (domain invariant)."""
+        """Marking an already-read notification returns 204 (idempotent)."""
         now = datetime.now(UTC).replace(tzinfo=None)
         nid = await _insert_notification(
             session_factory,
@@ -388,7 +388,15 @@ class TestMarkNotificationAsRead:
                 headers=auth_headers(user_id),
             )
 
-        assert response.status_code == 409
+        assert response.status_code == 204
+
+        # read_at should remain unchanged
+        async with session_factory() as s:
+            result = await s.execute(
+                select(NotificationRecordTable).where(NotificationRecordTable.id == nid)
+            )
+            row = result.scalar_one()
+            assert row.read_at == now
 
     async def test_mark_as_read_then_list_shows_read(
         self,

@@ -12,10 +12,7 @@ from contexts.notification.application.mark_notification_as_read import (
 )
 
 # --- Notification context: domain exceptions ---
-from contexts.notification.domain.exceptions import (
-    InvalidReminderMinutesError,
-    NotificationAlreadyReadError,
-)
+from contexts.notification.domain.exceptions import InvalidReminderMinutesError
 from contexts.notification.domain.exceptions import (
     UnauthorizedOperationError as NotificationUnauthorizedOperationError,
 )
@@ -33,14 +30,14 @@ from contexts.preparation.application.add_agenda_comment_use_case import (
 from contexts.preparation.application.add_agenda_comment_use_case import (
     UnauthorizedAgendaCommentError,
 )
+from contexts.preparation.application.add_agenda_to_group_use_case import (
+    ScheduleGroupNotFoundError as AddAgendaToGroupScheduleGroupNotFoundError,
+)
 from contexts.preparation.application.add_agenda_use_case import (
     ScheduleNotFoundError as AddAgendaScheduleNotFoundError,
 )
 from contexts.preparation.application.add_agenda_use_case import (
     UnauthorizedAgendaOperationError as AddAgendaUnauthorizedError,
-)
-from contexts.preparation.application.add_agenda_to_group_use_case import (
-    ScheduleGroupNotFoundError as AddAgendaToGroupScheduleGroupNotFoundError,
 )
 from contexts.preparation.application.cancel_schedule_group_use_case import (
     ScheduleGroupNotFoundError as CancelGroupScheduleGroupNotFoundError,
@@ -307,7 +304,6 @@ EXCEPTION_STATUS_MAP: dict[type[Exception], int] = {
     NoPendingConfirmationRequestError: 409,
     ScheduleCancelledError: 409,
     SameUserError: 409,
-    NotificationAlreadyReadError: 409,
     # -------------------------------------------------------
     # 422 Unprocessable Entity -- validation / business rule
     # -------------------------------------------------------
