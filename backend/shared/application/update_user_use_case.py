@@ -75,7 +75,6 @@ class UpdateUserUseCase:
             user.update_profile(name=input_dto.name, email=input_dto.email)
             user.change_role(input_dto.role)
             await self._user_repo.save(user)
-            await self._uow.commit()
 
         return UpdateUserOutput(
             id=user.id,

@@ -61,5 +61,6 @@ preload された review-pr スキルのレビュー観点に従ってくださ�
 `docs/coding-standards.md` に基づき、以下を必ず確認する:
 
 - **DDD レイヤー依存**: ユースケース・ルーターでインフラ具象を直接 import していないか（`dependencies.py` 経由であること）
+- **UnitOfWork 自動 commit**: use case 内で明示的に `await uow.commit()` を呼んでいないか（`__aexit__` で自動 commit されるため不要）
 - **命名規則**: UseCase / QueryService の使い分け、ファイル名規則に準拠しているか
 - **カラートークン**: ハードコード色が使われていないか、`:root` と `.dark` の両方に定義されているか

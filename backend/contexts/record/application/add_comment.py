@@ -117,7 +117,6 @@ class AddCommentUseCase:
 
             await self._comment_repository.save(comment)
             await self._record_repository.save(record)
-            await self._unit_of_work.commit()
 
         # Dispatch events after successful commit
         events: list[DomainEvent] = list(comment.collect_events())

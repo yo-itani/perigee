@@ -95,6 +95,5 @@ class ChangeWorkspaceParentUseCase:
             workspace.change_parent(new_parent_id=input_dto.new_parent_id, now=now)
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)

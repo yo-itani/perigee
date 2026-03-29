@@ -49,6 +49,7 @@ Reviewer からのレビュー指摘が prompt で渡されます。以下の手
 `docs/coding-standards.md` を必ず読んで従うこと。特に以下は厳守:
 
 - **DDD レイヤー依存ルール**: ユースケース・ルーターでインフラ具象を直接 import しない。DI プロバイダー経由で注入
+- **UnitOfWork 自動 commit**: `async with uow:` ブロック終了時に自動 commit される。use case 内で明示的に `await uow.commit()` を呼ばないこと
 - **命名規則**: UseCase / QueryService の使い分け、ファイル名規則
 - **カラートークン**: ハードコード色禁止、`:root` と `.dark` の両方に定義
 

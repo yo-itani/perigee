@@ -67,6 +67,5 @@ class RemoveMemberUseCase:
             workspace.remove_member(user_id=input_dto.user_id, now=now)
             await self._workspace_repo.save(workspace)
             events: list[DomainEvent] = list(workspace.collect_events())
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)

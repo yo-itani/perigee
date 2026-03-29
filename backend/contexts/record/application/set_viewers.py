@@ -118,8 +118,6 @@ class SetViewersUseCase:
                     user_id=viewer_id,
                 )
 
-            await self._unit_of_work.commit()
-
         # Dispatch events after successful commit
         events: list[DomainEvent] = list(record.collect_events())
         await self._event_dispatcher.dispatch(events)

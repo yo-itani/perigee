@@ -43,12 +43,13 @@ class TestSqlAlchemyUnitOfWork:
 
         mock_session.rollback.assert_awaited_once()
 
-    async def test_aexit_does_not_rollback_on_normal_exit(self) -> None:
-        """__aexit__ should not rollback on normal (no exception) exit."""
+    async def test_aexit_commits_on_normal_exit(self) -> None:
+        """__aexit__ should auto-commit on normal (no exception) exit."""
         mock_session = AsyncMock()
         uow = SqlAlchemyUnitOfWork(mock_session)
         await uow.__aenter__()
 
         await uow.__aexit__(None, None, None)
 
+        mock_session.commit.assert_awaited_once()
         mock_session.rollback.assert_not_awaited()

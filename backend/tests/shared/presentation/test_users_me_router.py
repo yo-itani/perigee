@@ -35,7 +35,10 @@ class _NoOpUnitOfWork(UnitOfWork):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        pass
+        if exc_type is not None:
+            await self.rollback()
+        else:
+            await self.commit()
 
 
 # ---------------------------------------------------------------------------

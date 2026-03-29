@@ -7,15 +7,17 @@ from types import TracebackType
 class UnitOfWork(ABC):
     """Abstract base class for the Unit of Work pattern.
 
-    Designed to be used as an async context manager::
+    Designed to be used as an async context manager.  On normal exit
+    the transaction is **automatically committed**; on exception it is
+    rolled back::
 
         async with uow:
             repo.save(entity)
-            await uow.commit()
+        # auto-commit here
 
     ``commit()`` performs only the database commit.  Event dispatching
-    should be done explicitly by the application service after a
-    successful commit.
+    should be done explicitly by the application service after the
+    context manager block.
     """
 
     @abstractmethod
@@ -37,4 +39,7 @@ class UnitOfWork(ABC):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Exit the async context, rolling back on unhandled exceptions."""
+        """Exit the async context.
+
+        Auto-commits on normal exit; rolls back on unhandled exceptions.
+        """

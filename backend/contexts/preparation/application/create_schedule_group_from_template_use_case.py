@@ -170,7 +170,6 @@ class CreateScheduleGroupFromTemplateUseCase:
                 await self._schedule_repo.save(schedule)
             if all_agendas:
                 await self._agenda_repo.save_all(all_agendas)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(all_events)
 

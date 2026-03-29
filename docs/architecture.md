@@ -339,8 +339,10 @@ from contexts.preparation.infrastructure.tables import ScheduleTable  # noqa: F4
 
 ### UnitOfWork + EventDispatcher 統合パターン
 
+- `UnitOfWork` は `async with` ブロックを抜ける際に **自動 commit** する（例外発生時は rollback）
+- use case から明示的に `commit()` を呼ぶ必要はない
 - `UnitOfWork.commit()` は DB commit のみを行い、イベントディスパッチは含まない
-- アプリケーションサービスが commit 後に明示的にイベントをディスパッチする
+- アプリケーションサービスがコンテキストマネージャ終了後にイベントをディスパッチする
 - これにより、DB コミットとイベント処理の責務を分離し、テスト容易性を確保する
 
 ```python
@@ -362,7 +364,7 @@ class PublishRecordUseCase:
             record.publish(actor_id=actor_id, now=datetime.now(UTC))
             await self._record_repo.save(record)
             events = record.collect_events()
-            await self._uow.commit()
+        # __aexit__ で自動 commit される
 
         # commit 成功後にイベントをディスパッチ
         await self._event_dispatcher.dispatch(events)

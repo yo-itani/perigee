@@ -43,7 +43,6 @@ class ActivateUserUseCase:
 
             user.activate()
             await self._user_repo.save(user)
-            await self._uow.commit()
 
         return ActivateUserOutput(
             id=user.id,

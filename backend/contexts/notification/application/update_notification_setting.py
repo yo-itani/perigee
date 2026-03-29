@@ -88,7 +88,6 @@ class UpdateNotificationSettingUseCase:
 
             await self._notification_setting_repository.save(setting)
             events: list[DomainEvent] = list(setting.collect_events())
-            await self._unit_of_work.commit()
 
         await self._event_dispatcher.dispatch(events)
 

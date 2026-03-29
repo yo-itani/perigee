@@ -110,6 +110,5 @@ class DeleteAgendaUseCase:
 
         async with self._uow:
             await self._agenda_repo.delete_by_ids([agenda.id])
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)

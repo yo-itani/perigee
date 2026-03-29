@@ -87,4 +87,3 @@ class MarkRecordAsViewedUseCase:
             )
 
             await self._read_status_repository.upsert(read_status)
-            await self._unit_of_work.commit()

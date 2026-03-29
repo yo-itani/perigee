@@ -65,6 +65,5 @@ class CreateInvitationUseCase:
                 created_at=now,
             )
             await self._invitation_token_repo.save(record)
-            await self._uow.commit()
 
         return CreateInvitationOutput(token=raw_token, expires_at=expires_at)

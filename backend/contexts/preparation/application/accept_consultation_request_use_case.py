@@ -89,6 +89,5 @@ class AcceptConsultationRequestUseCase:
 
         async with self._uow:
             await self._schedule_repo.save(schedule)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(events)

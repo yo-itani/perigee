@@ -80,9 +80,7 @@ class DeleteActionItemUseCase:
         self._unit_of_work = unit_of_work
         self._event_dispatcher = event_dispatcher
 
-    async def execute(
-        self, input_dto: DeleteActionItemInput
-    ) -> DeleteActionItemOutput:
+    async def execute(self, input_dto: DeleteActionItemInput) -> DeleteActionItemOutput:
         now = datetime.now(UTC)
 
         async with self._unit_of_work:
@@ -111,7 +109,6 @@ class DeleteActionItemUseCase:
                 raise ActionItemNotFoundError(input_dto.action_item_id)
 
             await self._action_item_repository.delete(input_dto.action_item_id)
-            await self._unit_of_work.commit()
 
         # Dispatch events after successful commit
         events: list[DomainEvent] = [

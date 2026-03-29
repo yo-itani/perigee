@@ -54,7 +54,6 @@ class UpdateMyProfileUseCase:
 
             current_user.update_profile(name=input_dto.name, email=input_dto.email)
             await self._user_repo.save(current_user)
-            await self._uow.commit()
 
         return UpdateMyProfileOutput(
             id=current_user.id,

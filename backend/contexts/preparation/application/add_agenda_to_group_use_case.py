@@ -94,6 +94,5 @@ class AddAgendaToGroupUseCase:
             await self._schedule_group_repo.save(group)
             if new_agendas:
                 await self._agenda_repo.save_all(new_agendas)
-            await self._uow.commit()
 
         await self._event_dispatcher.dispatch(all_events)
