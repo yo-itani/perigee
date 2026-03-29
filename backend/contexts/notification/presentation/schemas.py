@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import AwareDatetime, BaseModel
 
 
 class NotificationSettingResponse(BaseModel):
@@ -33,8 +32,8 @@ class NotificationRecordResponse(BaseModel):
     body: str
     link: str | None
     is_read: bool
-    read_at: datetime | None
-    created_at: datetime
+    read_at: AwareDatetime | None
+    created_at: AwareDatetime
 
 
 class NotificationListResponse(BaseModel):

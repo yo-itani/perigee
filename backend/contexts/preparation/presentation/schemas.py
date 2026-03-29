@@ -1,6 +1,5 @@
 """Pydantic request/response schemas for the Preparation context API."""
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel
@@ -121,8 +120,8 @@ class TemplateListItemSchema(BaseModel):
     name: str
     default_counterpart_ids: list[UUID]
     agenda_topics: list[str]
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
 
 
 class ListTemplatesResponse(BaseModel):
@@ -139,8 +138,8 @@ class GetTemplateResponse(BaseModel):
     name: str
     default_counterpart_ids: list[UUID]
     agenda_topics: list[str]
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
 
 
 class SaveTemplateRequest(BaseModel):
@@ -168,7 +167,7 @@ class UpcomingScheduleItemSchema(BaseModel):
     schedule_id: UUID
     organizer_id: UUID
     counterpart_id: UUID
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime
     status: str
     title: str
     schedule_group_id: UUID | None
@@ -192,11 +191,11 @@ class GetScheduleDetailResponse(BaseModel):
     organizer_id: UUID
     counterpart_id: UUID
     title: str
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime
     status: str
     schedule_group_id: UUID | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
 
 
 # ---------------------------------------------------------------------------
@@ -210,7 +209,7 @@ class AgendaCommentSchema(BaseModel):
     comment_id: UUID
     author_id: UUID
     body: str
-    created_at: datetime
+    created_at: AwareDatetime
 
 
 class AgendaItemSchema(BaseModel):
@@ -221,7 +220,7 @@ class AgendaItemSchema(BaseModel):
     added_by: UUID
     added_by_tag: str
     comments: list[AgendaCommentSchema]
-    created_at: datetime
+    created_at: AwareDatetime
 
 
 class ListScheduleAgendasResponse(BaseModel):
@@ -287,14 +286,14 @@ class ActionItemSummarySchema(BaseModel):
     action_item_id: UUID
     content: str
     is_completed: bool
-    created_at: datetime
+    created_at: AwareDatetime
 
 
 class GetLastSessionSummaryResponse(BaseModel):
     """Response body for GET /records/last-summary."""
 
     record_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
     memo_excerpt: str
     action_items: list[ActionItemSummarySchema]
 
@@ -304,10 +303,10 @@ class PendingActionItemSchema(BaseModel):
 
     action_item_id: UUID
     content: str
-    created_at: datetime
+    created_at: AwareDatetime
     record_id: UUID
     organizer_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
 
 
 class ListPendingActionItemsResponse(BaseModel):
@@ -321,10 +320,10 @@ class AllPendingActionItemSchema(BaseModel):
 
     action_item_id: UUID
     content: str
-    created_at: datetime
+    created_at: AwareDatetime
     record_id: UUID
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
 
 
 class ListAllPendingActionItemsResponse(BaseModel):

@@ -20,6 +20,7 @@ from contexts.preparation.infrastructure.tables import (
     AgendaCommentTable,
     AgendaTable,
 )
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -85,36 +86,38 @@ class SqlAlchemyAgendaRepository(AgendaRepository):
     # ------------------------------------------------------------------
 
     async def _insert(self, entity: Agenda) -> None:
+        created_naive = to_naive_utc(entity.created_at)
         agenda_row = AgendaTable(
             id=str(entity.id.value),
             schedule_id=str(entity.schedule_id.value),
             topic=entity.topic.value,
             added_by=str(entity.added_by.value),
             added_by_tag=entity.added_by_tag.value,
-            created_at=entity.created_at,
-            updated_at=entity.created_at,
+            created_at=created_naive,
+            updated_at=created_naive,
         )
         for comment in entity.comments:
+            comment_created_naive = to_naive_utc(comment.created_at)
             comment_row = AgendaCommentTable(
                 id=str(comment.id.value),
                 agenda_id=str(entity.id.value),
                 author_id=str(comment.author_id.value),
                 body=comment.body.value,
-                created_at=comment.created_at,
-                updated_at=comment.created_at,
+                created_at=comment_created_naive,
+                updated_at=comment_created_naive,
             )
             agenda_row.comments.append(comment_row)
         self._session.add(agenda_row)
         await self._session.flush()
 
     async def _update(self, entity: Agenda, existing: AgendaTable) -> None:
-        now = datetime.now(UTC)
+        now_naive = to_naive_utc(datetime.now(UTC))
 
         existing.schedule_id = str(entity.schedule_id.value)
         existing.topic = entity.topic.value
         existing.added_by = str(entity.added_by.value)
         existing.added_by_tag = entity.added_by_tag.value
-        existing.updated_at = now
+        existing.updated_at = now_naive
 
         # Reconcile comments
         existing_comment_map: dict[str, AgendaCommentTable] = {
@@ -129,15 +132,16 @@ class SqlAlchemyAgendaRepository(AgendaRepository):
                 db_comment = existing_comment_map[comment_id]
                 db_comment.author_id = str(comment.author_id.value)
                 db_comment.body = comment.body.value
-                db_comment.updated_at = now
+                db_comment.updated_at = now_naive
             else:
+                comment_created_naive = to_naive_utc(comment.created_at)
                 new_comment = AgendaCommentTable(
                     id=comment_id,
                     agenda_id=str(entity.id.value),
                     author_id=str(comment.author_id.value),
                     body=comment.body.value,
-                    created_at=comment.created_at,
-                    updated_at=comment.created_at,
+                    created_at=comment_created_naive,
+                    updated_at=comment_created_naive,
                 )
                 existing.comments.append(new_comment)
 
@@ -155,7 +159,7 @@ class SqlAlchemyAgendaRepository(AgendaRepository):
                 _agenda_id=AgendaId.from_str(c.agenda_id),
                 _author_id=UserId.from_str(c.author_id),
                 _body=CommentBody(c.body),
-                _created_at=c.created_at,
+                _created_at=to_aware_utc(c.created_at),
             )
             for c in row.comments
         ]
@@ -166,5 +170,5 @@ class SqlAlchemyAgendaRepository(AgendaRepository):
             _added_by=UserId.from_str(row.added_by),
             _added_by_tag=AddedByTag(row.added_by_tag),
             _comments=comments,
-            _created_at=row.created_at,
+            _created_at=to_aware_utc(row.created_at),
         )

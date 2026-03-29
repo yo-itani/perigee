@@ -16,6 +16,7 @@ from contexts.preparation.infrastructure.tables import (
     TemplateDefaultCounterpartTable,
     TemplateTable,
 )
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -53,12 +54,13 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
     # ------------------------------------------------------------------
 
     async def _insert(self, entity: Template) -> None:
+        created_naive = to_naive_utc(entity.created_at)
         template_row = TemplateTable(
             id=str(entity.id.value),
             organizer_id=str(entity.organizer_id.value),
             name=entity.name.value,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            created_at=created_naive,
+            updated_at=to_naive_utc(entity.updated_at),
         )
         for position, user_id in enumerate(entity.default_counterparts):
             dc_row = TemplateDefaultCounterpartTable(
@@ -66,8 +68,8 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
                 template_id=str(entity.id.value),
                 user_id=str(user_id.value),
                 position=position,
-                created_at=entity.created_at,
-                updated_at=entity.created_at,
+                created_at=created_naive,
+                updated_at=created_naive,
             )
             template_row.default_counterparts.append(dc_row)
         for position, at in enumerate(entity.agenda_templates):
@@ -76,19 +78,19 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
                 template_id=str(entity.id.value),
                 topic=at.topic.value,
                 position=position,
-                created_at=entity.created_at,
-                updated_at=entity.created_at,
+                created_at=created_naive,
+                updated_at=created_naive,
             )
             template_row.agenda_templates.append(at_row)
         self._session.add(template_row)
         await self._session.flush()
 
     async def _update(self, entity: Template, existing: TemplateTable) -> None:
-        now = datetime.now(UTC)
+        now_naive = to_naive_utc(datetime.now(UTC))
 
         existing.organizer_id = str(entity.organizer_id.value)
         existing.name = entity.name.value
-        existing.updated_at = now
+        existing.updated_at = now_naive
 
         # DefaultCounterparts: full delete + re-insert
         existing.default_counterparts.clear()
@@ -100,8 +102,8 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
                 template_id=str(entity.id.value),
                 user_id=str(user_id.value),
                 position=position,
-                created_at=now,
-                updated_at=now,
+                created_at=now_naive,
+                updated_at=now_naive,
             )
             existing.default_counterparts.append(new_dc)
 
@@ -115,8 +117,8 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
                 template_id=str(entity.id.value),
                 topic=at.topic.value,
                 position=position,
-                created_at=now,
-                updated_at=now,
+                created_at=now_naive,
+                updated_at=now_naive,
             )
             existing.agenda_templates.append(new_at)
 
@@ -136,6 +138,6 @@ class SqlAlchemyTemplateRepository(TemplateRepository):
             _name=TemplateName(row.name),
             _default_counterparts=default_counterparts,
             _agenda_templates=agenda_templates,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

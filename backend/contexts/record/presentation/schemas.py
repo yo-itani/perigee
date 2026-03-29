@@ -1,6 +1,5 @@
 """Pydantic request/response schemas for the Record context API."""
 
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, Field
@@ -121,7 +120,7 @@ class ActionItemSchema(BaseModel):
     title: str
     is_completed: bool
     counterpart_id: UUID
-    created_at: datetime
+    created_at: AwareDatetime
 
 
 class GetRecordDetailResponse(BaseModel):
@@ -135,9 +134,9 @@ class GetRecordDetailResponse(BaseModel):
     status: str
     confirmed_agenda_ids: list[UUID]
     action_items: list[ActionItemSchema]
-    conducted_at: datetime
-    created_at: datetime
-    updated_at: datetime
+    conducted_at: AwareDatetime
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
 
 
 # ---------------------------------------------------------------------------
@@ -151,7 +150,7 @@ class CommentSchema(BaseModel):
     comment_id: UUID
     author_id: UUID
     body: str
-    created_at: datetime
+    created_at: AwareDatetime
 
 
 class ListRecordCommentsResponse(BaseModel):
@@ -210,7 +209,7 @@ class OneOnOneHistoryItemSchema(BaseModel):
     record_id: UUID
     organizer_id: UUID
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
     memo_excerpt: str
     schedule_id: UUID | None
 
@@ -277,9 +276,9 @@ class DraftRecordItemSchema(BaseModel):
 
     record_id: UUID
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime
     memo_excerpt: str
-    created_at: datetime
+    created_at: AwareDatetime
     schedule_id: UUID | None
 
 

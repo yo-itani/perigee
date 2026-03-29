@@ -9,6 +9,7 @@ from contexts.record.domain.comment_repository import CommentRepository
 from contexts.record.domain.exceptions import CommentAlreadyExistsError
 from contexts.record.domain.value_objects import CommentId, RecordId
 from contexts.record.infrastructure.tables import CommentTable
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -41,7 +42,7 @@ class SqlAlchemyCommentRepository(CommentRepository):
             record_id=str(entity.record_id.value),
             author_id=str(entity.author_id.value),
             body=entity.body.value,
-            created_at=entity.created_at,
+            created_at=to_naive_utc(entity.created_at),
         )
         self._session.add(comment_row)
         await self._session.flush()
@@ -62,5 +63,5 @@ class SqlAlchemyCommentRepository(CommentRepository):
             record_id=RecordId.from_str(row.record_id),
             author_id=UserId.from_str(row.author_id),
             body=CommentBody(row.body),
-            created_at=row.created_at,
+            created_at=to_aware_utc(row.created_at),
         )

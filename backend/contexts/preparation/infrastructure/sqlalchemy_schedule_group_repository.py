@@ -22,6 +22,7 @@ from contexts.preparation.infrastructure.tables import (
     ScheduleGroupTable,
     ScheduleTable,
 )
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -70,13 +71,14 @@ class SqlAlchemyScheduleGroupRepository(ScheduleGroupRepository):
         return [ScheduleId.from_str(row[0]) for row in result.fetchall()]
 
     async def _insert(self, entity: ScheduleGroup) -> None:
+        created_naive = to_naive_utc(entity.created_at)
         group_row = ScheduleGroupTable(
             id=str(entity.id.value),
             organizer_id=str(entity.organizer_id.value),
             template_id=(str(entity.template_id.value) if entity.template_id else None),
             title=entity.title.value,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            created_at=created_naive,
+            updated_at=to_naive_utc(entity.updated_at),
         )
         for position, at in enumerate(entity.agenda_templates):
             at_row = ScheduleGroupAgendaTemplateTable(
@@ -84,8 +86,8 @@ class SqlAlchemyScheduleGroupRepository(ScheduleGroupRepository):
                 schedule_group_id=str(entity.id.value),
                 topic=at.topic.value,
                 position=position,
-                created_at=entity.created_at,
-                updated_at=entity.created_at,
+                created_at=created_naive,
+                updated_at=created_naive,
             )
             group_row.agenda_templates.append(at_row)
         self._session.add(group_row)
@@ -94,14 +96,14 @@ class SqlAlchemyScheduleGroupRepository(ScheduleGroupRepository):
     async def _update(
         self, entity: ScheduleGroup, existing: ScheduleGroupTable
     ) -> None:
-        now = datetime.now(UTC)
+        now_naive = to_naive_utc(datetime.now(UTC))
 
         existing.organizer_id = str(entity.organizer_id.value)
         existing.template_id = (
             str(entity.template_id.value) if entity.template_id else None
         )
         existing.title = entity.title.value
-        existing.updated_at = now
+        existing.updated_at = now_naive
 
         # AgendaTemplates: full delete + re-insert
         # (position-ordered list, IDs have no meaning)
@@ -114,8 +116,8 @@ class SqlAlchemyScheduleGroupRepository(ScheduleGroupRepository):
                 schedule_group_id=str(entity.id.value),
                 topic=at.topic.value,
                 position=position,
-                created_at=now,
-                updated_at=now,
+                created_at=now_naive,
+                updated_at=now_naive,
             )
             existing.agenda_templates.append(new_row)
 
@@ -137,6 +139,6 @@ class SqlAlchemyScheduleGroupRepository(ScheduleGroupRepository):
             _title=ScheduleTitle(row.title),
             _agenda_templates=agenda_templates,
             _schedule_ids=schedule_ids,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

@@ -10,6 +10,7 @@ from contexts.notification.domain.notification_setting_repository import (
     NotificationSettingRepository,
 )
 from contexts.notification.infrastructure.tables import NotificationSettingTable
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -42,14 +43,14 @@ class SqlAlchemyNotificationSettingRepository(NotificationSettingRepository):
                 user_id=str(entity.user_id.value),
                 reminder_minutes_before=entity.reminder_minutes_before,
                 is_enabled=entity.is_enabled,
-                created_at=entity.created_at,
-                updated_at=entity.updated_at,
+                created_at=to_naive_utc(entity.created_at),
+                updated_at=to_naive_utc(entity.updated_at),
             )
             self._session.add(row)
         else:
             existing.reminder_minutes_before = entity.reminder_minutes_before
             existing.is_enabled = entity.is_enabled
-            existing.updated_at = entity.updated_at
+            existing.updated_at = to_naive_utc(entity.updated_at)
 
         await self._session.flush()
 
@@ -59,6 +60,6 @@ class SqlAlchemyNotificationSettingRepository(NotificationSettingRepository):
             user_id=UserId.from_str(row.user_id),
             _reminder_minutes_before=row.reminder_minutes_before,
             _is_enabled=row.is_enabled,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

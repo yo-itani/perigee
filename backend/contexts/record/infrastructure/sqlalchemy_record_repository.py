@@ -15,6 +15,7 @@ from contexts.record.infrastructure.tables import (
     RecordTable,
     RecordViewerTable,
 )
+from foundation.datetime_utils import to_aware_utc, to_aware_utc_optional, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -153,6 +154,8 @@ class SqlAlchemyRecordRepository(RecordRepository):
         )
 
     async def _insert(self, entity: Record) -> None:
+        created_naive = to_naive_utc(entity.created_at)
+        updated_naive = to_naive_utc(entity.updated_at)
         record_row = RecordTable(
             id=str(entity.id.value),
             organizer_id=str(entity.organizer_id.value),
@@ -160,18 +163,22 @@ class SqlAlchemyRecordRepository(RecordRepository):
             schedule_id=(str(entity.schedule_id.value) if entity.schedule_id else None),
             memo=entity.memo.value,
             status=entity.status.value,
-            conducted_at=entity.conducted_at,
-            latest_activity_at=entity.latest_activity_at,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            conducted_at=to_naive_utc(entity.conducted_at),
+            latest_activity_at=(
+                to_naive_utc(entity.latest_activity_at)
+                if entity.latest_activity_at
+                else None
+            ),
+            created_at=created_naive,
+            updated_at=updated_naive,
         )
         for viewer_id in entity.viewers:
             viewer_row = RecordViewerTable(
                 id=str(uuid.uuid4()),
                 record_id=str(entity.id.value),
                 user_id=str(viewer_id.value),
-                created_at=entity.created_at,
-                updated_at=entity.updated_at,
+                created_at=created_naive,
+                updated_at=updated_naive,
             )
             record_row.viewers.append(viewer_row)
         for agenda_id in entity.confirmed_agenda_ids:
@@ -179,23 +186,28 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 id=str(uuid.uuid4()),
                 record_id=str(entity.id.value),
                 agenda_id=str(agenda_id.value),
-                created_at=entity.created_at,
-                updated_at=entity.updated_at,
+                created_at=created_naive,
+                updated_at=updated_naive,
             )
             record_row.confirmed_agendas.append(agenda_row)
         self._session.add(record_row)
         await self._session.flush()
 
     async def _update(self, entity: Record, existing: RecordTable) -> None:
+        updated_naive = to_naive_utc(entity.updated_at)
         # Update scalar fields
         existing.memo = entity.memo.value
         existing.status = entity.status.value
-        existing.conducted_at = entity.conducted_at
+        existing.conducted_at = to_naive_utc(entity.conducted_at)
         existing.schedule_id = (
             str(entity.schedule_id.value) if entity.schedule_id else None
         )
-        existing.latest_activity_at = entity.latest_activity_at
-        existing.updated_at = entity.updated_at
+        existing.latest_activity_at = (
+            to_naive_utc(entity.latest_activity_at)
+            if entity.latest_activity_at
+            else None
+        )
+        existing.updated_at = updated_naive
 
         # Replace viewers: delete all, then re-insert
         existing.viewers.clear()
@@ -206,8 +218,8 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 id=str(uuid.uuid4()),
                 record_id=str(entity.id.value),
                 user_id=str(viewer_id.value),
-                created_at=entity.updated_at,
-                updated_at=entity.updated_at,
+                created_at=updated_naive,
+                updated_at=updated_naive,
             )
             existing.viewers.append(new_viewer)
 
@@ -220,8 +232,8 @@ class SqlAlchemyRecordRepository(RecordRepository):
                 id=str(uuid.uuid4()),
                 record_id=str(entity.id.value),
                 agenda_id=str(agenda_id.value),
-                created_at=entity.updated_at,
-                updated_at=entity.updated_at,
+                created_at=updated_naive,
+                updated_at=updated_naive,
             )
             existing.confirmed_agendas.append(new_agenda)
 
@@ -244,8 +256,8 @@ class SqlAlchemyRecordRepository(RecordRepository):
             _status=RecordStatus(row.status),
             _viewers=viewers,
             _confirmed_agenda_ids=confirmed_agenda_ids,
-            conducted_at=row.conducted_at,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
-            _latest_activity_at=row.latest_activity_at,
+            conducted_at=to_aware_utc(row.conducted_at),
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
+            _latest_activity_at=to_aware_utc_optional(row.latest_activity_at),
         )
