@@ -111,6 +111,16 @@ class TestGetMyProfile:
         assert data["is_active"] is True
         assert data["slack_user_id"] == "U12345"
 
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(select(UserTable).where(UserTable.id == user_id))
+            row = result.scalar_one()
+            assert data["name"] == row.name
+            assert data["email"] == row.email
+            assert data["role"] == row.role
+            assert data["is_active"] == row.is_active
+            assert data["slack_user_id"] == row.slack_user_id
+
     async def test_returns_401_without_token(
         self, app, session_factory: async_sessionmaker[AsyncSession]
     ) -> None:
