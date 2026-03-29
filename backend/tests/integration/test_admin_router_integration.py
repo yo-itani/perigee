@@ -27,6 +27,7 @@ from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
 from foundation.auth.tables import InvitationTokenTable
 from shared.domain.value_objects import UserId
+from shared.infrastructure.tables import UserTable
 from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
@@ -124,6 +125,17 @@ class TestCreateUser:
         assert body["is_active"] is True
         # Validate that a UUID was assigned
         uuid.UUID(body["id"])
+
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(
+                select(UserTable).where(UserTable.id == body["id"])
+            )
+            row = result.scalar_one()
+            assert row.name == "New User"
+            assert row.email == new_email
+            assert row.role == "member"
+            assert row.is_active is True
 
     async def test_create_user_duplicate_email_returns_409(
         self, app, session_factory: async_sessionmaker[AsyncSession]
@@ -254,6 +266,15 @@ class TestGetUserDetail:
         assert body["role"] == "member"
         assert body["is_active"] is True
 
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(select(UserTable).where(UserTable.id == member_id))
+            row = result.scalar_one()
+            assert body["name"] == row.name
+            assert body["email"] == row.email
+            assert body["role"] == row.role
+            assert body["is_active"] == row.is_active
+
     async def test_get_user_detail_not_found_returns_404(
         self, app, session_factory: async_sessionmaker[AsyncSession]
     ) -> None:
@@ -305,6 +326,14 @@ class TestUpdateUser:
         assert body["email"] == updated_email
         assert body["role"] == "admin"
 
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(select(UserTable).where(UserTable.id == member_id))
+            row = result.scalar_one()
+            assert row.name == "Updated Name"
+            assert row.email == updated_email
+            assert row.role == "admin"
+
     async def test_update_user_not_found_returns_404(
         self, app, session_factory: async_sessionmaker[AsyncSession]
     ) -> None:
@@ -353,6 +382,12 @@ class TestDeactivateUser:
         body = resp.json()
         assert body["is_active"] is False
 
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(select(UserTable).where(UserTable.id == member_id))
+            row = result.scalar_one()
+            assert row.is_active is False
+
 
 # =====================================================================
 # PUT /users/{user_id}/activate
@@ -381,6 +416,12 @@ class TestActivateUser:
         assert resp.status_code == 200
         body = resp.json()
         assert body["is_active"] is True
+
+        # DB verification via separate session
+        async with session_factory() as s:
+            result = await s.execute(select(UserTable).where(UserTable.id == member_id))
+            row = result.scalar_one()
+            assert row.is_active is True
 
 
 # =====================================================================
