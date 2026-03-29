@@ -163,6 +163,37 @@ os.environ.setdefault(
 
 これらは pytest fixture として公開され、テスト関数の引数として注入する。
 
+## テスト記述ガイドライン
+
+### DB 更新値の検証は期待値との一致で行う
+
+DB を更新するエンドポイントのテストでは、リクエストで送った値を変数に保持し、DB から取得した値がその期待値と正確に一致することを検証する。`!= original` のような「変わったこと」だけの検証では、誤った値への更新を見逃す。
+
+```python
+# NG: 変わったことしか検証できない
+assert row_after.scheduled_at != original_scheduled_at
+
+# OK: リクエストした値と一致することを検証
+new_scheduled_at = datetime.now(UTC) + timedelta(days=14)
+# ... API call with new_scheduled_at ...
+assert row_after.scheduled_at == new_scheduled_at
+```
+
+### テスト名・Docstring は実際の期待値に合わせる
+
+テスト名や Docstring は、テストが検証する実際の振る舞い（ステータスコード・結果）を正確に反映する。テスト名から期待値が読み取れるようにする。
+
+```python
+# NG: 名前と期待値が不一致
+def test_reject_after_reschedule_reverts_to_confirmed():
+    """リスケ後にリジェクトすると CONFIRMED に戻る"""
+    # ... 実際は 409 を期待 ...
+
+# OK: 実際の振る舞いを反映
+def test_reject_after_reschedule_returns_409_when_no_pending_request():
+    """リスケ確定後は未処理の相談リクエストがないため reject は 409"""
+```
+
 ```python
 @pytest.fixture
 def uow() -> StubUnitOfWork:
