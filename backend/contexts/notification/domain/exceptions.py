@@ -15,12 +15,3 @@ class UnauthorizedOperationError(Exception):
 
     def __init__(self, message: str = "Unauthorized operation.") -> None:
         super().__init__(message)
-
-
-class NotificationAlreadyReadError(Exception):
-    """Raised when attempting to mark an already-read notification as read."""
-
-    def __init__(
-        self, message: str = "Notification is already marked as read."
-    ) -> None:
-        super().__init__(message)

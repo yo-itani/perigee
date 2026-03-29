@@ -11,10 +11,7 @@ from contexts.notification.application.mark_notification_as_read import (
     MarkNotificationAsReadUseCase,
     NotificationNotFoundError,
 )
-from contexts.notification.domain.exceptions import (
-    NotificationAlreadyReadError,
-    UnauthorizedOperationError,
-)
+from contexts.notification.domain.exceptions import UnauthorizedOperationError
 from contexts.notification.domain.notification_message import NotificationMessage
 from contexts.notification.domain.notification_record import NotificationRecord
 from contexts.notification.domain.value_objects import (
@@ -127,19 +124,24 @@ class TestMarkNotificationAsReadErrors:
                 )
             )
 
-    async def test_raises_when_already_read(self) -> None:
-        uc, repo, _uow = _build_use_case()
+    async def test_idempotent_when_already_read(self) -> None:
+        uc, repo, uow = _build_use_case()
         user_id = UserId.generate()
         record = _make_record(recipient_id=user_id)
-        record.mark_as_read(now=datetime(2026, 3, 26, 11, 0))
+        first_read_at = datetime(2026, 3, 26, 11, 0)
+        record.mark_as_read(now=first_read_at)
         await repo.save(record)
 
-        with pytest.raises(
-            NotificationAlreadyReadError, match="already marked as read"
-        ):
-            await uc.execute(
-                MarkNotificationAsReadInput(
-                    notification_id=record.id,
-                    actor_id=user_id,
-                )
+        # Second mark_as_read should succeed without error
+        await uc.execute(
+            MarkNotificationAsReadInput(
+                notification_id=record.id,
+                actor_id=user_id,
             )
+        )
+
+        saved = await repo.get_by_id(record.id)
+        assert saved is not None
+        assert saved.is_read is True
+        assert saved.read_at == first_read_at
+        assert uow.committed is True

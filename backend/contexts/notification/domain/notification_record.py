@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from contexts.notification.domain.exceptions import NotificationAlreadyReadError
 from contexts.notification.domain.notification_message import NotificationMessage
 from contexts.notification.domain.value_objects import (
     NotificationRecordId,
@@ -21,7 +20,7 @@ class NotificationRecord:
     Tracks whether the notification has been read.
 
     Business rules:
-    - A notification cannot be marked as read if it is already read.
+    - Marking an already-read notification as read is idempotent (no-op).
     """
 
     id: NotificationRecordId
@@ -64,14 +63,11 @@ class NotificationRecord:
         )
 
     def mark_as_read(self, now: datetime) -> None:
-        """Mark this notification as read.
+        """Mark this notification as read (idempotent).
 
-        Raises:
-            NotificationAlreadyReadError: If the notification is already read.
+        If the notification is already read, this is a no-op.
         """
         if self._is_read:
-            raise NotificationAlreadyReadError(
-                f"Notification {self.id.value} is already marked as read."
-            )
+            return
         self._is_read = True
         self._read_at = now
