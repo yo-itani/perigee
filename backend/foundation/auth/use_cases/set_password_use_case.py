@@ -55,7 +55,10 @@ class SetPasswordUseCase:
         if record.is_used:
             raise InvalidInvitationTokenError("Invitation token has already been used")
 
-        if record.expires_at < now:
+        # Strip tzinfo for comparison: MariaDB returns naive datetimes
+        # while in-memory repos may return aware datetimes.
+        expires_at = record.expires_at.replace(tzinfo=None)
+        if expires_at < now.replace(tzinfo=None):
             raise InvalidInvitationTokenError("Invitation token has expired")
 
         user = await self._user_repo.get_by_id(UserId.from_str(record.user_id))
