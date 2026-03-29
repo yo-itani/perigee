@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     db_password: str = ""
     db_name: str = "perigee"
 
+    # Test endpoints (E2E)
+    enable_test_endpoints: bool = False
+
     # JWT / Auth
     jwt_secret_key: str
 

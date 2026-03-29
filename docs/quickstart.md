@@ -49,17 +49,36 @@ docker compose up -d
 
 DB マイグレーションはバックエンド起動時に自動適用されます。
 
-## 4. 認証（開発モード）
+## 4. 認証
 
-現在は開発用の簡易認証です。リクエストヘッダー `X-User-Id` に UUID を渡すことでユーザーを識別します。
+Cookie + JWT 認証方式を使用しています。
 
-フロントエンドは `00000000-0000-0000-0000-000000000001`（Dev User）として固定で動作します。
+### 初期セットアップ
+
+初回起動時にブラウザで http://localhost:5173 にアクセスすると、セットアップ画面が表示されます。管理者ユーザー（名前・メールアドレス・パスワード）を登録してください。
+
+### ログイン
+
+セットアップ完了後、ログイン画面でメールアドレスとパスワードを入力します。
+
+- アクセストークン（JWT）はメモリ内のみで管理（localStorage には保存しない）
+- リフレッシュトークンは HttpOnly Cookie として自動管理
+- ページリロード時は Cookie 内のリフレッシュトークンでアクセストークンを再取得
 
 ### API を直接呼ぶ場合
 
 ```bash
-curl -H "X-User-Id: 00000000-0000-0000-0000-000000000001" \
-     http://localhost:8000/schedules/upcoming
+# ログイン（アクセストークン取得 + リフレッシュトークン Cookie 設定）
+curl -c cookies.txt -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "your-password"}'
+
+# 認証付きリクエスト
+curl -H "Authorization: Bearer <access_token>" \
+     http://localhost:8000/users/me
+
+# トークンリフレッシュ
+curl -b cookies.txt -c cookies.txt -X POST http://localhost:8000/auth/refresh
 ```
 
 ## 5. 初期データの投入
