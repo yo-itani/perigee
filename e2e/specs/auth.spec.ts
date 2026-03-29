@@ -133,12 +133,14 @@ test.describe("Authentication", () => {
       await logoutMenuItem.click();
     } else {
       // If no visible logout button, call the API directly and navigate
-      await page.evaluate(async () => {
-        await fetch("http://localhost:8000/auth/logout", {
+      const apiBase =
+        process.env.E2E_API_BASE_URL ?? "http://localhost:8000";
+      await page.evaluate(async (url) => {
+        await fetch(`${url}/auth/logout`, {
           method: "POST",
           credentials: "include",
         });
-      });
+      }, apiBase);
       await page.goto("/");
     }
 

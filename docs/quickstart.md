@@ -127,6 +127,36 @@ cd frontend
 pnpm test
 ```
 
+### E2E テスト（Playwright）
+
+E2E テストは Docker Compose の `e2e` プロファイルで専用のバックエンド・DB・フロントエンドを起動し、Playwright で実行します。
+
+```bash
+# 1. E2E 用コンテナを起動
+docker compose --profile e2e up -d
+
+# 2. Playwright テストを実行
+pnpm exec playwright test
+
+# 3. テスト終了後にコンテナを停止
+docker compose --profile e2e down
+```
+
+E2E 環境のポートマッピング:
+
+| サービス | URL | 説明 |
+|---|---|---|
+| frontend-e2e | http://localhost:5174 | E2E 用フロントエンド |
+| backend-e2e | http://localhost:8001 | E2E 用バックエンド |
+| mariadb-e2e | localhost:3307 | E2E 用データベース |
+
+環境変数で接続先を変更できます:
+
+| 変数 | デフォルト | 説明 |
+|---|---|---|
+| `E2E_BASE_URL` | `http://localhost:5173` | Playwright がアクセスするフロントエンド URL |
+| `E2E_API_BASE_URL` | `http://localhost:8000` | テストヘルパーがアクセスするバックエンド URL |
+
 ## トラブルシューティング
 
 ### バックエンドのビルドが失敗する（asyncmy）

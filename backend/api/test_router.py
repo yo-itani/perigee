@@ -57,11 +57,15 @@ async def reset_database() -> None:
             ),
             {"db_name": db_name},
         )
-        table_names = [row[0] for row in result.fetchall()]
+        table_names = [
+            row[0] for row in result.fetchall() if row[0] != "alembic_version"
+        ]
 
         if table_names:
             await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
-            for table_name in table_names:
-                # Use backtick quoting for table names (safe: from information_schema)
-                await conn.execute(text(f"TRUNCATE TABLE `{table_name}`"))
-            await conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+            try:
+                for table_name in table_names:
+                    # Backtick quoting is safe: names from information_schema
+                    await conn.execute(text(f"TRUNCATE TABLE `{table_name}`"))
+            finally:
+                await conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))

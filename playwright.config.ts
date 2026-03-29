@@ -9,6 +9,9 @@ export default defineConfig({
   reporter: process.env.CI ? "html" : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+    // E2E_API_BASE_URL: Backend API base URL for direct API calls in tests.
+    // Defaults to "http://localhost:8000". When using Docker Compose E2E profile,
+    // backend-e2e is mapped to port 8001 (e.g. E2E_API_BASE_URL=http://localhost:8001).
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },

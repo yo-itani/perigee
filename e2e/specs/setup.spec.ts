@@ -6,7 +6,11 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { resetDatabase, getSystemStatus } from "../helpers/api.helper";
+import {
+  resetDatabase,
+  getSystemStatus,
+  setupFirstUser,
+} from "../helpers/api.helper";
 
 test.describe("Initial setup flow", () => {
   test.beforeEach(async () => {
@@ -84,7 +88,6 @@ test.describe("Initial setup flow", () => {
     page,
   }) => {
     // First, set up the system
-    const { setupFirstUser } = await import("../helpers/api.helper");
     await setupFirstUser({
       name: "Already Setup",
       email: "already@e2e-test.example.com",
