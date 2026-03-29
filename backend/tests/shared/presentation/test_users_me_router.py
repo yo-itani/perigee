@@ -11,6 +11,7 @@ from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
 from shared.presentation.router import router
+from tests.helpers import auth_headers
 
 # ---------------------------------------------------------------------------
 # Setup: build a test app with in-memory dependencies
@@ -49,20 +50,18 @@ _repo = InMemoryUserRepository(users=[_admin_user, _member_user, _inactive_user]
 
 
 def _build_app() -> FastAPI:
-    from fastapi import Header, HTTPException
+    from fastapi import HTTPException, Request
 
+    from foundation.auth.dependencies import parse_user_id_from_jwt
     from shared.application.update_my_profile_use_case import UpdateMyProfileUseCase
     from shared.presentation.dependencies import get_update_my_profile_use_case
 
     app = FastAPI()
     app.include_router(router)
 
-    async def fake_get_current_user(
-        x_user_id: str | None = Header(default=None),
-    ) -> User:
-        if x_user_id is None:
-            raise HTTPException(status_code=401, detail="Missing auth")
-        user = await _repo.get_by_id(UserId.from_str(x_user_id))
+    async def fake_get_current_user(request: Request) -> User:
+        parsed_id = await parse_user_id_from_jwt(request)
+        user = await _repo.get_by_id(parsed_id)
         if user is None:
             raise HTTPException(status_code=403, detail="User not found")
         if not user.is_active:
@@ -95,7 +94,7 @@ class TestGetMyProfile:
     @pytest.mark.asyncio
     async def test_returns_admin_profile(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/users/me", headers={"X-User-Id": _ADMIN_ID})
+            resp = await client.get("/users/me", headers=auth_headers(_ADMIN_ID))
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == _ADMIN_ID
@@ -108,7 +107,7 @@ class TestGetMyProfile:
     @pytest.mark.asyncio
     async def test_returns_member_profile(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/users/me", headers={"X-User-Id": _MEMBER_ID})
+            resp = await client.get("/users/me", headers=auth_headers(_MEMBER_ID))
         assert resp.status_code == 200
         data = resp.json()
         assert data["role"] == "member"
@@ -132,7 +131,7 @@ class TestUpdateMyProfile:
         async with await _client() as client:
             resp = await client.put(
                 "/users/me",
-                headers={"X-User-Id": _MEMBER_ID},
+                headers=auth_headers(_MEMBER_ID),
                 json={"name": "Updated Name", "email": "updated@example.com"},
             )
         assert resp.status_code == 200
@@ -147,7 +146,7 @@ class TestUpdateMyProfile:
         async with await _client() as client:
             resp = await client.put(
                 "/users/me",
-                headers={"X-User-Id": _ADMIN_ID},
+                headers=auth_headers(_ADMIN_ID),
                 json={"name": "Admin Updated", "email": "admin-new@example.com"},
             )
         assert resp.status_code == 200
@@ -167,7 +166,7 @@ class TestUpdateMyProfile:
         async with await _client() as client:
             resp = await client.put(
                 "/users/me",
-                headers={"X-User-Id": _MEMBER_ID},
+                headers=auth_headers(_MEMBER_ID),
                 json={"name": "Test", "email": "not-an-email"},
             )
         assert resp.status_code == 422
@@ -177,16 +176,14 @@ class TestUpdateMyProfile:
         """User can update their profile while keeping the same email."""
         # First read the current email
         async with await _client() as client:
-            get_resp = await client.get(
-                "/users/me", headers={"X-User-Id": _ADMIN_ID}
-            )
+            get_resp = await client.get("/users/me", headers=auth_headers(_ADMIN_ID))
         current_email = get_resp.json()["email"]
 
         # Update name but keep the same email
         async with await _client() as client:
             resp = await client.put(
                 "/users/me",
-                headers={"X-User-Id": _ADMIN_ID},
+                headers=auth_headers(_ADMIN_ID),
                 json={"name": "Admin Same Email", "email": current_email},
             )
         assert resp.status_code == 200
@@ -197,8 +194,6 @@ class TestUpdateMyProfile:
     async def test_deactivated_user_returns_403(self) -> None:
         """Deactivated user cannot access API endpoints."""
         async with await _client() as client:
-            resp = await client.get(
-                "/users/me", headers={"X-User-Id": _INACTIVE_ID}
-            )
+            resp = await client.get("/users/me", headers=auth_headers(_INACTIVE_ID))
         assert resp.status_code == 403
         assert resp.json()["detail"] == "User account is deactivated"

@@ -14,6 +14,7 @@ from httpx import ASGITransport, AsyncClient
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
+from tests.helpers import auth_headers
 
 pytestmark = pytest.mark.integration
 
@@ -45,7 +46,7 @@ class TestCreatePostHocRecordAuth:
     """POST /records/post-hoc -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
@@ -69,7 +70,7 @@ class TestCreatePostHocRecord:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": counterpart_id,
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -92,7 +93,7 @@ class TestSuggestedViewersAuth:
     """GET /records/{id}/suggested-viewers -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -113,7 +114,7 @@ class TestSuggestedViewers:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}/suggested-viewers",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 404
@@ -127,7 +128,7 @@ class TestSuggestedViewers:
             # First create a record
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -138,7 +139,7 @@ class TestSuggestedViewers:
             # Then get suggested viewers
             response = await client.get(
                 f"/records/{record_id}/suggested-viewers",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 200
@@ -156,7 +157,7 @@ class TestSetViewersAuth:
     """PUT /records/{id}/viewers -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -178,7 +179,7 @@ class TestSetViewersIntegration:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": [str(uuid.uuid4())]},
             )
 
@@ -192,7 +193,7 @@ class TestSetViewersIntegration:
             # First create a record
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -203,7 +204,7 @@ class TestSetViewersIntegration:
             # Then set viewers
             response = await client.put(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": [viewer_id]},
             )
 
@@ -221,7 +222,7 @@ class TestPublishRecordAuth:
     """POST /records/{id}/publish -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -243,7 +244,7 @@ class TestPublishRecordIntegration:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
                 f"/records/{record_id}/publish",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": []},
             )
 
@@ -257,7 +258,7 @@ class TestPublishRecordIntegration:
             # First create a record
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -268,7 +269,7 @@ class TestPublishRecordIntegration:
             # Then publish
             response = await client.post(
                 f"/records/{record_id}/publish",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": [viewer_id]},
             )
 
@@ -283,7 +284,7 @@ class TestPublishRecordIntegration:
             # Create
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -294,14 +295,14 @@ class TestPublishRecordIntegration:
             # Publish first time
             await client.post(
                 f"/records/{record_id}/publish",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": []},
             )
 
             # Publish again
             response = await client.post(
                 f"/records/{record_id}/publish",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": []},
             )
 
@@ -317,7 +318,7 @@ class TestMarkRecordAsViewedAuth:
     """POST /records/{id}/viewed -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -338,7 +339,7 @@ class TestMarkRecordAsViewedIntegration:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
                 f"/records/{record_id}/viewed",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 404
@@ -350,7 +351,7 @@ class TestMarkRecordAsViewedIntegration:
             # Create a record
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -361,7 +362,7 @@ class TestMarkRecordAsViewedIntegration:
             # Mark as viewed
             response = await client.post(
                 f"/records/{record_id}/viewed",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 200
@@ -376,7 +377,7 @@ class TestMarkRecordAsViewedIntegration:
             # Create a record as organizer
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -387,7 +388,7 @@ class TestMarkRecordAsViewedIntegration:
             # Stranger tries to mark as viewed
             response = await client.post(
                 f"/records/{record_id}/viewed",
-                headers={"X-User-Id": stranger_id},
+                headers=auth_headers(stranger_id),
             )
 
         assert response.status_code == 403
@@ -401,7 +402,7 @@ class TestMarkRecordAsViewedIntegration:
             # Create and publish
             create_response = await client.post(
                 "/records/post-hoc",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "counterpart_id": str(uuid.uuid4()),
                     "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -410,18 +411,18 @@ class TestMarkRecordAsViewedIntegration:
             record_id = create_response.json()["record_id"]
             await client.post(
                 f"/records/{record_id}/publish",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"viewer_ids": []},
             )
 
             # Mark as viewed twice
             response1 = await client.post(
                 f"/records/{record_id}/viewed",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
             response2 = await client.post(
                 f"/records/{record_id}/viewed",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response1.status_code == 200

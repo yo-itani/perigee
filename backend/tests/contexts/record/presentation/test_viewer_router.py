@@ -30,6 +30,7 @@ from contexts.record.infrastructure.sqlalchemy_record_repository import (
 )
 from foundation.infrastructure.sqlalchemy_unit_of_work import SqlAlchemyUnitOfWork
 from shared.domain.value_objects import UserId
+from tests.helpers import auth_headers
 
 pytestmark = pytest.mark.integration
 
@@ -75,7 +76,7 @@ async def _create_record(
     """Helper: create a post-hoc record and return its record_id."""
     response = await client.post(
         "/records/post-hoc",
-        headers={"X-User-Id": organizer_id},
+        headers=auth_headers(organizer_id),
         json={
             "counterpart_id": counterpart_id,
             "conducted_at": "2026-03-20T14:00:00+09:00",
@@ -123,7 +124,7 @@ class TestGetRecordDetail:
     """Tests for GET /records/{record_id}."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -140,7 +141,7 @@ class TestGetRecordDetail:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{fake_id}",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 404
@@ -154,7 +155,7 @@ class TestGetRecordDetail:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 200
@@ -176,7 +177,7 @@ class TestGetRecordDetail:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}",
-                headers={"X-User-Id": counterpart_id},
+                headers=auth_headers(counterpart_id),
             )
 
         assert response.status_code == 403
@@ -195,7 +196,7 @@ class TestGetRecordDetail:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}",
-                headers={"X-User-Id": counterpart_id},
+                headers=auth_headers(counterpart_id),
             )
 
         assert response.status_code == 200
@@ -217,7 +218,7 @@ class TestGetRecordDetail:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}",
-                headers={"X-User-Id": unrelated_user_id},
+                headers=auth_headers(unrelated_user_id),
             )
 
         assert response.status_code == 403
@@ -232,7 +233,7 @@ class TestListRecordComments:
     """Tests for GET /records/{record_id}/comments."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -249,7 +250,7 @@ class TestListRecordComments:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{fake_id}/comments",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 404
@@ -263,7 +264,7 @@ class TestListRecordComments:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}/comments",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 422
@@ -282,7 +283,7 @@ class TestListRecordComments:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}/comments",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 200
@@ -302,7 +303,7 @@ class TestListRecordComments:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}/comments",
-                headers={"X-User-Id": counterpart_id},
+                headers=auth_headers(counterpart_id),
             )
 
         assert response.status_code == 200
@@ -321,7 +322,7 @@ class TestListRecordComments:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}/comments",
-                headers={"X-User-Id": unrelated_user_id},
+                headers=auth_headers(unrelated_user_id),
             )
 
         assert response.status_code == 403
@@ -336,7 +337,7 @@ class TestGetViewers:
     """Tests for GET /records/{record_id}/viewers."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         record_id = str(uuid.uuid4())
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
@@ -353,7 +354,7 @@ class TestGetViewers:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{fake_id}/viewers",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 404
@@ -367,7 +368,7 @@ class TestGetViewers:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 200
@@ -387,7 +388,7 @@ class TestGetViewers:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": counterpart_id},
+                headers=auth_headers(counterpart_id),
             )
 
         assert response.status_code == 200
@@ -401,7 +402,7 @@ class TestGetViewers:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": counterpart_id},
+                headers=auth_headers(counterpart_id),
             )
 
         assert response.status_code == 403
@@ -415,7 +416,7 @@ class TestGetViewers:
             record_id = await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 f"/records/{record_id}/viewers",
-                headers={"X-User-Id": unrelated_user_id},
+                headers=auth_headers(unrelated_user_id),
             )
 
         assert response.status_code == 403
@@ -432,7 +433,7 @@ class TestListOneOnOneHistory:
     async def test_returns_401_without_auth_header(
         self, app, organizer_id: str, counterpart_id: str
     ) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
@@ -453,7 +454,7 @@ class TestListOneOnOneHistory:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/records/history",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
                 params={
                     "organizer_id": organizer_id,
                     "counterpart_id": counterpart_id,
@@ -474,7 +475,7 @@ class TestListOneOnOneHistory:
             await _create_record(client, organizer_id, counterpart_id)
             response = await client.get(
                 "/records/history",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
                 params={
                     "organizer_id": organizer_id,
                     "counterpart_id": counterpart_id,
@@ -500,7 +501,7 @@ class TestListOneOnOneHistory:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/records/history",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
                 params={
                     "organizer_id": organizer_id,
                     "counterpart_id": counterpart_id,
@@ -527,7 +528,7 @@ class TestListOneOnOneHistory:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/records/history",
-                headers={"X-User-Id": unrelated_user_id},
+                headers=auth_headers(unrelated_user_id),
                 params={
                     "organizer_id": organizer_id,
                     "counterpart_id": counterpart_id,
@@ -547,7 +548,7 @@ class TestListOneOnOneHistory:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/records/history",
-                headers={"X-User-Id": organizer_id},
+                headers=auth_headers(organizer_id),
             )
 
         assert response.status_code == 422
