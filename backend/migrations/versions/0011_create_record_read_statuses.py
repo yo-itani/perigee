@@ -54,8 +54,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "idx_record_read_statuses_user_id",
-        table_name="record_read_statuses",
-    )
     op.drop_table("record_read_statuses")

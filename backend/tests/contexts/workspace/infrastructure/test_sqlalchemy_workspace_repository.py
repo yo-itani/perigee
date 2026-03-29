@@ -205,18 +205,10 @@ class TestAlembicMigration:
                 assert "workspaces" in tables
                 assert "memberships" in tables
 
-            # Downgrade to base.
-            # The downgrade uses its own DB connection inside asyncio.run(),
-            # so we cannot set session-level FK checks.  Instead, we drop
-            # all tables manually with FK checks disabled, which is
-            # equivalent to verifying that the downgrade *would* work.
-            async with session_factory() as s:
-                await s.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
-                result = await s.execute(text("SHOW TABLES"))
-                for (table_name,) in result.fetchall():
-                    await s.execute(text(f"DROP TABLE IF EXISTS `{table_name}`"))
-                await s.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
-                await s.commit()
+            # Downgrade to base
+            await loop.run_in_executor(
+                None, command.downgrade, alembic_cfg, "base"
+            )
 
             # Verify tables are gone
             async with session_factory() as s:
