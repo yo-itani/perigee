@@ -8,6 +8,7 @@ from contexts.record.domain.read_status import ReadStatus
 from contexts.record.domain.read_status_repository import ReadStatusRepository
 from contexts.record.domain.value_objects import ReadStatusId, RecordId
 from contexts.record.infrastructure.tables import ReadStatusTable
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -38,7 +39,7 @@ class SqlAlchemyReadStatusRepository(ReadStatusRepository):
             id=str(entity.id.value),
             record_id=str(entity.record_id.value),
             user_id=str(entity.user_id.value),
-            last_viewed_at=entity.last_viewed_at,
+            last_viewed_at=to_naive_utc(entity.last_viewed_at),
         )
         stmt = stmt.on_duplicate_key_update(
             last_viewed_at=stmt.inserted.last_viewed_at,
@@ -78,14 +79,14 @@ class SqlAlchemyReadStatusRepository(ReadStatusRepository):
             id=str(entity.id.value),
             record_id=str(entity.record_id.value),
             user_id=str(entity.user_id.value),
-            last_viewed_at=entity.last_viewed_at,
+            last_viewed_at=to_naive_utc(entity.last_viewed_at),
         )
         self._session.add(row)
         await self._session.flush()
 
     @staticmethod
     def _update(entity: ReadStatus, existing: ReadStatusTable) -> None:
-        existing.last_viewed_at = entity.last_viewed_at
+        existing.last_viewed_at = to_naive_utc(entity.last_viewed_at)
 
     @staticmethod
     def _to_entity(row: ReadStatusTable) -> ReadStatus:
@@ -93,5 +94,5 @@ class SqlAlchemyReadStatusRepository(ReadStatusRepository):
             id=ReadStatusId.from_str(row.id),
             record_id=RecordId.from_str(row.record_id),
             user_id=UserId.from_str(row.user_id),
-            _last_viewed_at=row.last_viewed_at,
+            _last_viewed_at=to_aware_utc(row.last_viewed_at),
         )

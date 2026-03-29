@@ -7,6 +7,7 @@ from contexts.record.domain.action_item import ActionItem
 from contexts.record.domain.action_item_repository import ActionItemRepository
 from contexts.record.domain.value_objects import ActionItemId, ActionItemTitle, RecordId
 from contexts.record.infrastructure.tables import ActionItemTable, RecordTable
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 _DEFAULT_PENDING_LIMIT = 50
@@ -90,15 +91,15 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
             record_id=str(entity.record_id.value),
             title=entity.title.value,
             is_completed=entity.is_completed,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            created_at=to_naive_utc(entity.created_at),
+            updated_at=to_naive_utc(entity.updated_at),
         )
         self._session.add(action_item_row)
         await self._session.flush()
 
     async def _update(self, entity: ActionItem, existing: ActionItemTable) -> None:
         existing.is_completed = entity.is_completed
-        existing.updated_at = entity.updated_at
+        existing.updated_at = to_naive_utc(entity.updated_at)
         await self._session.flush()
 
     @staticmethod
@@ -109,6 +110,6 @@ class SqlAlchemyActionItemRepository(ActionItemRepository):
             record_id=RecordId.from_str(row.record_id),
             title=ActionItemTitle(row.title),
             _is_completed=row.is_completed,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

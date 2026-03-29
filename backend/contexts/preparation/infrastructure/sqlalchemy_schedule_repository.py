@@ -21,6 +21,7 @@ from contexts.preparation.infrastructure.tables import (
     ConfirmationRequestTable,
     ScheduleTable,
 )
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -57,6 +58,7 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
     ) -> list[Schedule]:
         user_id_str = str(user_id.value)
         status_values = [s.value for s in statuses]
+        now_naive = to_naive_utc(now)
         stmt = (
             select(ScheduleTable)
             .where(
@@ -65,7 +67,7 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                     ScheduleTable.counterpart_id == user_id_str,
                 ),
                 ScheduleTable.status.in_(status_values),
-                ScheduleTable.scheduled_at >= now,
+                ScheduleTable.scheduled_at >= now_naive,
             )
             .order_by(ScheduleTable.scheduled_at.asc())
             .limit(limit)
@@ -77,10 +79,11 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
     async def list_confirmed_upcoming(
         self, now: datetime, lookahead_minutes: int
     ) -> list[Schedule]:
-        upper = now + timedelta(minutes=lookahead_minutes)
+        now_naive = to_naive_utc(now)
+        upper = now_naive + timedelta(minutes=lookahead_minutes)
         stmt = select(ScheduleTable).where(
             ScheduleTable.status == ScheduleStatus.CONFIRMED.value,
-            ScheduleTable.scheduled_at > now,
+            ScheduleTable.scheduled_at > now_naive,
             ScheduleTable.scheduled_at <= upper,
         )
         result = await self._session.execute(stmt)
@@ -109,10 +112,10 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                 else None
             ),
             title=entity.title.value,
-            scheduled_at=entity.scheduled_at,
+            scheduled_at=to_naive_utc(entity.scheduled_at),
             status=entity.status.value,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            created_at=to_naive_utc(entity.created_at),
+            updated_at=to_naive_utc(entity.updated_at),
         )
         for cr in entity.confirmation_requests:
             cr_row = ConfirmationRequestTable(
@@ -120,18 +123,18 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                 schedule_id=str(entity.id.value),
                 request_type=cr.request_type.value,
                 requested_by=str(cr.requested_by.value),
-                proposed_at=cr.proposed_at,
+                proposed_at=to_naive_utc(cr.proposed_at),
                 resolution=cr.resolution.value,
                 resolved_by=str(cr.resolved_by.value) if cr.resolved_by else None,
-                created_at=cr.created_at,
-                updated_at=entity.created_at,
+                created_at=to_naive_utc(cr.created_at),
+                updated_at=to_naive_utc(entity.created_at),
             )
             schedule_row.confirmation_requests.append(cr_row)
         self._session.add(schedule_row)
         await self._session.flush()
 
     async def _update(self, entity: Schedule, existing: ScheduleTable) -> None:
-        now = datetime.now(UTC)
+        now_naive = to_naive_utc(datetime.now(UTC))
 
         existing.organizer_id = str(entity.organizer_id.value)
         existing.counterpart_id = str(entity.counterpart_id.value)
@@ -139,9 +142,9 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
             str(entity.schedule_group_id.value) if entity.schedule_group_id else None
         )
         existing.title = entity.title.value
-        existing.scheduled_at = entity.scheduled_at
+        existing.scheduled_at = to_naive_utc(entity.scheduled_at)
         existing.status = entity.status.value
-        existing.updated_at = now
+        existing.updated_at = now_naive
 
         # Reconcile confirmation requests
         existing_cr_map: dict[str, ConfirmationRequestTable] = {
@@ -156,23 +159,23 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                 db_cr = existing_cr_map[cr_id]
                 db_cr.request_type = cr.request_type.value
                 db_cr.requested_by = str(cr.requested_by.value)
-                db_cr.proposed_at = cr.proposed_at
+                db_cr.proposed_at = to_naive_utc(cr.proposed_at)
                 db_cr.resolution = cr.resolution.value
                 db_cr.resolved_by = (
                     str(cr.resolved_by.value) if cr.resolved_by else None
                 )
-                db_cr.updated_at = now
+                db_cr.updated_at = now_naive
             else:
                 new_cr = ConfirmationRequestTable(
                     id=cr_id,
                     schedule_id=str(entity.id.value),
                     request_type=cr.request_type.value,
                     requested_by=str(cr.requested_by.value),
-                    proposed_at=cr.proposed_at,
+                    proposed_at=to_naive_utc(cr.proposed_at),
                     resolution=cr.resolution.value,
                     resolved_by=(str(cr.resolved_by.value) if cr.resolved_by else None),
-                    created_at=cr.created_at,
-                    updated_at=cr.created_at,
+                    created_at=to_naive_utc(cr.created_at),
+                    updated_at=to_naive_utc(cr.created_at),
                 )
                 existing.confirmation_requests.append(new_cr)
 
@@ -189,12 +192,12 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                 id=ConfirmationRequestId.from_str(cr.id),
                 request_type=ConfirmationRequestType(cr.request_type),
                 requested_by=UserId.from_str(cr.requested_by),
-                proposed_at=cr.proposed_at,
+                proposed_at=to_aware_utc(cr.proposed_at),
                 _resolution=ConfirmationResolution(cr.resolution),
                 _resolved_by=(
                     UserId.from_str(cr.resolved_by) if cr.resolved_by else None
                 ),
-                created_at=cr.created_at,
+                created_at=to_aware_utc(cr.created_at),
             )
             for cr in row.confirmation_requests
         ]
@@ -208,9 +211,9 @@ class SqlAlchemyScheduleRepository(ScheduleRepository):
                 else None
             ),
             _title=ScheduleTitle(row.title),
-            _scheduled_at=row.scheduled_at,
+            _scheduled_at=to_aware_utc(row.scheduled_at),
             _status=ScheduleStatus(row.status),
             _confirmation_requests=confirmation_requests,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

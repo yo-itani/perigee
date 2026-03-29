@@ -14,6 +14,7 @@ from contexts.notification.domain.value_objects import (
     NotificationType,
 )
 from contexts.notification.infrastructure.tables import NotificationRecordTable
+from foundation.datetime_utils import to_aware_utc, to_aware_utc_optional, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -62,13 +63,13 @@ class SqlAlchemyNotificationRecordRepository(NotificationRecordRepository):
                 body=record.body,
                 link=record.link,
                 is_read=record.is_read,
-                read_at=record.read_at,
-                created_at=record.created_at,
+                read_at=(to_naive_utc(record.read_at) if record.read_at else None),
+                created_at=to_naive_utc(record.created_at),
             )
             self._session.add(row)
         else:
             existing.is_read = record.is_read
-            existing.read_at = record.read_at
+            existing.read_at = to_naive_utc(record.read_at) if record.read_at else None
 
         await self._session.flush()
 
@@ -82,6 +83,6 @@ class SqlAlchemyNotificationRecordRepository(NotificationRecordRepository):
             body=row.body,
             link=row.link,
             _is_read=row.is_read,
-            _read_at=row.read_at,
-            created_at=row.created_at,
+            _read_at=to_aware_utc_optional(row.read_at),
+            created_at=to_aware_utc(row.created_at),
         )

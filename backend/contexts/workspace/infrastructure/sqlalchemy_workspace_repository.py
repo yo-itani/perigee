@@ -14,6 +14,7 @@ from contexts.workspace.domain.workspace import Membership, Workspace
 from contexts.workspace.domain.workspace_name import WorkspaceName
 from contexts.workspace.domain.workspace_repository import WorkspaceRepository
 from contexts.workspace.infrastructure.tables import MembershipTable, WorkspaceTable
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -80,12 +81,14 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
     # ------------------------------------------------------------------
 
     async def _insert(self, entity: Workspace) -> None:
+        created_naive = to_naive_utc(entity.created_at)
+        updated_naive = to_naive_utc(entity.updated_at)
         workspace_row = WorkspaceTable(
             id=str(entity.id.value),
             name=entity.name.value,
             parent_id=str(entity.parent_id.value) if entity.parent_id else None,
-            created_at=entity.created_at,
-            updated_at=entity.updated_at,
+            created_at=created_naive,
+            updated_at=updated_naive,
         )
         for m in entity.memberships:
             membership_row = MembershipTable(
@@ -93,20 +96,20 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
                 workspace_id=str(entity.id.value),
                 user_id=str(m.user_id.value),
                 role=m.role.value,
-                created_at=entity.created_at,
-                updated_at=entity.updated_at,
+                created_at=created_naive,
+                updated_at=updated_naive,
             )
             workspace_row.memberships.append(membership_row)
         self._session.add(workspace_row)
         await self._session.flush()
 
     async def _update(self, entity: Workspace, existing: WorkspaceTable) -> None:
-        now = datetime.now(UTC)
+        now_naive = to_naive_utc(datetime.now(UTC))
 
         # Update workspace fields (last-write-wins)
         existing.name = entity.name.value
         existing.parent_id = str(entity.parent_id.value) if entity.parent_id else None
-        existing.updated_at = now
+        existing.updated_at = now_naive
 
         # Reconcile memberships: build a map of current DB memberships
         existing_membership_map: dict[str, MembershipTable] = {
@@ -122,7 +125,7 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
                 db_m = existing_membership_map[m_id]
                 db_m.user_id = str(m.user_id.value)
                 db_m.role = m.role.value
-                db_m.updated_at = now
+                db_m.updated_at = now_naive
             else:
                 # Insert new membership
                 new_m = MembershipTable(
@@ -130,8 +133,8 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
                     workspace_id=str(entity.id.value),
                     user_id=str(m.user_id.value),
                     role=m.role.value,
-                    created_at=now,
-                    updated_at=now,
+                    created_at=now_naive,
+                    updated_at=now_naive,
                 )
                 existing.memberships.append(new_m)
 
@@ -157,6 +160,6 @@ class SqlAlchemyWorkspaceRepository(WorkspaceRepository):
             _name=WorkspaceName(row.name),
             _parent_id=WorkspaceId.from_str(row.parent_id) if row.parent_id else None,
             _memberships=memberships,
-            created_at=row.created_at,
-            _updated_at=row.updated_at,
+            created_at=to_aware_utc(row.created_at),
+            _updated_at=to_aware_utc(row.updated_at),
         )

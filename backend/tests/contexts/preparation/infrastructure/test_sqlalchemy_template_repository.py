@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ from tests.helpers import create_test_user
 
 pytestmark = pytest.mark.integration
 
-NOW = datetime(2026, 4, 1, 10, 0)
+NOW = datetime(2026, 4, 1, 10, 0, tzinfo=UTC)
 
 
 def _make_template(
@@ -119,7 +119,7 @@ class TestUpdateTemplate:
                 AgendaTemplate("New Topic A"),
                 AgendaTemplate("New Topic B"),
             ],
-            now=datetime(2026, 4, 2, 10, 0),
+            now=datetime(2026, 4, 2, 10, 0, tzinfo=UTC),
         )
         await repo.save(template)
         await session.commit()
@@ -154,7 +154,7 @@ class TestUpdateTemplate:
             name=TemplateName("Empty Template"),
             default_counterparts=[],
             agenda_templates=[],
-            now=datetime(2026, 4, 2, 10, 0),
+            now=datetime(2026, 4, 2, 10, 0, tzinfo=UTC),
         )
         await repo.save(template)
         await session.commit()

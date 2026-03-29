@@ -3,7 +3,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel
+from pydantic import AwareDatetime, BaseModel, Field, field_validator
+
+from foundation.datetime_utils import normalize_to_utc
 
 # ---------------------------------------------------------------------------
 # ScheduleGroup -- POST /schedule-groups
@@ -14,7 +16,15 @@ class CounterpartScheduleSchema(BaseModel):
     """Per-counterpart scheduling parameters."""
 
     counterpart_id: UUID
-    scheduled_at: AwareDatetime
+    scheduled_at: AwareDatetime = Field(
+        description="Timezone-aware ISO 8601 required; normalized to UTC.",
+        json_schema_extra={"example": "2026-03-29T15:30:00+09:00"},
+    )
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class CreateScheduleGroupRequest(BaseModel):
@@ -79,8 +89,16 @@ class CreateScheduleRequest(BaseModel):
     """Request body for POST /schedules."""
 
     counterpart_id: UUID
-    scheduled_at: AwareDatetime
+    scheduled_at: AwareDatetime = Field(
+        description="Timezone-aware ISO 8601 required; normalized to UTC.",
+        json_schema_extra={"example": "2026-03-29T15:30:00+09:00"},
+    )
     title: str
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class CreateScheduleResponse(BaseModel):
@@ -98,9 +116,17 @@ class SendConsultationRequestRequest(BaseModel):
     """Request body for POST /schedules/consultation-request."""
 
     organizer_id: UUID
-    scheduled_at: AwareDatetime
+    scheduled_at: AwareDatetime = Field(
+        description="Timezone-aware ISO 8601 required; normalized to UTC.",
+        json_schema_extra={"example": "2026-03-29T15:30:00+09:00"},
+    )
     title: str
     agenda_topics: list[str]
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def _normalize_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class SendConsultationRequestResponse(BaseModel):
@@ -121,8 +147,14 @@ class TemplateListItemSchema(BaseModel):
     name: str
     default_counterpart_ids: list[UUID]
     agenda_topics: list[str]
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
+    updated_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class ListTemplatesResponse(BaseModel):
@@ -139,8 +171,14 @@ class GetTemplateResponse(BaseModel):
     name: str
     default_counterpart_ids: list[UUID]
     agenda_topics: list[str]
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
+    updated_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class SaveTemplateRequest(BaseModel):
@@ -168,7 +206,10 @@ class UpcomingScheduleItemSchema(BaseModel):
     schedule_id: UUID
     organizer_id: UUID
     counterpart_id: UUID
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
     status: str
     title: str
     schedule_group_id: UUID | None
@@ -192,11 +233,20 @@ class GetScheduleDetailResponse(BaseModel):
     organizer_id: UUID
     counterpart_id: UUID
     title: str
-    scheduled_at: datetime
+    scheduled_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
     status: str
     schedule_group_id: UUID | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
+    updated_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -210,7 +260,10 @@ class AgendaCommentSchema(BaseModel):
     comment_id: UUID
     author_id: UUID
     body: str
-    created_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class AgendaItemSchema(BaseModel):
@@ -221,7 +274,10 @@ class AgendaItemSchema(BaseModel):
     added_by: UUID
     added_by_tag: str
     comments: list[AgendaCommentSchema]
-    created_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class ListScheduleAgendasResponse(BaseModel):
@@ -238,7 +294,15 @@ class ListScheduleAgendasResponse(BaseModel):
 class RescheduleRequest(BaseModel):
     """Request body for POST /schedules/{schedule_id}/reschedule."""
 
-    new_scheduled_at: AwareDatetime
+    new_scheduled_at: AwareDatetime = Field(
+        description="Timezone-aware ISO 8601 required; normalized to UTC.",
+        json_schema_extra={"example": "2026-03-29T15:30:00+09:00"},
+    )
+
+    @field_validator("new_scheduled_at")
+    @classmethod
+    def _normalize_new_scheduled_at_to_utc(cls, v: datetime) -> datetime:
+        return normalize_to_utc(v)
 
 
 class RenameScheduleRequest(BaseModel):
@@ -287,14 +351,20 @@ class ActionItemSummarySchema(BaseModel):
     action_item_id: UUID
     content: str
     is_completed: bool
-    created_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class GetLastSessionSummaryResponse(BaseModel):
     """Response body for GET /records/last-summary."""
 
     record_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
     memo_excerpt: str
     action_items: list[ActionItemSummarySchema]
 
@@ -304,10 +374,16 @@ class PendingActionItemSchema(BaseModel):
 
     action_item_id: UUID
     content: str
-    created_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
     record_id: UUID
     organizer_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class ListPendingActionItemsResponse(BaseModel):
@@ -321,10 +397,16 @@ class AllPendingActionItemSchema(BaseModel):
 
     action_item_id: UUID
     content: str
-    created_at: datetime
+    created_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
     record_id: UUID
     counterpart_id: UUID
-    conducted_at: datetime
+    conducted_at: AwareDatetime = Field(
+        description="Returned in UTC.",
+        json_schema_extra={"example": "2026-03-29T06:30:00Z"},
+    )
 
 
 class ListAllPendingActionItemsResponse(BaseModel):

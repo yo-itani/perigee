@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,8 +27,8 @@ async def _create_record(
     record = Record.create(
         organizer_id=organizer,
         counterpart_id=counterpart,
-        conducted_at=datetime(2026, 3, 20, 14, 0),
-        now=datetime(2026, 3, 20, 10, 0),
+        conducted_at=datetime(2026, 3, 20, 14, 0, tzinfo=UTC),
+        now=datetime(2026, 3, 20, 10, 0, tzinfo=UTC),
     )
     repo = SqlAlchemyRecordRepository(session)
     await repo.save(record)
@@ -51,7 +51,7 @@ class TestSaveAndGetById:
             title=ActionItemTitle("Review PR #42"),
             actor_id=organizer,
             organizer_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(action_item)
         await session.commit()
@@ -88,7 +88,7 @@ class TestActionItemUpdate:
             title=ActionItemTitle("Write tests"),
             actor_id=organizer,
             organizer_id=organizer,
-            now=datetime(2026, 3, 20, 15, 0),
+            now=datetime(2026, 3, 20, 15, 0, tzinfo=UTC),
         )
         await repo.save(action_item)
         await session.commit()
@@ -96,7 +96,7 @@ class TestActionItemUpdate:
         # Complete the action item
         action_item.complete(
             actor_id=counterpart,
-            now=datetime(2026, 3, 20, 16, 0),
+            now=datetime(2026, 3, 20, 16, 0, tzinfo=UTC),
         )
         await repo.save(action_item)
         await session.commit()

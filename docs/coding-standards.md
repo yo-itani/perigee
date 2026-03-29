@@ -46,6 +46,25 @@
 
 ### datetime の扱い
 
+#### ポリシー（全レイヤー共通）
+
+- **ドメイン層**: `aware datetime (tz=UTC)` のみ使用。naive datetime は禁止
+- **DB（MariaDB `DATETIME(6)`）**: naive UTC で保存する
+- **API 入力**: `AwareDatetime`（Pydantic）必須。オフセット付き ISO 8601 のみ受け付け
+- **API 出力**: `AwareDatetime`（UTC 明示、`Z` サフィックス）で返す
+
+#### レイヤー境界の変換
+
+| 方向 | 変換 | 使用関数 |
+|---|---|---|
+| Presentation → Domain | aware datetime を UTC aware に正規化 | Pydantic スキーマの `field_validator` で `normalize_to_utc()` を明示呼出 |
+| Domain → Infrastructure/DB | UTC aware → naive UTC | `to_naive_utc()` |
+| Infrastructure/DB → Domain | naive UTC → UTC aware | `to_aware_utc()` / `to_aware_utc_optional()` |
+| Domain → Presentation | UTC aware のまま返却 | Schema で `AwareDatetime` |
+
+- 変換ユーティリティは `foundation/datetime_utils.py` に定義
+- naive datetime を aware として扱おうとした場合（またはその逆）は即座に例外を投げる（暗黙変換しない）
+
 #### ドメイン層
 
 - **ファクトリメソッド（`create()`）**: `now: datetime | None = None` で受け取り、省略時は `datetime.now(UTC)` をフォールバック
@@ -58,7 +77,9 @@
 - DB セッションは `connect_args={"init_command": "SET time_zone='+00:00'"}` で UTC 固定
 - `NOW()` / `CURRENT_TIMESTAMP` は常に UTC を返す
 - アプリ層で datetime を生成する場合は `datetime.now(UTC)` を使用する
-- 表示層で各ユーザーのタイムゾーンに変換する
+- `TimestampMixin` の `created_at` / `updated_at` は `DATETIME(fsp=6)` で統一する
+- リポジトリの `_to_entity` では `to_aware_utc()` で naive → aware 復元する
+- リポジトリの `_insert` / `_update` では `to_naive_utc()` で aware → naive 変換する
 
 ### カラム規約
 

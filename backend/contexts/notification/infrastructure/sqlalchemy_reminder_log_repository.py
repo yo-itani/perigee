@@ -12,6 +12,7 @@ from contexts.notification.domain.reminder_log_repository import ReminderLogRepo
 from contexts.notification.domain.value_objects import ReminderLogId
 from contexts.notification.infrastructure.tables import ReminderLogTable
 from contexts.preparation.domain.value_objects import ScheduleId
+from foundation.datetime_utils import to_aware_utc, to_naive_utc
 from shared.domain.value_objects import UserId
 
 
@@ -30,7 +31,7 @@ class SqlAlchemyReminderLogRepository(ReminderLogRepository):
         stmt = select(ReminderLogTable.id).where(
             ReminderLogTable.schedule_id == str(schedule_id.value),
             ReminderLogTable.user_id == str(user_id.value),
-            ReminderLogTable.scheduled_at == scheduled_at,
+            ReminderLogTable.scheduled_at == to_naive_utc(scheduled_at),
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
@@ -40,8 +41,8 @@ class SqlAlchemyReminderLogRepository(ReminderLogRepository):
             id=str(log.id.value),
             schedule_id=str(log.schedule_id.value),
             user_id=str(log.user_id.value),
-            scheduled_at=log.scheduled_at,
-            sent_at=log.sent_at,
+            scheduled_at=to_naive_utc(log.scheduled_at),
+            sent_at=to_naive_utc(log.sent_at),
             reminder_minutes_before=log.reminder_minutes_before,
         )
         self._session.add(row)
@@ -53,7 +54,7 @@ class SqlAlchemyReminderLogRepository(ReminderLogRepository):
             id=ReminderLogId.from_str(row.id),
             schedule_id=ScheduleId.from_str(row.schedule_id),
             user_id=UserId.from_str(row.user_id),
-            scheduled_at=row.scheduled_at,
-            _sent_at=row.sent_at,
+            scheduled_at=to_aware_utc(row.scheduled_at),
+            _sent_at=to_aware_utc(row.sent_at),
             _reminder_minutes_before=row.reminder_minutes_before,
         )
