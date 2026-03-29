@@ -1,17 +1,42 @@
 """Tests for GET /users/me and PUT /users/me endpoints."""
 
 import uuid
+from types import TracebackType
+from typing import Self
 
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from api.dependencies import get_current_user
+from foundation.application.unit_of_work import UnitOfWork
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
 from shared.infrastructure.in_memory_user_repository import InMemoryUserRepository
 from shared.presentation.router import router
 from tests.helpers import auth_headers
+
+
+class _NoOpUnitOfWork(UnitOfWork):
+    """No-op UoW for unit tests with in-memory repositories."""
+
+    async def commit(self) -> None:
+        pass
+
+    async def rollback(self) -> None:
+        pass
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        pass
+
 
 # ---------------------------------------------------------------------------
 # Setup: build a test app with in-memory dependencies
@@ -69,7 +94,7 @@ def _build_app() -> FastAPI:
         return user
 
     def fake_update_use_case() -> UpdateMyProfileUseCase:
-        return UpdateMyProfileUseCase(user_repo=_repo)
+        return UpdateMyProfileUseCase(user_repo=_repo, uow=_NoOpUnitOfWork())
 
     app.dependency_overrides[get_current_user] = fake_get_current_user
     app.dependency_overrides[get_update_my_profile_use_case] = fake_update_use_case

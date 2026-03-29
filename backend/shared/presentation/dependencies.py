@@ -6,7 +6,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from api.dependencies import get_user_repository
+from api.dependencies import get_unit_of_work, get_user_repository
+from foundation.application.unit_of_work import UnitOfWork
 from shared.application.activate_user_use_case import ActivateUserUseCase
 from shared.application.create_user_use_case import CreateUserUseCase
 from shared.application.deactivate_user_use_case import DeactivateUserUseCase
@@ -19,8 +20,9 @@ from shared.domain.user_repository import UserRepository
 
 def get_update_my_profile_use_case(
     repo: Annotated[UserRepository, Depends(get_user_repository)],
+    uow: Annotated[UnitOfWork, Depends(get_unit_of_work)],
 ) -> UpdateMyProfileUseCase:
-    return UpdateMyProfileUseCase(user_repo=repo)
+    return UpdateMyProfileUseCase(user_repo=repo, uow=uow)
 
 
 def get_list_users_query_service(
