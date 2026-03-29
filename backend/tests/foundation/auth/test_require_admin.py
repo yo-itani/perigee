@@ -3,11 +3,13 @@
 import uuid
 
 import pytest
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from httpx import ASGITransport, AsyncClient
 
+from foundation.auth.dependencies import parse_user_id_from_jwt
 from shared.domain.user import User
 from shared.domain.value_objects import UserId, UserRole
+from tests.helpers import auth_headers
 
 # ---------------------------------------------------------------------------
 # Test fixtures: build a mini FastAPI app with in-memory user lookup
@@ -41,22 +43,14 @@ _USERS: dict[str, User] = {
     ),
 }
 
-_MISSING_HEADER_DETAIL = "X-User-Id header is missing or invalid"
-
 
 def _build_test_app() -> FastAPI:
-    """Build a test app with in-memory user lookup."""
+    """Build a test app with in-memory user lookup and JWT auth."""
     app = FastAPI()
 
-    async def fake_get_current_user(
-        x_user_id: str | None = Header(default=None),
-    ) -> User:
-        if x_user_id is None:
-            raise HTTPException(
-                status_code=401,
-                detail=_MISSING_HEADER_DETAIL,
-            )
-        user = _USERS.get(x_user_id)
+    async def fake_get_current_user(request: Request) -> User:
+        parsed_id = await parse_user_id_from_jwt(request)
+        user = _USERS.get(str(parsed_id.value))
         if user is None:
             raise HTTPException(status_code=403, detail="User not found")
         if not user.is_active:
@@ -111,14 +105,14 @@ class TestGetCurrentUser:
     @pytest.mark.asyncio
     async def test_admin_user_is_allowed(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/auth-only", headers={"X-User-Id": _ADMIN_ID})
+            resp = await client.get("/auth-only", headers=auth_headers(_ADMIN_ID))
         assert resp.status_code == 200
         assert resp.json()["user_id"] == _ADMIN_ID
 
     @pytest.mark.asyncio
     async def test_member_user_is_allowed(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/auth-only", headers={"X-User-Id": _MEMBER_ID})
+            resp = await client.get("/auth-only", headers=auth_headers(_MEMBER_ID))
         assert resp.status_code == 200
         assert resp.json()["user_id"] == _MEMBER_ID
 
@@ -133,7 +127,7 @@ class TestGetCurrentUser:
         async with await _client() as client:
             resp = await client.get(
                 "/auth-only",
-                headers={"X-User-Id": str(uuid.uuid4())},
+                headers=auth_headers(str(uuid.uuid4())),
             )
         assert resp.status_code == 403
         assert resp.json()["detail"] == "User not found"
@@ -143,7 +137,7 @@ class TestGetCurrentUser:
         async with await _client() as client:
             resp = await client.get(
                 "/auth-only",
-                headers={"X-User-Id": _INACTIVE_ID},
+                headers=auth_headers(_INACTIVE_ID),
             )
         assert resp.status_code == 403
         assert resp.json()["detail"] == "User account is deactivated"
@@ -158,14 +152,14 @@ class TestRequireAdmin:
     @pytest.mark.asyncio
     async def test_admin_is_allowed(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/admin-only", headers={"X-User-Id": _ADMIN_ID})
+            resp = await client.get("/admin-only", headers=auth_headers(_ADMIN_ID))
         assert resp.status_code == 200
         assert resp.json()["role"] == "admin"
 
     @pytest.mark.asyncio
     async def test_member_is_rejected(self) -> None:
         async with await _client() as client:
-            resp = await client.get("/admin-only", headers={"X-User-Id": _MEMBER_ID})
+            resp = await client.get("/admin-only", headers=auth_headers(_MEMBER_ID))
         assert resp.status_code == 403
         assert resp.json()["detail"] == "Admin access required"
 

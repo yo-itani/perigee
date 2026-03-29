@@ -131,6 +131,9 @@ class TestRecordUpdate:
         )
         await repo.save(record)
         await session.commit()
+        # Clear identity map so the next session.get() fetches fresh from DB
+        # with selectin-loaded relationships (avoids MissingGreenlet).
+        session.expunge_all()
 
         # Replace viewers: remove viewer1, keep viewer2, add viewer3
         record.set_viewers(
@@ -160,6 +163,9 @@ class TestRecordUpdate:
         )
         await repo.save(record)
         await session.commit()
+        # Clear identity map so the next session.get() fetches fresh from DB
+        # with selectin-loaded relationships (avoids MissingGreenlet).
+        session.expunge_all()
 
         # Clear all viewers
         record.set_viewers(

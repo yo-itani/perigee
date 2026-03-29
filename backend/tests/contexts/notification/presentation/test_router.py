@@ -10,14 +10,26 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
+from shared.domain.value_objects import UserId
+from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
 
 _BASE_URL = "http://test"
+
+
+async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    """Create a new random user in the DB and return its id string."""
+    uid = str(uuid.uuid4())
+    async with session_factory() as s:
+        await create_test_user(s, user_id=UserId(uuid.UUID(uid)))
+        await s.commit()
+    return uid
 
 
 def _create_test_app():
@@ -37,8 +49,8 @@ def app():
 
 
 @pytest.fixture
-def user_id() -> str:
-    return str(uuid.uuid4())
+async def user_id(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    return await _new_user(session_factory)
 
 
 class TestGetNotificationSetting:
@@ -52,7 +64,7 @@ class TestGetNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 200
@@ -62,20 +74,20 @@ class TestGetNotificationSetting:
         assert data["is_enabled"] is True
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get("/notification-settings")
 
         assert response.status_code == 401
 
-    async def test_returns_401_with_invalid_user_id(self, app) -> None:
-        """Request with non-UUID X-User-Id returns 401."""
+    async def test_returns_401_with_invalid_token(self, app) -> None:
+        """Request with an invalid Bearer token returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/notification-settings",
-                headers={"X-User-Id": "not-a-uuid"},
+                headers={"Authorization": "Bearer invalid-token"},
             )
 
         assert response.status_code == 401
@@ -90,7 +102,7 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 60, "is_enabled": False},
             )
 
@@ -107,13 +119,13 @@ class TestUpdateNotificationSetting:
             # Create initial setting
             await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 60, "is_enabled": False},
             )
             # Update it
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 15, "is_enabled": True},
             )
 
@@ -128,12 +140,12 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 120, "is_enabled": False},
             )
             response = await client.get(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 200
@@ -149,7 +161,7 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 4, "is_enabled": True},
             )
 
@@ -163,14 +175,14 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 1441, "is_enabled": True},
             )
 
         assert response.status_code == 422
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """PUT without X-User-Id header returns 401."""
+        """PUT without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
@@ -180,13 +192,13 @@ class TestUpdateNotificationSetting:
 
         assert response.status_code == 401
 
-    async def test_returns_401_with_invalid_user_id(self, app) -> None:
-        """PUT with non-UUID X-User-Id returns 401."""
+    async def test_returns_401_with_invalid_token(self, app) -> None:
+        """PUT with an invalid Bearer token returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": "not-a-uuid"},
+                headers={"Authorization": "Bearer invalid-token"},
                 json={"reminder_minutes_before": 30, "is_enabled": True},
             )
 
@@ -198,7 +210,7 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 5, "is_enabled": True},
             )
 
@@ -211,7 +223,7 @@ class TestUpdateNotificationSetting:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.put(
                 "/notification-settings",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={"reminder_minutes_before": 1440, "is_enabled": True},
             )
 

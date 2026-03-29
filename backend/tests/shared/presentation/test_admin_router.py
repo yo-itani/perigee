@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 
 from api.dependencies import get_current_user, require_admin
@@ -21,6 +21,7 @@ from shared.presentation.dependencies import (
     get_list_users_query_service,
     get_update_user_use_case,
 )
+from tests.helpers import auth_headers
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -47,8 +48,9 @@ _member_user = User(
 
 
 def _build_app(repo: InMemoryUserRepository) -> FastAPI:
-    from fastapi import Header, HTTPException
+    from fastapi import HTTPException
 
+    from foundation.auth.dependencies import parse_user_id_from_jwt
     from shared.application.activate_user_use_case import ActivateUserUseCase
     from shared.application.create_user_use_case import CreateUserUseCase
     from shared.application.deactivate_user_use_case import DeactivateUserUseCase
@@ -61,22 +63,17 @@ def _build_app(repo: InMemoryUserRepository) -> FastAPI:
     app = FastAPI()
     app.include_router(admin_router)
 
-    async def fake_get_current_user(
-        x_user_id: str | None = Header(default=None),
-    ) -> User:
-        if x_user_id is None:
-            raise HTTPException(status_code=401, detail="Missing auth")
-        user = await repo.get_by_id(UserId.from_str(x_user_id))
+    async def fake_get_current_user(request: Request) -> User:
+        parsed_id = await parse_user_id_from_jwt(request)
+        user = await repo.get_by_id(parsed_id)
         if user is None:
             raise HTTPException(status_code=403, detail="User not found")
         if not user.is_active:
             raise HTTPException(status_code=403, detail="User account is deactivated")
         return user
 
-    async def fake_require_admin(
-        x_user_id: str | None = Header(default=None),
-    ) -> User:
-        user = await fake_get_current_user(x_user_id)
+    async def fake_require_admin(request: Request) -> User:
+        user = await fake_get_current_user(request)
         if not user.is_admin:
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
@@ -122,11 +119,11 @@ async def client(app: FastAPI) -> AsyncClient:
 
 
 def _admin_headers() -> dict[str, str]:
-    return {"X-User-Id": _ADMIN_ID}
+    return auth_headers(_ADMIN_ID)
 
 
 def _member_headers() -> dict[str, str]:
-    return {"X-User-Id": _MEMBER_ID}
+    return auth_headers(_MEMBER_ID)
 
 
 # ---------------------------------------------------------------------------

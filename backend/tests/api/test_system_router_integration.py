@@ -19,6 +19,12 @@ async def _cleanup(session: AsyncSession) -> None:
     await session.execute(
         delete(UserTable).where(UserTable.email == "admin@example.com")
     )
+    # Ensure the singleton row exists (metadata.create_all does not insert data).
+    await session.execute(
+        text(
+            "INSERT IGNORE INTO system_settings (id, setup_completed_at) VALUES (1, NULL)"
+        )
+    )
     # Reset setup_completed_at to NULL so the singleton row is reusable.
     await session.execute(
         text("UPDATE system_settings SET setup_completed_at = NULL WHERE id = 1")

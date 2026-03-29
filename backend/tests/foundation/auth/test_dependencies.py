@@ -32,9 +32,7 @@ class _FakeSettings:
 
 
 def _patch_settings():  # type: ignore[no-untyped-def]
-    return patch(
-        "foundation.auth.dependencies.settings", _FakeSettings()
-    )
+    return patch("foundation.auth.dependencies.settings", _FakeSettings())
 
 
 # ---------------------------------------------------------------------------
@@ -59,9 +57,7 @@ async def test_valid_jwt_returns_user_id() -> None:
     app = _make_parse_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
                 "/test-parse",
                 headers={"Authorization": f"Bearer {token}"},
@@ -74,9 +70,7 @@ async def test_missing_auth_header_returns_401() -> None:
     app = _make_parse_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get("/test-parse")
     assert resp.status_code == 401
 
@@ -85,9 +79,7 @@ async def test_invalid_token_returns_401() -> None:
     app = _make_parse_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
                 "/test-parse",
                 headers={"Authorization": "Bearer bad-token"},
@@ -145,9 +137,7 @@ def _build_auth_app() -> FastAPI:
         parsed_id = await parse_user_id_from_jwt(request)
         user = await _repo.get_by_id(parsed_id)
         if user is None:
-            raise HTTPException(
-                status_code=403, detail="User not found"
-            )
+            raise HTTPException(status_code=403, detail="User not found")
         if not user.is_active:
             raise HTTPException(
                 status_code=403,
@@ -155,9 +145,7 @@ def _build_auth_app() -> FastAPI:
             )
         return user
 
-    app.dependency_overrides[get_current_user] = (
-        _fake_get_current_user
-    )
+    app.dependency_overrides[get_current_user] = _fake_get_current_user
     return app
 
 
@@ -170,9 +158,7 @@ async def test_active_user_returns_200() -> None:
     app = _build_auth_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
                 "/test-auth",
                 headers=_auth_header(_ACTIVE_USER_ID),
@@ -185,9 +171,7 @@ async def test_inactive_user_returns_403() -> None:
     app = _build_auth_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
                 "/test-auth",
                 headers=_auth_header(_INACTIVE_USER_ID),
@@ -200,9 +184,7 @@ async def test_unknown_user_returns_403() -> None:
     app = _build_auth_app()
     transport = ASGITransport(app=app)
     with _patch_settings():
-        async with AsyncClient(
-            transport=transport, base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
                 "/test-auth",
                 headers=_auth_header(_UNKNOWN_USER_ID),

@@ -10,14 +10,26 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.event_setup import create_event_dispatcher
 from api.exception_handlers import register_exception_handlers
 from api.register_routers import register_routers
+from shared.domain.value_objects import UserId
+from tests.helpers import auth_headers, create_test_user
 
 pytestmark = pytest.mark.integration
 
 _BASE_URL = "http://test"
+
+
+async def _new_user(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    """Create a new random user in the DB and return its id string."""
+    uid = str(uuid.uuid4())
+    async with session_factory() as s:
+        await create_test_user(s, user_id=UserId(uuid.UUID(uid)))
+        await s.commit()
+    return uid
 
 
 def _create_test_app():
@@ -37,15 +49,15 @@ def app():
 
 
 @pytest.fixture
-def user_id() -> str:
-    return str(uuid.uuid4())
+async def user_id(session_factory: async_sessionmaker[AsyncSession]) -> str:
+    return await _new_user(session_factory)
 
 
 class TestCreateScheduleGroupAuth:
     """POST /schedule-groups -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
@@ -63,7 +75,7 @@ class TestCreateScheduleAuth:
     """POST /schedules -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
@@ -87,7 +99,7 @@ class TestListTemplates:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.get(
                 "/templates",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
             )
 
         assert response.status_code == 200
@@ -104,7 +116,7 @@ class TestSaveTemplate:
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(
                 "/templates",
-                headers={"X-User-Id": user_id},
+                headers=auth_headers(user_id),
                 json={
                     "name": "Weekly Template",
                     "default_counterpart_ids": [],
@@ -123,7 +135,7 @@ class TestSendConsultationRequestAuth:
     """POST /schedules/consultation-request -- authentication checks."""
 
     async def test_returns_401_without_auth_header(self, app) -> None:
-        """Request without X-User-Id header returns 401."""
+        """Request without Authorization header returns 401."""
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
             response = await client.post(

@@ -269,10 +269,10 @@ class TestRefresh:
         )
         await refresh_repo.save(record)
 
+        client.cookies.set("refresh_token", raw_token)
         with _patch_settings():
             resp = await client.post(
                 "/auth/refresh",
-                cookies={"refresh_token": raw_token},
                 headers={"origin": "http://localhost:5173"},
             )
 
@@ -298,10 +298,10 @@ class TestRefresh:
         client: AsyncClient,
     ) -> None:
         """Missing Origin header returns 403 (CSRF protection)."""
+        client.cookies.set("refresh_token", "some-token")
         with _patch_settings():
             resp = await client.post(
                 "/auth/refresh",
-                cookies={"refresh_token": "some-token"},
             )
 
         assert resp.status_code == 403
@@ -333,10 +333,10 @@ class TestLogout:
         )
         await refresh_repo.save(record)
 
+        client.cookies.set("refresh_token", raw_token)
         with _patch_settings():
             resp = await client.post(
                 "/auth/logout",
-                cookies={"refresh_token": raw_token},
                 headers={"origin": "http://localhost:5173"},
             )
 
