@@ -54,4 +54,8 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         if exc_type is not None:
             await self.rollback()
         else:
-            await self.commit()
+            try:
+                await self.commit()
+            except BaseException:
+                await self.rollback()
+                raise

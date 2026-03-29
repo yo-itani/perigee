@@ -53,3 +53,18 @@ class TestSqlAlchemyUnitOfWork:
 
         mock_session.commit.assert_awaited_once()
         mock_session.rollback.assert_not_awaited()
+
+    async def test_aexit_rolls_back_when_commit_fails(self) -> None:
+        """__aexit__ should rollback and re-raise when commit() fails."""
+        mock_session = AsyncMock()
+        mock_session.commit.side_effect = RuntimeError("DB error")
+        uow = SqlAlchemyUnitOfWork(mock_session)
+        await uow.__aenter__()
+
+        import pytest
+
+        with pytest.raises(RuntimeError, match="DB error"):
+            await uow.__aexit__(None, None, None)
+
+        mock_session.commit.assert_awaited_once()
+        mock_session.rollback.assert_awaited_once()
