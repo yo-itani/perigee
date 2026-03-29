@@ -623,3 +623,562 @@ class TestGetScheduleDetail:
             )
 
         assert response.status_code == 403
+
+
+# =====================================================================
+# Agenda management -- POST / GET / DELETE agendas
+# =====================================================================
+
+
+class TestAddAgenda:
+    """POST /schedules/{schedule_id}/agendas -- agenda creation."""
+
+    async def test_adds_agenda_and_returns_201(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Adding an agenda returns 201 and persists the row in the DB."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create a schedule first
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            sched_resp = await client.post(
+                "/schedules",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "scheduled_at": _future(30),
+                    "title": "Agenda test",
+                },
+            )
+        assert sched_resp.status_code == 201
+        schedule_id = sched_resp.json()["schedule_id"]
+
+        # Add agenda
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+                json={"topic": "Discuss project timeline"},
+            )
+
+        assert response.status_code == 201
+        agenda_id = response.json()["agenda_id"]
+        uuid.UUID(agenda_id)
+
+        # Verify DB
+        async with session_factory() as s:
+            from contexts.preparation.infrastructure.tables import AgendaTable
+
+            result = await s.execute(
+                select(AgendaTable).where(AgendaTable.id == agenda_id)
+            )
+            row = result.scalar_one()
+            assert row.topic == "Discuss project timeline"
+            assert row.schedule_id == schedule_id
+            assert row.added_by == organizer_id
+
+
+class TestListScheduleAgendas:
+    """GET /schedules/{schedule_id}/agendas -- agenda listing."""
+
+    async def test_returns_agendas_for_schedule(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Listing agendas returns previously added agendas."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create schedule
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            sched_resp = await client.post(
+                "/schedules",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "scheduled_at": _future(30),
+                    "title": "List agenda test",
+                },
+            )
+        assert sched_resp.status_code == 201
+        schedule_id = sched_resp.json()["schedule_id"]
+
+        # Add two agendas
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            resp1 = await client.post(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+                json={"topic": "Topic A"},
+            )
+            resp2 = await client.post(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+                json={"topic": "Topic B"},
+            )
+        assert resp1.status_code == 201
+        assert resp2.status_code == 201
+
+        # List agendas
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 200
+        agendas = response.json()["agendas"]
+        topics = sorted(a["topic"] for a in agendas)
+        assert topics == ["Topic A", "Topic B"]
+
+    async def test_returns_empty_list_when_no_agendas(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """A schedule with no agendas returns an empty list."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create schedule without agendas
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            sched_resp = await client.post(
+                "/schedules",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "scheduled_at": _future(30),
+                    "title": "Empty agenda test",
+                },
+            )
+        assert sched_resp.status_code == 201
+        schedule_id = sched_resp.json()["schedule_id"]
+
+        # List agendas
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 200
+        assert response.json()["agendas"] == []
+
+
+class TestDeleteAgenda:
+    """DELETE /schedules/{schedule_id}/agendas/{agenda_id} -- agenda deletion."""
+
+    async def test_deletes_agenda_and_returns_204(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Deleting an agenda returns 204 and removes the row from DB."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create schedule
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            sched_resp = await client.post(
+                "/schedules",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "scheduled_at": _future(30),
+                    "title": "Delete agenda test",
+                },
+            )
+        assert sched_resp.status_code == 201
+        schedule_id = sched_resp.json()["schedule_id"]
+
+        # Add agenda
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            add_resp = await client.post(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+                json={"topic": "To be deleted"},
+            )
+        assert add_resp.status_code == 201
+        agenda_id = add_resp.json()["agenda_id"]
+
+        # Delete agenda
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.delete(
+                f"/schedules/{schedule_id}/agendas/{agenda_id}",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 204
+
+        # Verify DB: row is gone
+        async with session_factory() as s:
+            from contexts.preparation.infrastructure.tables import AgendaTable
+
+            result = await s.execute(
+                select(AgendaTable).where(AgendaTable.id == agenda_id)
+            )
+            assert result.scalar_one_or_none() is None
+
+
+# =====================================================================
+# Agenda comments -- POST /agendas/{agenda_id}/comments
+# =====================================================================
+
+
+class TestAddAgendaComment:
+    """POST /agendas/{agenda_id}/comments -- comment creation."""
+
+    async def test_adds_comment_and_returns_201(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Adding a comment returns 201 and persists the row in agenda_comments."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create schedule
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            sched_resp = await client.post(
+                "/schedules",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "scheduled_at": _future(30),
+                    "title": "Comment test",
+                },
+            )
+        assert sched_resp.status_code == 201
+        schedule_id = sched_resp.json()["schedule_id"]
+
+        # Add agenda
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            agenda_resp = await client.post(
+                f"/schedules/{schedule_id}/agendas",
+                headers=auth_headers(organizer_id),
+                json={"topic": "Discussion point"},
+            )
+        assert agenda_resp.status_code == 201
+        agenda_id = agenda_resp.json()["agenda_id"]
+
+        # Add comment
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.post(
+                f"/agendas/{agenda_id}/comments",
+                headers=auth_headers(organizer_id),
+                json={"body": "Let's discuss this first"},
+            )
+
+        assert response.status_code == 201
+        comment_id = response.json()["comment_id"]
+        uuid.UUID(comment_id)
+
+        # Verify DB
+        async with session_factory() as s:
+            from contexts.preparation.infrastructure.tables import AgendaCommentTable
+
+            result = await s.execute(
+                select(AgendaCommentTable).where(AgendaCommentTable.id == comment_id)
+            )
+            row = result.scalar_one()
+            assert row.agenda_id == agenda_id
+            assert row.author_id == organizer_id
+            assert row.body == "Let's discuss this first"
+
+
+# =====================================================================
+# Template detail -- GET /templates/{template_id}
+# =====================================================================
+
+
+class TestGetTemplate:
+    """GET /templates/{template_id} -- template detail retrieval."""
+
+    async def test_returns_template_detail(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Getting a template returns its full details matching DB state."""
+        organizer_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create a template
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            create_resp = await client.post(
+                "/templates",
+                headers=auth_headers(organizer_id),
+                json={
+                    "name": "Detail Template",
+                    "default_counterpart_ids": [],
+                    "agenda_topics": ["Review", "Planning"],
+                },
+            )
+        assert create_resp.status_code == 201
+        template_id = create_resp.json()["template_id"]
+
+        # Get template detail
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/templates/{template_id}",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 200
+        detail = response.json()
+        assert detail["template_id"] == template_id
+        assert detail["organizer_id"] == organizer_id
+        assert detail["name"] == "Detail Template"
+        assert detail["default_counterpart_ids"] == []
+        assert sorted(detail["agenda_topics"]) == ["Planning", "Review"]
+
+    async def test_returns_404_for_nonexistent_template(
+        self, app, user_id: str
+    ) -> None:
+        """Getting a nonexistent template returns 404."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/templates/{uuid.uuid4()}",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 404
+
+
+# =====================================================================
+# Pending action items -- GET /action-items/pending
+# =====================================================================
+
+
+class TestListAllPendingActionItems:
+    """GET /action-items/pending -- all pending action items."""
+
+    async def test_returns_pending_action_items(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Pending items from a published record are returned."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create a record, add action item, then publish
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            rec_resp = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "conducted_at": _future(0),
+                },
+            )
+        assert rec_resp.status_code == 201
+        record_id = rec_resp.json()["record_id"]
+
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            ai_resp = await client.post(
+                f"/records/{record_id}/action-items",
+                headers=auth_headers(organizer_id),
+                json={"title": "Follow up on metrics"},
+            )
+        assert ai_resp.status_code == 201
+        action_item_id = ai_resp.json()["action_item_id"]
+
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            pub_resp = await client.post(
+                f"/records/{record_id}/publish",
+                headers=auth_headers(organizer_id),
+                json={"viewer_ids": []},
+            )
+        assert pub_resp.status_code == 200
+
+        # Query pending action items
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                "/action-items/pending",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 200
+        items = response.json()["items"]
+        returned_ids = [i["action_item_id"] for i in items]
+        assert action_item_id in returned_ids
+
+    async def test_returns_empty_list_when_no_items(
+        self, app, user_id: str
+    ) -> None:
+        """A user with no action items gets an empty list."""
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                "/action-items/pending",
+                headers=auth_headers(user_id),
+            )
+
+        assert response.status_code == 200
+        assert response.json()["items"] == []
+
+
+# =====================================================================
+# Pending action items by counterpart -- GET /action-items/pending/{id}
+# =====================================================================
+
+
+class TestListPendingActionItemsByCounterpart:
+    """GET /action-items/pending/{counterpart_id} -- filtered by counterpart."""
+
+    async def test_filters_by_counterpart(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Only action items for the specified counterpart are returned."""
+        organizer_id = await _new_user(session_factory)
+        cp_a = await _new_user(session_factory)
+        cp_b = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create record with cp_a and add action item
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            rec_a = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(organizer_id),
+                json={"counterpart_id": cp_a, "conducted_at": _future(0)},
+            )
+        assert rec_a.status_code == 201
+        record_a_id = rec_a.json()["record_id"]
+
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            await client.post(
+                f"/records/{record_a_id}/action-items",
+                headers=auth_headers(organizer_id),
+                json={"title": "Item for A"},
+            )
+            pub = await client.post(
+                f"/records/{record_a_id}/publish",
+                headers=auth_headers(organizer_id),
+                json={"viewer_ids": []},
+            )
+        assert pub.status_code == 200
+
+        # Create record with cp_b and add action item
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            rec_b = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(organizer_id),
+                json={"counterpart_id": cp_b, "conducted_at": _future(0)},
+            )
+        assert rec_b.status_code == 201
+        record_b_id = rec_b.json()["record_id"]
+
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            await client.post(
+                f"/records/{record_b_id}/action-items",
+                headers=auth_headers(organizer_id),
+                json={"title": "Item for B"},
+            )
+            pub = await client.post(
+                f"/records/{record_b_id}/publish",
+                headers=auth_headers(organizer_id),
+                json={"viewer_ids": []},
+            )
+        assert pub.status_code == 200
+
+        # Query pending for cp_a only
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                f"/action-items/pending/{cp_a}",
+                headers=auth_headers(organizer_id),
+            )
+
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) >= 1
+        counterpart_ids = {i.get("counterpart_id") for i in items}
+        # All returned items should NOT include cp_b's counterpart_id
+        # (this endpoint returns organizer_id, not counterpart_id)
+        titles = [i["content"] for i in items]
+        assert "Item for A" in titles
+        assert "Item for B" not in titles
+
+
+# =====================================================================
+# Last session summary -- GET /records/last-summary
+# =====================================================================
+
+
+class TestGetLastSessionSummary:
+    """GET /records/last-summary -- last session summary."""
+
+    async def test_returns_last_summary(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Published record's summary is returned for the organizer-counterpart pair."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+
+        # Create record, update memo, publish
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            rec_resp = await client.post(
+                "/records/post-hoc",
+                headers=auth_headers(organizer_id),
+                json={
+                    "counterpart_id": cp_id,
+                    "conducted_at": _future(0),
+                },
+            )
+        assert rec_resp.status_code == 201
+        record_id = rec_resp.json()["record_id"]
+
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            await client.put(
+                f"/records/{record_id}/memo",
+                headers=auth_headers(organizer_id),
+                json={"memo": "Discussed quarterly goals"},
+            )
+            await client.post(
+                f"/records/{record_id}/publish",
+                headers=auth_headers(organizer_id),
+                json={"viewer_ids": []},
+            )
+
+        # Query last summary
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                "/records/last-summary",
+                headers=auth_headers(organizer_id),
+                params={
+                    "organizer_id": organizer_id,
+                    "counterpart_id": cp_id,
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["record_id"] == record_id
+        assert "Discussed quarterly goals" in data["memo_excerpt"]
+
+    async def test_returns_null_when_no_records(
+        self, app, session_factory: async_sessionmaker[AsyncSession]
+    ) -> None:
+        """Returns null when no published records exist for the pair."""
+        organizer_id = await _new_user(session_factory)
+        cp_id = await _new_user(session_factory)
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url=_BASE_URL) as client:
+            response = await client.get(
+                "/records/last-summary",
+                headers=auth_headers(organizer_id),
+                params={
+                    "organizer_id": organizer_id,
+                    "counterpart_id": cp_id,
+                },
+            )
+
+        assert response.status_code == 200
+        assert response.json() is None
