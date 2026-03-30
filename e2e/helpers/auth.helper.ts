@@ -39,17 +39,25 @@ export async function loginAndSaveState(
 ): Promise<void> {
   const result = await login(user.email, user.password);
 
-  // Parse the refresh_token cookie from Set-Cookie header
-  const setCookie = result.setCookieHeader;
-  if (!setCookie) {
+  // Parse the refresh_token cookie from Set-Cookie headers
+  if (result.setCookieHeaders.length === 0) {
     throw new Error("No Set-Cookie header in login response");
   }
 
-  const cookieAttrs = parseCookieHeader(setCookie);
+  const refreshCookie = result.setCookieHeaders.find((h) =>
+    h.startsWith("refresh_token="),
+  );
+  if (!refreshCookie) {
+    throw new Error(
+      "refresh_token cookie not found in Set-Cookie headers",
+    );
+  }
+
+  const cookieAttrs = parseCookieHeader(refreshCookie);
 
   // Navigate to the app to establish the cookie domain
-  const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
-  const apiBaseURL = process.env.E2E_API_BASE_URL ?? "http://localhost:8000";
+  const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5174";
+  const apiBaseURL = process.env.E2E_API_BASE_URL ?? "http://localhost:8001";
   const apiUrl = new URL(apiBaseURL);
 
   await page.goto(baseURL);

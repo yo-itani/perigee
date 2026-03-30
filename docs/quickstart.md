@@ -154,8 +154,8 @@ E2E 環境のポートマッピング:
 
 | 変数 | デフォルト | 説明 |
 |---|---|---|
-| `E2E_BASE_URL` | `http://localhost:5173` | Playwright がアクセスするフロントエンド URL |
-| `E2E_API_BASE_URL` | `http://localhost:8000` | テストヘルパーがアクセスするバックエンド URL |
+| `E2E_BASE_URL` | `http://localhost:5174` | Playwright がアクセスするフロントエンド URL |
+| `E2E_API_BASE_URL` | `http://localhost:8001` | テストヘルパーがアクセスするバックエンド URL |
 
 ## トラブルシューティング
 

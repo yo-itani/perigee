@@ -5,7 +5,7 @@
  * This is used for test data creation instead of going through the UI.
  */
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
+const DEFAULT_API_BASE_URL = "http://localhost:8001";
 
 function getApiBaseUrl(): string {
   return process.env.E2E_API_BASE_URL ?? DEFAULT_API_BASE_URL;
@@ -97,7 +97,7 @@ export async function login(
   password: string,
 ): Promise<{
   accessToken: string;
-  setCookieHeader: string | null;
+  setCookieHeaders: string[];
 }> {
   const url = `${getApiBaseUrl()}/auth/login`;
   const response = await fetch(url, {
@@ -112,11 +112,11 @@ export async function login(
   }
 
   const body = (await response.json()) as { access_token: string };
-  const setCookieHeader = response.headers.get("set-cookie");
+  const setCookieHeaders = response.headers.getSetCookie();
 
   return {
     accessToken: body.access_token,
-    setCookieHeader,
+    setCookieHeaders,
   };
 }
 
