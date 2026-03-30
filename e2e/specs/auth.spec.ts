@@ -10,6 +10,7 @@ import {
   resetDatabase,
   setupFirstUser,
   login,
+  getApiBaseUrl,
 } from "../helpers/api.helper";
 
 test.describe("Authentication", () => {
@@ -133,8 +134,7 @@ test.describe("Authentication", () => {
       await logoutMenuItem.click();
     } else {
       // If no visible logout button, call the API directly and navigate
-      const apiBase =
-        process.env.E2E_API_BASE_URL ?? "http://localhost:8000";
+      const apiBase = getApiBaseUrl();
       await page.evaluate(async (url) => {
         await fetch(`${url}/auth/logout`, {
           method: "POST",
@@ -151,7 +151,7 @@ test.describe("Authentication", () => {
   test("accessing protected API without auth returns 401", async () => {
     // Direct API call without authentication
     const response = await fetch(
-      `${process.env.E2E_API_BASE_URL ?? "http://localhost:8000"}/users/me`,
+      `${getApiBaseUrl()}/users/me`,
     );
     expect(response.status).toBe(401);
   });
@@ -159,7 +159,11 @@ test.describe("Authentication", () => {
   test("refresh token cookie is httponly", async () => {
     // Verify that login response sets an HttpOnly cookie
     const result = await login(TEST_EMAIL, TEST_PASSWORD);
-    expect(result.setCookieHeader).not.toBeNull();
-    expect(result.setCookieHeader!.toLowerCase()).toContain("httponly");
+    expect(result.setCookieHeaders.length).toBeGreaterThan(0);
+    const refreshTokenCookie = result.setCookieHeaders.find((h) =>
+      h.toLowerCase().includes("refresh_token"),
+    );
+    expect(refreshTokenCookie).toBeDefined();
+    expect(refreshTokenCookie!.toLowerCase()).toContain("httponly");
   });
 });

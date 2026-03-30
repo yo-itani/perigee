@@ -7,7 +7,7 @@
 
 const DEFAULT_API_BASE_URL = "http://localhost:8001";
 
-function getApiBaseUrl(): string {
+export function getApiBaseUrl(): string {
   return process.env.E2E_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 }
 
