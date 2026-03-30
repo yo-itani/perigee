@@ -53,6 +53,71 @@ services:
     depends_on:
       - backend
 
+  # E2E testing services
+  mariadb-e2e:
+    image: mariadb:11.8.6
+    profiles:
+      - e2e
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${PERIGEE_DB_ROOT_PASSWORD:-rootpassword}
+      MARIADB_DATABASE: perigee_e2e
+      MARIADB_USER: ${PERIGEE_DB_USER:-perigee}
+      MARIADB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
+    volumes:
+      - mariadb_e2e_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-e2e:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    profiles:
+      - e2e
+    ports:
+      - "8001:8000"
+    environment:
+      PERIGEE_DB_HOST: mariadb-e2e
+      PERIGEE_DB_PORT: "3306"
+      PERIGEE_DB_USER: ${PERIGEE_DB_USER:-perigee}
+      PERIGEE_DB_PASSWORD: ${PERIGEE_DB_PASSWORD:-perigee}
+      PERIGEE_DB_NAME: perigee_e2e
+      PERIGEE_DEBUG: "true"
+      PERIGEE_ENABLE_TEST_ENDPOINTS: "true"
+      PERIGEE_JWT_SECRET_KEY: ${PERIGEE_JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      PERIGEE_JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${PERIGEE_JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      PERIGEE_JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${PERIGEE_JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      PERIGEE_CORS_ORIGINS: ${PERIGEE_CORS_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174}
+      PERIGEE_TRUSTED_HOSTS: ${PERIGEE_TRUSTED_HOSTS:-localhost,127.0.0.1}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      mariadb-e2e:
+        condition: service_healthy
+
+  frontend-e2e:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    profiles:
+      - e2e
+    ports:
+      - "5174:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8001
+    volumes:
+      - ./frontend:/app
+      - frontend_e2e_node_modules:/app/node_modules
+    depends_on:
+      - backend-e2e
+
 volumes:
   mariadb_data:
+  mariadb_e2e_data:
   frontend_node_modules:
+  frontend_e2e_node_modules:

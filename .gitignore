@@ -196,3 +196,9 @@ sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/python,react
 *.swp
+
+# Playwright E2E
+e2e/test-results/
+e2e/.auth/
+playwright-report/
+blob-report/

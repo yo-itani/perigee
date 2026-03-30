@@ -8,6 +8,7 @@ from contexts.notification.presentation.router import (
 from contexts.notification.presentation.router import (
     router as notification_router,
 )
+from foundation.config.settings import settings
 
 
 def register_routers(app: FastAPI) -> None:
@@ -31,3 +32,8 @@ def register_routers(app: FastAPI) -> None:
     # Register /users/me routes before /users/{user_id} to avoid path conflicts
     app.include_router(users_router)
     app.include_router(admin_router)
+
+    if settings.enable_test_endpoints:
+        from api.test_router import test_router
+
+        app.include_router(test_router)
